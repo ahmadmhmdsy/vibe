@@ -17,6 +17,7 @@ the state-of-the-run narrative; this file owns durable knowledge.
 | 2026-09-28 | Provider-agnostic + OpenAI/Anthropic/OpenCode Go/custom | model selection requirement; OpenCode Go is dual-protocol | design spec §5 |
 | 2026-09-28 | Usage + cost tracking (tokens in/out/cached/cache_hit/total + steps + USD) | user requirement; "how the agent consumes" | design spec §10 |
 | 2026-09-28 | pnpm (frontend) + uv (backend), never mix | one manager per ecosystem | ENVIRONMENT.md |
+| 2026-09-28 | Acquired backend agent skills: fastapi (local copy), langgraph-*/langchain-* (GitHub) | backend half of the product had zero skill coverage | skills-lock.json |
 
 ## Lessons
 

@@ -26,7 +26,7 @@ lines. The nearest scoped instruction file owns the details:
 | frontend | React + TypeScript chat/preview/code/settings UI (`apps/vibe/`) | this file + [rules/frontend.md](rules/frontend.md) |
 | backend | FastAPI + LangGraph agent, tools, providers, executor, sessions (`services/vibe/`) | this file + [rules/agent.md](rules/agent.md), [rules/executor.md](rules/executor.md) |
 | docs | project documents and the design spec (`docs/`) | this file + [rules/context.md](rules/context.md) |
-| skills | installed agent skills (`.agents/skills/`) | [rules/tooling.md](rules/tooling.md) |
+| skills | installed agent skills (`.agents/skills/`) — frontend + backend (fastapi, langgraph-*, langchain-*) | [rules/tooling.md](rules/tooling.md) |
 
 ## Task-routed read matrix
 
