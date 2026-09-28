@@ -13,9 +13,11 @@ volatile current facts. Where they live instead:
 
 - Frontend (`apps/vibe`): pnpm only, via the lockfile. Never npm/yarn
   for this app.
-- Backend (`services/vibe`): uv only. Every interpreter command goes
-  through the repo venv (`uv run ...`); never a bare `python` or `pip`
-  invocation and never outside the environment.
+- Backend (`services/vibe`): uv only. This environment has NO network
+  access, so `uv run` hangs on dependency resolution. Run interpreter
+  commands via the venv directly: `services/vibe/.venv/Scripts/python.exe`.
+  Install with `uv sync --offline --extra dev` (deps pinned to cached
+  versions in pyproject.toml). Never a bare `python` or `pip`.
 - Never mix package managers across ecosystems; never install "just in
   case" — missing dependencies are installed into the venv by uv and then
   recorded here.
@@ -45,6 +47,9 @@ volatile current facts. Where they live instead:
 - Python: 3.13.7 (the `py` launcher also offers 3.9.13).
 - uv 0.11.22 — Python package manager.
 - Docker 28.3.2 — available; not needed for the local-first MVP (M4).
+- Network: DISABLED. No PyPI access. All deps must come from the uv cache
+  (pinned versions in pyproject.toml). Subagent foreground dispatch times
+  out at 10 min — use background dispatch.
 
 ## Capability table (durable)
 
@@ -52,5 +57,5 @@ volatile current facts. Where they live instead:
 |---|---|
 | Local subprocess execution | available (LocalSubprocessExecutor) |
 | Docker isolation | available on the machine; M4 scale path |
-| Playwright browser capture | to be installed with the backend |
+| Playwright browser capture | REMOVED from deps (offline, not cached). Post-M1 refinement — restore when network returns. |
 | LLM providers | OpenAI / Anthropic / OpenCode Go / custom (provider seam) |
