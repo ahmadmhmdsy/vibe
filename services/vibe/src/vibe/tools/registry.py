@@ -28,6 +28,7 @@ class ToolRegistry:
         for name, (schema, handler) in self._tools.items():
             tools.append(Tool.from_function(
                 name=name, description=schema.description,
+                func=lambda args, h=handler, c=ctx: h(args, c),
                 coroutine=lambda args, h=handler, c=ctx: h(args, c),
                 args_schema=schema.parameters,
             ))

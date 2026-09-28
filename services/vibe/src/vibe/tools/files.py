@@ -6,7 +6,7 @@ from vibe.runtime.base import AgentContext
 
 def _safe_path(workspace: Path, relpath: str) -> Path | None:
     p = (workspace / relpath).resolve()
-    if not str(p).startswith(str(workspace.resolve())):
+    if not p.is_relative_to(workspace.resolve()):
         return None
     return p
 
@@ -15,23 +15,23 @@ async def _write_file(args, ctx):
     if p is None:
         return ToolResult("", "write_file", "path outside workspace", True)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(args["content"])
+    p.write_text(args["content"], encoding="utf-8")
     return ToolResult("", "write_file", f"wrote {args['path']}")
 
 async def _read_file(args, ctx):
     p = _safe_path(ctx.workspace_path, args["path"])
     if p is None or not p.exists():
         return ToolResult("", "read_file", "file not found", True)
-    return ToolResult("", "read_file", p.read_text()[:20000])
+    return ToolResult("", "read_file", p.read_text(encoding="utf-8")[:20000])
 
 async def _edit_file(args, ctx):
     p = _safe_path(ctx.workspace_path, args["path"])
     if p is None or not p.exists():
         return ToolResult("", "edit_file", "file not found", True)
-    text = p.read_text()
+    text = p.read_text(encoding="utf-8")
     if args["old_string"] not in text:
         return ToolResult("", "edit_file", "old_string not found", True)
-    p.write_text(text.replace(args["old_string"], args["new_string"], 1))
+    p.write_text(text.replace(args["old_string"], args["new_string"], 1), encoding="utf-8")
     return ToolResult("", "edit_file", f"edited {args['path']}")
 
 async def _list_files(args, ctx):
