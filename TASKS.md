@@ -13,8 +13,8 @@ status; HANDOFF.md owns the narrative.
 
 | # | Task | Status | Gate / next action | Evidence |
 |---|---|---|---|---|
-| 1 | User reviews the design spec | `in_progress` | awaiting user approval | docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md |
-| 2 | Write the implementation plan (writing-plans skill) | `pending` | gated on #1 | — |
+| 1 | User reviews the design spec | `done` | approved 2026-09-28 | docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md |
+| 2 | Write the implementation plan (writing-plans skill) | `done` | complete | docs/superpowers/plans/2026-09-28-m1-core-loop.md |
 | 3 | M1 backend: FastAPI + LangGraph scaffold, AgentRuntime seam, ToolRegistry | `pending` | gated on #2 | — |
 | 4 | M1 backend: LocalSubprocessExecutor, provider seam, EventLog + SessionStore, SSE | `pending` | gated on #3 | — |
 | 5 | M1 backend: auto-run verify-fix policy, usage/cost tracking | `pending` | gated on #4 | — |

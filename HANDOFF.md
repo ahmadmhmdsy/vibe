@@ -12,8 +12,9 @@
   (snapshot), ENVIRONMENT.md (stable policy), TASKS.md (live list),
   MEMORY.md (decisions + lessons), HANDOFF.md (this guide), rules/
   (conditional policy).
-- Implementation **not started**. Next: user reviews the spec, then the
-  implementation plan (writing-plans skill), then M1.
+- Implementation **not started**. Design spec approved; implementation plan
+  written to docs/superpowers/plans/2026-09-28-m1-core-loop.md (16 tasks,
+  backend → frontend → E2E). Next: execute M1.
 
 ## Milestones
 
