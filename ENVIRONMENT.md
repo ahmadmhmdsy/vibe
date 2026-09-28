@@ -47,9 +47,9 @@ volatile current facts. Where they live instead:
 - Python: 3.13.7 (the `py` launcher also offers 3.9.13).
 - uv 0.11.22 — Python package manager.
 - Docker 28.3.2 — available; not needed for the local-first MVP (M4).
-- Network: DISABLED. No PyPI access. All deps must come from the uv cache
-  (pinned versions in pyproject.toml). Subagent foreground dispatch times
-  out at 10 min — use background dispatch.
+- Network: PyPI UNREACHABLE (uv sync/run hang — use uv cache, pinned
+  versions in pyproject.toml). npm registry REACHABLE (pnpm install works).
+  Subagent foreground dispatch times out at 10 min — use background dispatch.
 
 ## Capability table (durable)
 
