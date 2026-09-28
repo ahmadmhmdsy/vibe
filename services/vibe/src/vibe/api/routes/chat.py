@@ -3,7 +3,6 @@ from fastapi import APIRouter, Request, HTTPException
 from pathlib import Path
 from vibe.models import Message, AgentInput
 from vibe.runtime.base import AgentContext
-from vibe.executor.local import LocalSubprocessExecutor
 from vibe.events import Event
 
 router = APIRouter()
@@ -18,7 +17,7 @@ async def send_message(sid: str, body: dict, request: Request):
     # build context
     workspace = Path(request.app.state.settings.workspace_dir) / sid
     workspace.mkdir(parents=True, exist_ok=True)
-    executor = LocalSubprocessExecutor(workspace=workspace)
+    executor = request.app.state.get_executor(sid, workspace)
     ctx = AgentContext(session_id=sid, workspace_path=workspace, executor=executor,
                        event_bus=request.app.state.event_bus, store=store)
     inp = AgentInput(session_id=sid, messages=[Message(role="user", content=body["content"])], model=s.model_ref)
