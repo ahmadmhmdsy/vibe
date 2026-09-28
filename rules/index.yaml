@@ -1,0 +1,34 @@
+schema_version: 1
+rules:
+  - id: agent
+    file: agent.md
+    status: active
+    applies_when: agent runtime, LLM providers, or tool loop work
+  - id: frontend
+    file: frontend.md
+    status: active
+    applies_when: frontend React or TypeScript work
+  - id: executor
+    file: executor.md
+    status: active
+    applies_when: executor, preview, dev server, or subprocess work
+  - id: security
+    file: security.md
+    status: active
+    applies_when: secrets, workspace confinement, or dependency installs
+  - id: evidence
+    file: evidence.md
+    status: active
+    applies_when: claiming any result, metric, or validation
+  - id: tooling
+    file: tooling.md
+    status: active
+    applies_when: package managers, venv, or tooling choices
+  - id: context
+    file: context.md
+    status: active
+    applies_when: stale or conflicting documentation
+  - id: data
+    file: data.md
+    status: active
+    applies_when: touching workspaces, caches, or generated projects
