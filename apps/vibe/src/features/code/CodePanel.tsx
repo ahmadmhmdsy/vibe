@@ -4,13 +4,17 @@ import Editor from "@monaco-editor/react";
 import { useCodeStore } from "./store";
 import { Spinner } from "../../components/ui/Spinner";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { detectLanguage } from "../../lib/format";
 import "./code.css";
+
+type SaveState = "idle" | "saving" | "saved";
 
 export function CodePanel({ sessionId }: { sessionId: string }) {
   const { files, selectedFile, contents, setSelectedFile, loadFiles, loadFile, saveFile } = useCodeStore();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
 
   // Refresh the file list (picks up agent-written files).
   useEffect(() => {
@@ -29,9 +33,13 @@ export function CodePanel({ sessionId }: { sessionId: string }) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       setSaveError(null);
-      saveFile(sessionId, selectedFile, value).catch((e) => {
-        setSaveError(e instanceof Error ? `Save failed: ${e.message}` : "Save failed.");
-      });
+      setSaveState("saving");
+      saveFile(sessionId, selectedFile, value)
+        .then(() => setSaveState("saved"))
+        .catch((e) => {
+          setSaveState("idle");
+          setSaveError(e instanceof Error ? `Save failed: ${e.message}` : "Save failed.");
+        });
     }, 800);
   };
 
@@ -49,14 +57,22 @@ export function CodePanel({ sessionId }: { sessionId: string }) {
           />
         ) : (
           files.map((f) => (
-            <div key={f} onClick={() => setSelectedFile(f)}
-              className={f === selectedFile ? "code-file code-file-active" : "code-file"}>
+            <button
+              key={f}
+              className={f === selectedFile ? "code-file code-file-active" : "code-file"}
+              aria-pressed={f === selectedFile}
+              onClick={() => setSelectedFile(f)}
+            >
               {f}
-            </div>
+            </button>
           ))
         )}
       </div>
       <div className="code-editor">
+        <div className="code-save-status" role="status" aria-live="polite">
+          {saveState === "saving" && <span className="muted">Saving...</span>}
+          {saveState === "saved" && <span className="muted">Saved</span>}
+        </div>
         {saveError && (
           <div className="code-save-error" role="alert">
             {saveError}
@@ -65,7 +81,7 @@ export function CodePanel({ sessionId }: { sessionId: string }) {
         {selectedFile && (
           <Editor
             path={selectedFile}
-            language="typescript"
+            language={detectLanguage(selectedFile)}
             value={contents[selectedFile] ?? ""}
             onChange={onEdit}
           />
