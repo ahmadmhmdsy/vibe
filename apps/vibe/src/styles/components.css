@@ -1,0 +1,225 @@
+/* components.css — UI primitive styles, all token-driven. Imported from global.css. */
+
+/* --- Button --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.btn-sm {
+  min-height: 28px;
+  padding: var(--space-1) var(--space-2);
+}
+
+.btn-md {
+  min-height: 32px;
+}
+
+.btn-primary {
+  background: var(--accent-bg);
+  border-color: var(--accent-bg);
+  color: var(--accent-contrast);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-bg) 88%, #000);
+  border-color: color-mix(in srgb, var(--accent-bg) 88%, #000);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: transparent;
+}
+
+.btn-danger {
+  background: var(--danger-bg);
+  border-color: var(--danger-bg);
+  color: #ffffff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger-bg) 88%, #000);
+  border-color: color-mix(in srgb, var(--danger-bg) 88%, #000);
+}
+
+/* --- IconButton (44px touch target) --- */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* --- Spinner --- */
+@keyframes vibe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Modal --- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  z-index: 100;
+  animation: vibe-fade-in var(--duration) var(--ease-out);
+}
+
+.modal-panel {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: vibe-rise var(--duration) var(--ease-out);
+}
+
+.modal-wide {
+  max-width: 640px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-body {
+  padding: var(--space-4);
+  overflow: auto;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+@keyframes vibe-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vibe-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* --- EmptyState --- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-5);
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  color: var(--text-faint);
+  margin-bottom: var(--space-1);
+}
+
+.empty-state h3 {
+  margin: 0;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.empty-state-action {
+  margin-top: var(--space-2);
+}
+
+/* --- ErrorBanner --- */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-raised));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.error-banner svg {
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.error-banner-message {
+  flex: 1;
+}
+
+/* --- Tooltip --- */
+.tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-active);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-2);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  z-index: 50;
+}
+
+.tooltip-wrap:hover .tooltip,
+.tooltip-wrap:focus-within .tooltip {
+  opacity: 1;
+}

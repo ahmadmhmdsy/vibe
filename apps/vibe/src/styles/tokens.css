@@ -1,0 +1,83 @@
+/* tokens.css — design tokens for the vibe IDE.
+   Dark-first: :root is dark; [data-theme="light"] overrides.
+   Every color used by components comes from here — no hard-coded hex in components. */
+
+:root {
+  /* surfaces */
+  --bg: #0d1117;
+  --bg-raised: #161b22;
+  --bg-hover: #1c2129;
+  --bg-active: #252c36;
+  --border: #30363d;
+  --border-strong: #444c56;
+
+  /* text — muted is tinted from the foreground hue, never gray (craft floor) */
+  --text: #e6edf3;
+  --text-muted: #9aa7b4;
+  --text-faint: #6e7681;
+
+  /* accent (indigo) */
+  --accent: #8b9cf9;
+  --accent-bg: #5b62e0;
+  --accent-contrast: #ffffff;
+
+  /* semantic */
+  --success: #3fb950;
+  --danger: #f85149;
+  --danger-bg: #b3261e;
+  --warning: #d29922;
+
+  /* type */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --line-height: 1.5;
+
+  /* spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* shape + depth (offset + soft blur) */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.5);
+
+  /* motion */
+  --duration-fast: 120ms;
+  --duration: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="light"] {
+  --bg: #f6f8fa;
+  --bg-raised: #ffffff;
+  --bg-hover: #eef1f4;
+  --bg-active: #e4e9ee;
+  --border: #d0d7de;
+  --border-strong: #afb8c1;
+
+  --text: #1f2328;
+  --text-muted: #59636e;
+  --text-faint: #8c959f;
+
+  --accent: #4f46e5;
+  --accent-bg: #4f46e5;
+  --accent-contrast: #ffffff;
+
+  --success: #1a7f37;
+  --danger: #cf222e;
+  --danger-bg: #b3261e;
+  --warning: #9a6700;
+
+  --shadow-1: 0 1px 3px rgba(31, 35, 40, 0.08);
+  --shadow-2: 0 6px 20px rgba(31, 35, 40, 0.14);
+}

@@ -1,0 +1,22 @@
+// apps/vibe/src/components/ui/IconButton.tsx
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { Tooltip } from "./Tooltip";
+
+export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Accessible name — required (icon-only control). */
+  label: string;
+  children: ReactNode;
+}
+
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  { label, children, className, ...rest },
+  ref
+) {
+  return (
+    <Tooltip label={label}>
+      <button ref={ref} className={["icon-btn", className].filter(Boolean).join(" ")} aria-label={label} {...rest}>
+        {children}
+      </button>
+    </Tooltip>
+  );
+});
