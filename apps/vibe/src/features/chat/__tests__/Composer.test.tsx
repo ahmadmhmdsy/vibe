@@ -21,7 +21,7 @@ import { useChatStore } from "../store";
 
 afterEach(() => {
   cleanup();
-  useChatStore.setState({ messages: [], isStreaming: false, model: { provider_id: "openai", model_id: "gpt-4o" } });
+  useChatStore.setState({ messagesBySession: {}, isStreamingBySession: {}, model: { provider_id: "openai", model_id: "gpt-4o" } });
   vi.mocked(api.sendMessage).mockResolvedValue({ content: "ok" });
 });
 
@@ -49,5 +49,20 @@ describe("Composer", () => {
     fireEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/API error: 400/);
     expect(screen.getByRole("textbox")).toHaveValue("hello");
+  });
+
+  it("shows a stop button while streaming", () => {
+    useChatStore.setState({ isStreamingBySession: { s1: true } });
+    render(<Composer sessionId="s1" />);
+    expect(screen.getByRole("button", { name: /stop/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /send/i })).not.toBeInTheDocument();
+  });
+
+  it("stop button requests a stop and clears the indicator", () => {
+    useChatStore.setState({ isStreamingBySession: { s1: true } });
+    render(<Composer sessionId="s1" />);
+    fireEvent.click(screen.getByRole("button", { name: /stop/i }));
+    expect(useChatStore.getState().stopRequested.s1).toBe(true);
+    expect(useChatStore.getState().isStreamingBySession.s1).toBe(false);
   });
 });

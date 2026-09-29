@@ -61,6 +61,7 @@ export const api = {
     req<void>(`/providers/${id}`, { method: "DELETE" }),
   listApprovals: (sid: string) => req<Approval[]>(`/sessions/${sid}/approvals`),
   getUsage: (sid: string) => req<UsageStats>(`/sessions/${sid}/usage`),
+  getMessages: (sid: string) => req<Message[]>(`/sessions/${sid}/messages`),
   listFiles: (sid: string) => req<string[]>(`/sessions/${sid}/files`),
   readFile: (sid: string, path: string) => req<{ path: string; content: string }>(`/sessions/${sid}/files/${path}`),
   writeFile: (sid: string, path: string, content: string) =>
@@ -81,6 +82,11 @@ export interface Attachment {
   name: string;
   content_type: string;
   data_base64: string;
+}
+
+export interface Message {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export interface UsageStats {

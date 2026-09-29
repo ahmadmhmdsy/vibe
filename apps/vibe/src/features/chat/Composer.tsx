@@ -4,13 +4,17 @@ import { api, ApiError, type Attachment } from "../../lib/api";
 import { useChatStore } from "./store";
 import { ErrorBanner } from "../../components/ui/ErrorBanner";
 import { IconButton } from "../../components/ui/IconButton";
+import { Button } from "../../components/ui/Button";
 
 export function Composer({ sessionId }: { sessionId: string }) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { addMessage, setStreaming } = useChatStore();
+  const addMessage = useChatStore((s) => s.addMessage);
+  const setStreaming = useChatStore((s) => s.setStreaming);
+  const requestStop = useChatStore((s) => s.requestStop);
+  const isStreaming = useChatStore((s) => s.isStreamingBySession[sessionId] ?? false);
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -29,10 +33,10 @@ export function Composer({ sessionId }: { sessionId: string }) {
   const send = async () => {
     if (!text.trim() && attachments.length === 0) return;
     const snapshot = { text, attachments };
-    addMessage({ role: "user", content: text });
+    addMessage(sessionId, { role: "user", content: text });
     setText("");
     setAttachments([]);
-    setStreaming(true);
+    setStreaming(sessionId, true);
     setError(null);
     try {
       await api.sendMessage(sessionId, snapshot.text, snapshot.attachments);
@@ -42,8 +46,13 @@ export function Composer({ sessionId }: { sessionId: string }) {
       setAttachments(snapshot.attachments);
       setError(e instanceof ApiError ? `${e.message}. Your message was kept.` : "Failed to send. Your message was kept.");
     } finally {
-      setStreaming(false);
+      setStreaming(sessionId, false);
     }
+  };
+
+  const stop = () => {
+    requestStop(sessionId);
+    setStreaming(sessionId, false);
   };
 
   return (
@@ -92,9 +101,15 @@ export function Composer({ sessionId }: { sessionId: string }) {
           className="composer-input"
           rows={1}
         />
-        <button onClick={send} disabled={!text.trim() && attachments.length === 0} className="composer-send">
-          Send
-        </button>
+        {isStreaming ? (
+          <Button variant="danger" size="md" onClick={stop}>
+            Stop
+          </Button>
+        ) : (
+          <Button variant="primary" size="md" onClick={send} disabled={!text.trim() && attachments.length === 0}>
+            Send
+          </Button>
+        )}
       </div>
     </div>
   );
