@@ -1,0 +1,199 @@
+/* chat.css — composer, message list, approvals. */
+
+.composer {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--bg);
+}
+
+.composer-error {
+  margin-bottom: var(--space-1);
+}
+
+.composer-attachments {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.composer-attachment {
+  position: relative;
+}
+
+.composer-attachment img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.composer-attachment-remove {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--danger-bg);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.composer-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+
+.composer-input {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  min-height: 38px;
+  max-height: 160px;
+}
+
+.composer-send {
+  min-height: 38px;
+}
+
+/* --- message list --- */
+.message-list {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 100%;
+}
+
+.message-role {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+.message-content {
+  line-height: var(--line-height);
+  overflow-wrap: anywhere;
+}
+
+.message-content p {
+  margin: 0 0 var(--space-2) 0;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-user .message-content {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  align-self: flex-start;
+}
+
+.message-assistant .message-content {
+  padding: 0;
+}
+
+.message-streaming {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* --- approvals --- */
+.approval-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.approval-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.approval-title svg {
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+.approval-packages {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.approval-package {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--bg-active);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-2);
+  width: fit-content;
+}
+
+.approval-hint {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.approval-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.approval-always {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.approval-status {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.approval-status-approved {
+  color: var(--success);
+}
+
+.approval-status-denied {
+  color: var(--danger);
+}

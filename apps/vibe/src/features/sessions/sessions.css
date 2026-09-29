@@ -1,0 +1,98 @@
+/* sessions.css — sessions sidebar. */
+
+.sessions-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.sessions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.sessions-title {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sessions-alert {
+  padding: var(--space-3) var(--space-3) 0;
+}
+
+.sessions-list {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sessions-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-5) 0;
+}
+
+.session-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+}
+
+.session-row-active {
+  background: var(--bg-raised);
+  border-color: var(--border);
+}
+
+.session-select {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  min-height: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.session-select:hover {
+  background: none;
+}
+
+.session-name {
+  font-weight: 550;
+  color: var(--text);
+  font-size: var(--text-base);
+}
+
+.session-meta {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.session-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.session-delete {
+  color: var(--danger);
+}
+
+.session-rename-input {
+  width: 100%;
+}

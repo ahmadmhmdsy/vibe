@@ -4,10 +4,19 @@ import { api } from "../../lib/api";
 import type { ProviderInfo } from "../../lib/api";
 import { useChatStore } from "./store";
 
-export function ModelPicker() {
+export function ModelPicker({ sessionId }: { sessionId: string | null }) {
   const { model, setModel } = useChatStore();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   useEffect(() => { api.getCatalog().then(setProviders).catch(() => {}); }, []);
+
+  // Reflect the active session's stored model when the session changes.
+  useEffect(() => {
+    if (!sessionId) return;
+    api.getSession(sessionId)
+      .then((s) => setModel({ provider_id: s.model.provider_id, model_id: s.model.model_id }))
+      .catch(() => {});
+  }, [sessionId]);
+
   return (
     <select
       aria-label="Model"
@@ -15,6 +24,7 @@ export function ModelPicker() {
       onChange={(e) => {
         const [provider_id, model_id] = e.target.value.split("/");
         setModel({ provider_id, model_id });
+        if (sessionId) api.setSessionModel(sessionId, { provider_id, model_id }).catch(() => {});
       }}
       style={{ padding: 4 }}
     >
