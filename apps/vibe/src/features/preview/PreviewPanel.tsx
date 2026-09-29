@@ -4,7 +4,7 @@ import { usePreviewStore } from "./store";
 export function PreviewPanel({ sessionId }: { sessionId: string }) {
   const { url, isRunning, run, stop } = usePreviewStore();
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className="panel-preview" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={{ display: "flex", gap: 8, padding: 8 }}>
         <button onClick={run} disabled={isRunning}>Run</button>
         <button onClick={stop} disabled={!isRunning}>Stop</button>
