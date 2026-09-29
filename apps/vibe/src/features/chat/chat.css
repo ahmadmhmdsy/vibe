@@ -1,5 +1,12 @@
 /* chat.css — composer, message list, approvals. */
 
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
 .composer {
   padding: var(--space-3);
   border-top: 1px solid var(--border);

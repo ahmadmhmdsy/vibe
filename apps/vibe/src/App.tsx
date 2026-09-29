@@ -11,6 +11,7 @@ import { EmptyState } from "./components/ui/EmptyState";
 import { Button } from "./components/ui/Button";
 import { useSessionsStore } from "./features/sessions/store";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
+import { getTheme, toggleTheme, type Theme } from "./lib/theme";
 import "./styles/app.css";
 
 type MobileTab = "chat" | "code" | "preview";
@@ -23,8 +24,11 @@ export default function App() {
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [sideOpen, setSideOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
+  const [theme, setTheme] = useState<Theme>(getTheme);
 
   useKeyboardShortcut(() => setSettingsOpen((v) => !v), { meta: true, key: "," });
+
+  const onToggleTheme = () => setTheme(toggleTheme());
 
   return (
     <div className="app-shell">
@@ -59,6 +63,18 @@ export default function App() {
             <path d="M9.5 1.5v13" />
           </svg>
         </IconButton>
+        <IconButton label="Toggle theme" onClick={onToggleTheme}>
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            {theme === "dark" ? (
+              <>
+                <circle cx="8" cy="8" r="3" />
+                <path d="M8 1.8v1.4M8 12.8v1.4M1.8 8h1.4M12.8 8h1.4M3.5 3.5l1 1M11.5 11.5l1 1M12.5 3.5l-1 1M4.5 11.5l-1 1" strokeLinecap="round" />
+              </>
+            ) : (
+              <path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z" strokeLinejoin="round" />
+            )}
+          </svg>
+        </IconButton>
         <IconButton label="Settings" onClick={() => setSettingsOpen(true)}>
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <circle cx="8" cy="8" r="2.2" />
@@ -67,12 +83,12 @@ export default function App() {
         </IconButton>
       </header>
 
-      <div className="app-body">
+      <div className="app-body" data-mobile-tab={mobileTab}>
         <aside className={["app-sidebar", sessionsOpen ? "app-sidebar-open" : ""].join(" ")}>
           <SessionsPanel />
         </aside>
 
-        <main className="app-main" data-mobile-tab={mobileTab}>
+        <main className="app-main">
           {activeId ? (
             <ChatPanel sessionId={activeId} />
           ) : (
@@ -88,7 +104,7 @@ export default function App() {
           )}
         </main>
 
-        <section className={["app-side", sideOpen ? "app-side-open" : ""].join(" ")}>
+        <section className={["app-side", sideOpen ? "app-side-open" : ""].join(" ")} aria-label="Preview and code">
           {activeId && <PreviewPanel sessionId={activeId} />}
           {activeId && <CodePanel sessionId={activeId} />}
         </section>

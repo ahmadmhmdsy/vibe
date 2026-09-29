@@ -3,10 +3,11 @@ import { MessageList } from "./MessageList";
 import { Composer } from "./Composer";
 import { ModelPicker } from "./ModelPicker";
 import { UsageBadge } from "./UsageBadge";
+import "./chat.css";
 
 export function ChatPanel({ sessionId }: { sessionId: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className="chat-panel">
       <ModelPicker sessionId={sessionId} />
       <MessageList sessionId={sessionId} />
       <UsageBadge sessionId={sessionId} />

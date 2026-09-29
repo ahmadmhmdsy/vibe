@@ -1,9 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vibe</title>
+    <meta name="description" content="vibe — a local-first vibe-coding IDE. Describe the app, watch the agent build it." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>vibe — local vibe-coding IDE</title>
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var t = localStorage.getItem("vibe.theme");
+          if (t !== "light" && t !== "dark") t = "dark";
+          document.documentElement.dataset.theme = t;
+        } catch (e) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
