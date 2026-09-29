@@ -43,6 +43,10 @@ class LocalSubprocessExecutor:
     async def build(self) -> ToolResult:
         return await self._run([self._pnpm, "run", "build"])
 
+    @property
+    def dev_server_url(self) -> str | None:
+        return self._dev_server.url if self._dev_server else None
+
     async def start_dev_server(self) -> DevServerHandle:
         port = _free_port()
         proc = await asyncio.create_subprocess_exec(

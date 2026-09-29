@@ -135,12 +135,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health():
         return {"status": "ok"}
 
-    from vibe.api.routes import sessions, chat, catalog, providers, approvals, messages
+    from vibe.api.routes import sessions, chat, catalog, providers, approvals, messages, preview
     app.include_router(sessions.router)
     app.include_router(chat.router)
     app.include_router(catalog.router)
     app.include_router(providers.router)
     app.include_router(approvals.router)
     app.include_router(messages.router)
+    app.include_router(preview.router)
 
     return app

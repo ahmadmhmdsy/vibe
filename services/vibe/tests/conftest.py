@@ -16,7 +16,14 @@ class StubRuntime:
         yield AgentEvent(kind="turn_complete", data={})
 
 class StubExecutor:
-    async def install(self, packages): 
+    def __init__(self):
+        self._dev_server = None
+
+    @property
+    def dev_server_url(self):
+        return self._dev_server.url if self._dev_server else None
+
+    async def install(self, packages):
         from vibe.models import ToolResult
         return ToolResult("", "install", "ok")
     async def build(self):
@@ -24,8 +31,10 @@ class StubExecutor:
         return ToolResult("", "build", "ok")
     async def start_dev_server(self):
         from vibe.executor.base import DevServerHandle
-        return DevServerHandle(port=5173, url="http://127.0.0.1:5173/", process=None)
-    async def stop_dev_server(self): pass
+        self._dev_server = DevServerHandle(port=5173, url="http://127.0.0.1:5173/", process=None)
+        return self._dev_server
+    async def stop_dev_server(self):
+        self._dev_server = None
     async def read_console_logs(self, tail): return ""
     async def screenshot(self): return b""
 
