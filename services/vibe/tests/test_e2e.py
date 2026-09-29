@@ -22,6 +22,10 @@ class E2ERuntime:
         yield AgentEvent(kind="text_chunk", data={"text": "created App.tsx"})
         yield AgentEvent(kind="turn_complete", data={})
 
+class NoOpAutorun:
+    async def maybe_run(self, ctx, changed_files):
+        pass
+
 @pytest.mark.asyncio
 async def test_e2e_core_loop(tmp_path):
     settings = Settings(workspace_dir=tmp_path / "ws", port=8000)
@@ -30,6 +34,7 @@ async def test_e2e_core_loop(tmp_path):
     app.state.event_log = EventLog()
     app.state.event_bus = EventBus()
     app.state.runtime = E2ERuntime()
+    app.state.get_autorun = lambda sid, ws: NoOpAutorun()
     reg = ToolRegistry()
     register_file_tools(reg)
     register_executor_tools(reg)
