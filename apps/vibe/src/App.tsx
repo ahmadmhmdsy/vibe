@@ -3,6 +3,7 @@ import { SessionsPanel } from "./features/sessions/SessionsPanel";
 import { ChatPanel } from "./features/chat/ChatPanel";
 import { PreviewPanel } from "./features/preview/PreviewPanel";
 import { CodePanel } from "./features/code/CodePanel";
+import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { useSessionsStore } from "./features/sessions/store";
 
 export default function App() {
@@ -15,7 +16,9 @@ export default function App() {
       </div>
       <div style={{ width: "40%", display: "flex", flexDirection: "column" }}>
         {activeId && <PreviewPanel sessionId={activeId} />}
+        {activeId && <CodePanel files={[]} selectedFile={null} />}
       </div>
+      <SettingsPanel />
     </div>
   );
 }

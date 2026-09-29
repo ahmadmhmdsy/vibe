@@ -1,8 +1,10 @@
 // apps/vibe/src/features/sessions/SessionsPanel.tsx
+import { useEffect } from "react";
 import { useSessionsStore } from "./store";
 
 export function SessionsPanel() {
   const { sessions, activeId, load, create, remove, select } = useSessionsStore();
+  useEffect(() => { load().catch(() => {}); }, []);
   return (
     <div style={{ width: 240, borderRight: "1px solid #ccc", display: "flex", flexDirection: "column" }}>
       <button onClick={() => create()} style={{ margin: 8 }}>New</button>
