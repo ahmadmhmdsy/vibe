@@ -6,6 +6,7 @@ import { useChatStore } from "./store";
 import { useShallow } from "zustand/react/shallow";
 import { Spinner } from "../../components/ui/Spinner";
 import { Markdown } from "../../lib/markdown";
+import { ApprovalCard } from "./ApprovalCard";
 import "./chat.css";
 
 export function MessageList({ sessionId }: { sessionId: string }) {
@@ -43,6 +44,10 @@ export function MessageList({ sessionId }: { sessionId: string }) {
     return () => sse.disconnect();
   }, [sessionId]);
 
+  const resolveApproval = (id: string) => {
+    setApprovals((prev) => prev.filter((x) => x.id !== id));
+  };
+
   return (
     <div role="log" aria-live="polite" className="message-list" ref={listRef}>
       {messages.length === 0 && !isStreaming && (
@@ -65,26 +70,18 @@ export function MessageList({ sessionId }: { sessionId: string }) {
         </div>
       )}
       {approvals.map((a) => (
-        <div key={a.id} className="approval-card" data-status={a.status}>
-          <div className="approval-title">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <path d="M8 1.5L15 14H1L8 1.5z" strokeLinejoin="round" />
-              <path d="M8 6.5v3" strokeLinecap="round" />
-              <circle cx="8" cy="11.2" r="0.4" fill="currentColor" />
-            </svg>
-            Approval needed
-          </div>
-          <div className="approval-packages">
-            {a.packages.map((p) => (
-              <span key={p} className="approval-package">{p}</span>
-            ))}
-          </div>
-          <div className="approval-hint">The agent wants to install these packages.</div>
-          <div className="approval-actions">
-            <button onClick={() => api.approve(a.id).then(() => setApprovals((prev) => prev.filter((x) => x.id !== a.id)))}>Approve</button>
-            <button onClick={() => api.deny(a.id).then(() => setApprovals((prev) => prev.filter((x) => x.id !== a.id)))}>Deny</button>
-          </div>
-        </div>
+        <ApprovalCard
+          key={a.id}
+          approval={a}
+          onApprove={() => {
+            api.approve(a.id).catch(() => {});
+            resolveApproval(a.id);
+          }}
+          onDeny={() => {
+            api.deny(a.id).catch(() => {});
+            resolveApproval(a.id);
+          }}
+        />
       ))}
     </div>
   );
