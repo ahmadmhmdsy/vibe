@@ -64,10 +64,12 @@ def _llm_factory(settings: Settings, custom_store):
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
     app = FastAPI(title="vibe")
-    # CORS: the Vite dev server (port 5173) calls this API cross-origin.
+    # CORS: the Vite dev server calls this API cross-origin. The port
+    # varies (5173, or the next free one when busy), so the allowlist is
+    # configurable via VIBE_CORS_ORIGINS (comma-separated).
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

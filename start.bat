@@ -5,12 +5,13 @@ REM  Double-click to launch both servers in separate windows.
 REM ============================================================
 
 set VIBE_PORT=8123
+set VIBE_CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 
 echo Starting backend on port %VIBE_PORT%...
 start "vibe-backend" cmd /k "cd /d E:\python_projects\apps_building\services\vibe && .venv\Scripts\python.exe -m uvicorn vibe.api.app:create_app --factory --port %VIBE_PORT%"
 
 echo Starting frontend dev server...
-start "vibe-frontend" cmd /k "cd /d E:\python_projects\apps_building\apps\vibe && set VITE_API_URL=http://localhost:%VIBE_PORT% && pnpm run dev"
+start "vibe-frontend" cmd /k "cd /d E:\python_projects\apps_building\apps\vibe && set VITE_API_URL=http://localhost:%VIBE_PORT%&& pnpm run dev"
 
 echo.
 echo ========================================
