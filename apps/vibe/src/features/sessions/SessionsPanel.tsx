@@ -35,7 +35,12 @@ export function SessionsPanel() {
     refresh();
   }, []);
 
-  useEffect(() => { api.getCatalog().then(setProviders).catch(() => {}); }, []);
+  useEffect(() => {
+    api
+      .getCatalog()
+      .then(setProviders)
+      .catch(() => {});
+  }, []);
 
   const modelLabel = (provider_id: string, model_id: string) => {
     const m = providers.find((p) => p.id === provider_id)?.models.find((m) => m.id === model_id);
@@ -112,7 +117,12 @@ export function SessionsPanel() {
       <div className="sessions-header">
         <span className="sessions-title">Sessions</span>
         <div className="sessions-header-actions">
-          <Button variant="ghost" size="sm" onClick={exportSessions} disabled={sessions.length === 0}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportSessions}
+            disabled={sessions.length === 0}
+          >
             Export
           </Button>
           <Button variant="primary" size="sm" onClick={onCreate}>
@@ -152,10 +162,7 @@ export function SessionsPanel() {
           </div>
         ) : error ? null : filteredSessions.length === 0 ? (
           searchQuery ? (
-            <EmptyState
-              title="No matching sessions"
-              body={`No sessions match "${searchQuery}".`}
-            />
+            <EmptyState title="No matching sessions" body={`No sessions match "${searchQuery}".`} />
           ) : (
             <EmptyState
               title="No sessions yet"
@@ -189,7 +196,9 @@ export function SessionsPanel() {
               ) : (
                 <>
                   <button className="session-select" onClick={() => select(s.id)}>
-                    <span className="session-name" title={s.title}>{s.title}</span>
+                    <span className="session-name" title={s.title}>
+                      {s.title}
+                    </span>
                     <span className="session-meta" title={new Date(s.updated_at).toLocaleString()}>
                       {modelLabel(s.model.provider_id, s.model.model_id)}
                       {" · "}
@@ -198,8 +207,19 @@ export function SessionsPanel() {
                   </button>
                   <div className="session-actions">
                     <IconButton label="Rename" onClick={() => startRename(s)}>
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                        <path d="M11.2 2.3l2.5 2.5L5.4 13l-3 .6.6-3 8.2-8.3z" strokeLinejoin="round" />
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M11.2 2.3l2.5 2.5L5.4 13l-3 .6.6-3 8.2-8.3z"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </IconButton>
                     <IconButton
@@ -207,8 +227,20 @@ export function SessionsPanel() {
                       className="session-delete"
                       onClick={() => setConfirmDelete(s)}
                     >
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                        <path d="M2.8 4.5h10.4M6.3 4.5V3h3.4v1.5M4.4 4.5l.7 9h5.8l.7-9" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M2.8 4.5h10.4M6.3 4.5V3h3.4v1.5M4.4 4.5l.7 9h5.8l.7-9"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </IconButton>
                   </div>

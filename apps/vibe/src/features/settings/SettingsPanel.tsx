@@ -9,7 +9,11 @@ import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useToast } from "../../components/ui/Toast";
 import "./settings.css";
 
-const PROTOCOLS: CustomModel["protocol"][] = ["openai-chat", "openai-responses", "anthropic-messages"];
+const PROTOCOLS: CustomModel["protocol"][] = [
+  "openai-chat",
+  "openai-responses",
+  "anthropic-messages",
+];
 
 interface FormState {
   id: string | null;
@@ -29,10 +33,21 @@ export function SettingsPanel() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<CustomProvider | null>(null);
 
-  useEffect(() => { load().catch((e) => setError(e.message)); }, []);
-  useEffect(() => { api.listProviders().then(setCustoms).catch((e) => setError(e.message)); }, []);
+  useEffect(() => {
+    load().catch((e) => setError(e.message));
+  }, []);
+  useEffect(() => {
+    api
+      .listProviders()
+      .then(setCustoms)
+      .catch((e) => setError(e.message));
+  }, []);
 
-  const refreshCustoms = () => api.listProviders().then(setCustoms).catch((e) => setError(e.message));
+  const refreshCustoms = () =>
+    api
+      .listProviders()
+      .then(setCustoms)
+      .catch((e) => setError(e.message));
 
   const startEdit = (p: CustomProvider) => {
     setForm({
@@ -109,7 +124,11 @@ export function SettingsPanel() {
             {providers.map((p) => (
               <li key={p.id} className="provider-row">
                 <span className="provider-name">{p.name}</span>
-                <span className={p.key_configured ? "key-badge key-badge-on" : "key-badge key-badge-off"}>
+                <span
+                  className={
+                    p.key_configured ? "key-badge key-badge-on" : "key-badge key-badge-off"
+                  }
+                >
                   {p.key_configured ? "Key configured" : "No key"}
                 </span>
               </li>
@@ -143,36 +162,84 @@ export function SettingsPanel() {
         <div className="settings-form">
           <label className="field">
             <span className="field-label">Name</span>
-            <input placeholder="Name" aria-label="Provider name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <input
+              placeholder="Name"
+              aria-label="Provider name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
           </label>
           <label className="field">
             <span className="field-label">Base URL</span>
-            <input placeholder="Base URL" aria-label="Provider base URL" value={form.baseUrl} onChange={(e) => setForm({ ...form, baseUrl: e.target.value })} />
+            <input
+              placeholder="Base URL"
+              aria-label="Provider base URL"
+              value={form.baseUrl}
+              onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
+            />
           </label>
           <label className="field">
             <span className="field-label">API key</span>
-            <input placeholder="API key" aria-label="Provider API key" type="password" value={form.apiKey} onChange={(e) => setForm({ ...form, apiKey: e.target.value })} />
+            <input
+              placeholder="API key"
+              aria-label="Provider API key"
+              type="password"
+              value={form.apiKey}
+              onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+            />
           </label>
 
           <div className="field">
             <span className="field-label">Models</span>
             {form.models.map((m, i) => (
               <div key={i} className="model-row">
-                <input placeholder="id" aria-label={`Model ${i + 1} id`} value={m.id} onChange={(e) => setModel(i, { id: e.target.value })} />
-                <input placeholder="name" aria-label={`Model ${i + 1} name`} value={m.name} onChange={(e) => setModel(i, { name: e.target.value })} />
-                <select aria-label={`Model ${i + 1} protocol`} value={m.protocol} onChange={(e) => setModel(i, { protocol: e.target.value as CustomModel["protocol"] })}>
+                <input
+                  placeholder="id"
+                  aria-label={`Model ${i + 1} id`}
+                  value={m.id}
+                  onChange={(e) => setModel(i, { id: e.target.value })}
+                />
+                <input
+                  placeholder="name"
+                  aria-label={`Model ${i + 1} name`}
+                  value={m.name}
+                  onChange={(e) => setModel(i, { name: e.target.value })}
+                />
+                <select
+                  aria-label={`Model ${i + 1} protocol`}
+                  value={m.protocol}
+                  onChange={(e) =>
+                    setModel(i, { protocol: e.target.value as CustomModel["protocol"] })
+                  }
+                >
                   {PROTOCOLS.map((p) => (
                     <option key={p} value={p}>
                       {p}
                     </option>
                   ))}
                 </select>
-                <Button variant="ghost" size="sm" aria-label={`Remove model ${i + 1}`} onClick={() => setForm((f) => ({ ...f, models: f.models.filter((_, j) => j !== i) }))}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Remove model ${i + 1}`}
+                  onClick={() =>
+                    setForm((f) => ({ ...f, models: f.models.filter((_, j) => j !== i) }))
+                  }
+                >
                   Remove
                 </Button>
               </div>
             ))}
-            <Button variant="ghost" size="sm" onClick={() => setForm((f) => ({ ...f, models: [...f.models, { id: "", name: "", protocol: "openai-chat" }] }))}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  models: [...f.models, { id: "", name: "", protocol: "openai-chat" }],
+                }))
+              }
+            >
               + Add model
             </Button>
           </div>

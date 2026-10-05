@@ -103,15 +103,35 @@ export default function App() {
           className="app-header-sessions-toggle"
           onClick={() => setSessionsOpen((v) => !v)}
         >
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
             <rect x="1.5" y="1.5" width="13" height="13" rx="2" />
             <path d="M1.5 5.5h13M5.5 5.5v9" />
           </svg>
         </IconButton>
         <h1 className="app-brand">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M3 10l4-4 4 4 4-4 2 2" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M3 15l4-4 4 4 4-4 2 2" stroke="var(--text-faint)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M3 10l4-4 4 4 4-4 2 2"
+              stroke="var(--accent)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M3 15l4-4 4 4 4-4 2 2"
+              stroke="var(--text-faint)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           <span>vibe</span>
         </h1>
@@ -123,17 +143,36 @@ export default function App() {
           className="app-header-side-toggle"
           onClick={() => setSideOpen((v) => !v)}
         >
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
             <rect x="1.5" y="1.5" width="13" height="13" rx="2" />
             <path d="M9.5 1.5v13" />
           </svg>
         </IconButton>
         <IconButton label="Toggle theme" onClick={onToggleTheme}>
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
             {theme === "dark" ? (
               <>
                 <circle cx="8" cy="8" r="3" />
-                <path d="M8 1.8v1.4M8 12.8v1.4M1.8 8h1.4M12.8 8h1.4M3.5 3.5l1 1M11.5 11.5l1 1M12.5 3.5l-1 1M4.5 11.5l-1 1" strokeLinecap="round" />
+                <path
+                  d="M8 1.8v1.4M8 12.8v1.4M1.8 8h1.4M12.8 8h1.4M3.5 3.5l1 1M11.5 11.5l1 1M12.5 3.5l-1 1M4.5 11.5l-1 1"
+                  strokeLinecap="round"
+                />
               </>
             ) : (
               <path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z" strokeLinejoin="round" />
@@ -141,9 +180,20 @@ export default function App() {
           </svg>
         </IconButton>
         <IconButton label="Settings" onClick={() => setSettingsOpen(true)}>
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
             <circle cx="8" cy="8" r="2.2" />
-            <path d="M8 1.8v1.7M8 12.5v1.7M1.8 8h1.7M12.5 8h1.7M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M12.4 3.6l-1.2 1.2M4.8 11.2l-1.2 1.2" strokeLinecap="round" />
+            <path
+              d="M8 1.8v1.7M8 12.5v1.7M1.8 8h1.7M12.5 8h1.7M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M12.4 3.6l-1.2 1.2M4.8 11.2l-1.2 1.2"
+              strokeLinecap="round"
+            />
           </svg>
         </IconButton>
       </header>
@@ -209,7 +259,11 @@ export default function App() {
       </Modal>
 
       <ShortcutsHelp open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        commands={commands}
+      />
     </div>
   );
 }

@@ -14,7 +14,12 @@ interface LoadingProps {
   className?: string;
 }
 
-export function Loading({ label = "Loading", size = "md", overlay = false, className = "" }: LoadingProps) {
+export function Loading({
+  label = "Loading",
+  size = "md",
+  overlay = false,
+  className = "",
+}: LoadingProps) {
   const content = (
     <div className={`loading ${className}`} role="status" aria-label={label}>
       <Spinner size={size} label={label} />

@@ -114,14 +114,18 @@
     box-shadow: var(--shadow-2);
     transform: translateX(100%);
     visibility: hidden;
-    transition: transform var(--duration) var(--ease-out), visibility 0s linear var(--duration);
+    transition:
+      transform var(--duration) var(--ease-out),
+      visibility 0s linear var(--duration);
     z-index: var(--z-drawer);
   }
 
   .app-side-open {
     transform: translateX(0);
     visibility: visible;
-    transition: transform var(--duration) var(--ease-out), visibility 0s;
+    transition:
+      transform var(--duration) var(--ease-out),
+      visibility 0s;
   }
 }
 
@@ -145,13 +149,17 @@
     box-shadow: var(--shadow-2);
     transform: translateX(-100%);
     visibility: hidden;
-    transition: transform var(--duration) var(--ease-out), visibility 0s linear var(--duration);
+    transition:
+      transform var(--duration) var(--ease-out),
+      visibility 0s linear var(--duration);
   }
 
   .app-sidebar-open {
     transform: translateX(0);
     visibility: visible;
-    transition: transform var(--duration) var(--ease-out), visibility 0s;
+    transition:
+      transform var(--duration) var(--ease-out),
+      visibility 0s;
   }
 
   /* The panel column is back in normal flow here. The tablet rule above

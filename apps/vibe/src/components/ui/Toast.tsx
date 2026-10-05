@@ -34,11 +34,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const toast = useCallback((message: string, variant: ToastVariant = "info") => {
-    const id = String(++toastId);
-    setToasts((prev) => [...prev, { id, message, variant }]);
-    setTimeout(() => dismiss(id), 4000);
-  }, [dismiss]);
+  const toast = useCallback(
+    (message: string, variant: ToastVariant = "info") => {
+      const id = String(++toastId);
+      setToasts((prev) => [...prev, { id, message, variant }]);
+      setTimeout(() => dismiss(id), 4000);
+    },
+    [dismiss]
+  );
 
   return (
     <ToastContext.Provider value={{ toast }}>
@@ -48,7 +51,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div key={t.id} className={`toast toast-${t.variant}`} role="status">
             <span className="toast-message">{t.message}</span>
             <IconButton label="Dismiss" onClick={() => dismiss(t.id)}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
                 <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
               </svg>
             </IconButton>

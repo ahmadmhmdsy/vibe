@@ -35,7 +35,13 @@ describe("SessionsPanel", () => {
   });
 
   it("asks for confirmation before deleting a session", async () => {
-    const session = { id: "s1", title: "My app", model: { provider_id: "openai", model_id: "gpt-4o" }, created_at: "2026-09-29", updated_at: "2026-09-29" };
+    const session = {
+      id: "s1",
+      title: "My app",
+      model: { provider_id: "openai", model_id: "gpt-4o" },
+      created_at: "2026-09-29",
+      updated_at: "2026-09-29",
+    };
     vi.mocked(api.listSessions).mockResolvedValue([session]);
     useSessionsStore.setState({ sessions: [session], activeId: "s1" });
     render(<SessionsPanel />);

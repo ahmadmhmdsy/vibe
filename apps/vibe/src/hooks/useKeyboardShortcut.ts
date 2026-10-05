@@ -10,7 +10,10 @@ export interface ShortcutOptions {
   allowInInput?: boolean;
 }
 
-export function useKeyboardShortcut(handler: () => void, { meta = false, key, allowInInput = false }: ShortcutOptions) {
+export function useKeyboardShortcut(
+  handler: () => void,
+  { meta = false, key, allowInInput = false }: ShortcutOptions
+) {
   const handlerRef = useRef(handler);
   handlerRef.current = handler;
 

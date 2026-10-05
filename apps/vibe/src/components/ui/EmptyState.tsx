@@ -20,7 +20,11 @@ export const EmptyState = memo(function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="empty-state">
-      {icon && <div className="empty-state-icon" aria-hidden="true">{icon}</div>}
+      {icon && (
+        <div className="empty-state-icon" aria-hidden="true">
+          {icon}
+        </div>
+      )}
       <Heading>{title}</Heading>
       {body && <p className="muted">{body}</p>}
       {action && <div className="empty-state-action">{action}</div>}

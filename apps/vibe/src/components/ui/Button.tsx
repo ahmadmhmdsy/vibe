@@ -12,15 +12,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-export const Button = memo(forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "secondary", size = "md", loading = false, disabled, children, className, ...rest },
-  ref
-) {
-  const classes = ["btn", `btn-${variant}`, `btn-${size}`, className].filter(Boolean).join(" ");
-  return (
-    <button ref={ref} className={classes} disabled={disabled || loading} {...rest}>
-      {loading && <Spinner size="sm" />}
-      {children}
-    </button>
-  );
-}));
+export const Button = memo(
+  forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+    { variant = "secondary", size = "md", loading = false, disabled, children, className, ...rest },
+    ref
+  ) {
+    const classes = ["btn", `btn-${variant}`, `btn-${size}`, className].filter(Boolean).join(" ");
+    return (
+      <button ref={ref} className={classes} disabled={disabled || loading} {...rest}>
+        {loading && <Spinner size="sm" />}
+        {children}
+      </button>
+    );
+  })
+);

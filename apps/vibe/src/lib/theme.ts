@@ -16,9 +16,7 @@ const THEME_COLOR: Record<Theme, string> = { dark: "#0d1117", light: "#f6f8fa" }
 
 export function setTheme(t: Theme): void {
   document.documentElement.dataset.theme = t;
-  document
-    .querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", THEME_COLOR[t]);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[t]);
   try {
     localStorage.setItem(KEY, t);
   } catch {

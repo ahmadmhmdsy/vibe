@@ -23,7 +23,10 @@ export const usePreviewStore = create<PreviewState>((set) => ({
       const { url, is_running } = await api.runPreview(sid);
       set({ url, isRunning: is_running, loading: false });
     } catch (e) {
-      set({ loading: false, error: e instanceof Error ? e.message : "Failed to start the dev server." });
+      set({
+        loading: false,
+        error: e instanceof Error ? e.message : "Failed to start the dev server.",
+      });
     }
   },
   stop: async (sid) => {

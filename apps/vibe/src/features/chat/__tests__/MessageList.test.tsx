@@ -57,7 +57,9 @@ describe("MessageList", () => {
     expect(
       screen.getByRole("heading", { name: /describe the app you want to build/i })
     ).toBeInTheDocument();
-    expect(screen.getByText(/dependency installs that fall outside the allowlist/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/dependency installs that fall outside the allowlist/i)
+    ).toBeInTheDocument();
   });
 
   it("loads history for the session", async () => {

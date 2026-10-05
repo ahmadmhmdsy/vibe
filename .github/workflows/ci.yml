@@ -6,9 +6,8 @@
 # venv layout. A green run on a platform nobody develops on would be worth
 # less than the honesty of matching the real one.
 #
-# Deliberately NOT run here: prettier (pnpm run format:check). The tree is
-# not yet prettier-formatted, and reformatting it is a separate, reviewable
-# change - see TASKS.md.
+# Prettier runs as format:check (P3b, 2026-10-05): the tree is now
+# prettier-formatted, so a drift fails CI instead of accumulating.
 name: CI
 
 on:
@@ -68,6 +67,9 @@ jobs:
 
       - name: Lint (eslint)
         run: pnpm run lint
+
+      - name: Format (prettier)
+        run: pnpm run format:check
 
       - name: Typecheck (tsc)
         run: pnpm run typecheck

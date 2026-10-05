@@ -43,7 +43,10 @@ export function Composer({ sessionId }: { sessionId: string }) {
       reader.onload = () => {
         const dataUrl = reader.result as string;
         const data_base64 = dataUrl.split(",")[1] ?? "";
-        setAttachments((prev) => [...prev, { name: f.name, content_type: f.type || "image/png", data_base64 }]);
+        setAttachments((prev) => [
+          ...prev,
+          { name: f.name, content_type: f.type || "image/png", data_base64 },
+        ]);
       };
       reader.readAsDataURL(f);
     }
@@ -54,11 +57,14 @@ export function Composer({ sessionId }: { sessionId: string }) {
     e.target.value = "";
   };
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    processFiles(e.dataTransfer.files);
-  }, [processFiles]);
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      processFiles(e.dataTransfer.files);
+    },
+    [processFiles]
+  );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -85,7 +91,11 @@ export function Composer({ sessionId }: { sessionId: string }) {
       // Restore the user's work — never swallow a failed send silently.
       setText(snapshot.text);
       setAttachments(snapshot.attachments);
-      setError(e instanceof ApiError ? `${e.message}. Your message was kept.` : "Failed to send. Your message was kept.");
+      setError(
+        e instanceof ApiError
+          ? `${e.message}. Your message was kept.`
+          : "Failed to send. Your message was kept."
+      );
     } finally {
       endStream(sessionId);
     }
@@ -104,17 +114,8 @@ export function Composer({ sessionId }: { sessionId: string }) {
   };
 
   return (
-    <div
-      className="composer"
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-    >
-      {isDragging && (
-        <div className="composer-drop-zone">
-          Drop images to attach
-        </div>
-      )}
+    <div className="composer" onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}>
+      {isDragging && <div className="composer-drop-zone">Drop images to attach</div>}
       {error && (
         <div className="composer-error">
           <ErrorBanner message={error} />
@@ -130,7 +131,15 @@ export function Composer({ sessionId }: { sessionId: string }) {
                 aria-label={`Remove ${a.name}`}
                 className="composer-attachment-remove"
               >
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
                   <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
                 </svg>
               </button>
@@ -139,14 +148,35 @@ export function Composer({ sessionId }: { sessionId: string }) {
         </div>
       )}
       <div className="composer-row">
-        <input ref={fileRef} type="file" accept="image/*" multiple onChange={onPick} className="sr-only" aria-label="Attach image" />
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={onPick}
+          className="sr-only"
+          aria-label="Attach image"
+        />
         <IconButton label="Attach image" onClick={() => fileRef.current?.click()}>
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path d="M6.5 9.5L13 3a2.1 2.1 0 00-3-3L3.5 6.5M8 2l6 6M2 11.5V14h2.5L13 5.5 10.5 3 2 11.5z" strokeLinejoin="round" />
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <path
+              d="M6.5 9.5L13 3a2.1 2.1 0 00-3-3L3.5 6.5M8 2l6 6M2 11.5V14h2.5L13 5.5 10.5 3 2 11.5z"
+              strokeLinejoin="round"
+            />
           </svg>
         </IconButton>
         <div className="composer-input-wrap">
-          <label className="sr-only" htmlFor="composer-input">Describe the app you want to build</label>
+          <label className="sr-only" htmlFor="composer-input">
+            Describe the app you want to build
+          </label>
           <textarea
             id="composer-input"
             ref={textareaRef}

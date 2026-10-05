@@ -12,7 +12,15 @@ import { ErrorBanner } from "../ErrorBanner";
 afterEach(cleanup);
 
 const svgIcon = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    aria-hidden="true"
+  >
     <circle cx="8" cy="8" r="6" />
   </svg>
 );
@@ -41,12 +49,20 @@ describe("Button", () => {
 
 describe("IconButton", () => {
   it("requires an accessible label", () => {
-    render(<IconButton label="Attach image" onClick={() => {}}>{svgIcon}</IconButton>);
+    render(
+      <IconButton label="Attach image" onClick={() => {}}>
+        {svgIcon}
+      </IconButton>
+    );
     expect(screen.getByRole("button", { name: "Attach image" })).toBeInTheDocument();
   });
 
   it("meets the 44px touch target (icon-btn class carries the size)", () => {
-    render(<IconButton label="Settings" onClick={() => {}}>{svgIcon}</IconButton>);
+    render(
+      <IconButton label="Settings" onClick={() => {}}>
+        {svgIcon}
+      </IconButton>
+    );
     expect(screen.getByRole("button", { name: "Settings" })).toHaveClass("icon-btn");
   });
 });
@@ -136,7 +152,13 @@ describe("Spinner", () => {
 
 describe("EmptyState", () => {
   it("renders title, body and optional CTA", () => {
-    render(<EmptyState title="No files yet" body="The agent has not written any." action={<button>New</button>} />);
+    render(
+      <EmptyState
+        title="No files yet"
+        body="The agent has not written any."
+        action={<button>New</button>}
+      />
+    );
     expect(screen.getByText("No files yet")).toBeInTheDocument();
     expect(screen.getByText(/has not written any/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New" })).toBeInTheDocument();

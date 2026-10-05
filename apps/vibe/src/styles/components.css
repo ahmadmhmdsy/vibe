@@ -350,7 +350,6 @@
   }
 }
 
-
 /* --- Shortcuts help --- */
 .shortcuts-list {
   display: flex;
@@ -506,4 +505,3 @@
 .composer-char-count-over {
   color: var(--danger);
 }
-

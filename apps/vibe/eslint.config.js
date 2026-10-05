@@ -53,5 +53,5 @@ export default tseslint.config(
     // Test files run under vitest and reach into jsdom directly.
     files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}", "vitest.setup.ts"],
     languageOptions: { globals: { ...globals.node } },
-  },
+  }
 );

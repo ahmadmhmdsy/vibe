@@ -47,7 +47,9 @@ export class SSEClient {
   private open(sessionId: string, onEvent: (e: StreamEvent) => void): void {
     if (this.intentionallyClosed) return;
 
-    this.source = new EventSource(`${this.baseUrl}/sessions/${sessionId}/events?after_seq=${this.lastSeq}`);
+    this.source = new EventSource(
+      `${this.baseUrl}/sessions/${sessionId}/events?after_seq=${this.lastSeq}`
+    );
 
     this.source.onmessage = (msg) => {
       const event = this.parse(msg.data);

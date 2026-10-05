@@ -97,14 +97,14 @@ Deliberate behaviour changes, so nothing surprises you later:
 
 ### What P3 deliberately did *not* do
 
-Two items were left open because doing them unasked would have been the wrong
-call, not because they were missed. (The third — the root workspace — was
-approved and done 2026-10-05 as P3a.)
+One item was left open because doing it unasked would have been the wrong
+call, not because it was missed. (Two others — the root workspace and the
+prettier sweep — were approved and done 2026-10-05 as P3a and P3b.)
 
 | Item | Why it was left |
 |---|---|
 | ~~Root workspace + unified scripts~~ | **Done 2026-10-05 (P3a).** A root `package.json` + `pnpm-workspace.yaml` now own the install; the `allowBuilds: esbuild` setting moved up from `apps/vibe/pnpm-workspace.yaml`, which is gone. Verified: install 364 packages, build, 86 vitest, typecheck, eslint 0 errors / 14 warnings, 190 pytest, ruff clean. |
-| `prettier --write` | `prettier --check` reports **37 files**, every one of them currently holding uncommitted user work. Reformatting now would bury that work in a noise diff. `format:check` is therefore kept out of CI until the sweep is committed. |
+| ~~`prettier --write`~~ | **Done 2026-10-05 (P3b).** 37 files reformatted (595 insertions, 184 deletions — whitespace/line-width only, no semantic change). `format:check` passes and is now in the frontend CI job. |
 | 3 × `react-hooks/set-state-in-effect` + 2 × `react-hooks/refs` | Genuine findings, but each needs a behaviour-affecting refactor (`useSyncExternalStore`, render-phase state reset, `useEffectEvent`) with its own tests — not a lint-cleanup commit. Kept at `warn` with the reason written into `apps/vibe/eslint.config.js`. |
 
 
@@ -393,7 +393,7 @@ ruff.toml  eslint.config.js  .prettierrc
 | **P2 — Seams** ✅ **done 2026-10-05** | `Container` + `Depends`; extract `SessionService`/`MessageService`; provider registry; resolve the dead provider trio; `Settings.host`; `__main__` uses Settings | medium | makes "add a provider / add an endpoint" a local change. **Done:** `container.py` + `api/deps.py` (handlers declare `deps: App`); `vibe/services/` holds path confinement and the history projection; `providers/registry.py` replaces the deleted trio. Proof: `artifacts/p2-pytest.txt` (136 passed), `artifacts/p2-ruff.txt`, `artifacts/p2-live.txt` (22 PASS / 0 FAIL), `artifacts/p2-vitest.txt`, `artifacts/p2-typecheck.txt`, `artifacts/p2-build.txt`, `artifacts/p2-eslint.txt` |
 | **P3 — Developer experience** ✅ **done 2026-10-04** | logging; ruff + eslint + prettier; `vitest run` as the default script; CI; `packageManager` pin. **Split out and left open:** root workspace + unified scripts (needs the user's call), the prettier sweep (37 uncommitted files), 7 triaged React-hooks warnings | low | cheap, and it protects every later phase |
 | **P3a — Root workspace** ✅ **done 2026-10-05** | the user said "start P3a, P3b and P3c". A root `package.json` (private, `packageManager` pin, unified scripts) + a root `pnpm-workspace.yaml` (`packages: ["apps/*"]`); the `allowBuilds: esbuild` setting moved up from `apps/vibe/pnpm-workspace.yaml`, which is gone. Verified: install 364 packages, build, 86 vitest, typecheck, eslint 0 errors / 14 warnings, 190 pytest, ruff clean | low | one install at the root covers the workspace |
-| **P4 — Product gaps** ✅ **done 2026-10-05** | session titles from the first message; pagination + `X-Total-Count`; error taxonomy; the M6 honesty fix; README corrected. **Left open:** console-log capture + screenshots (needs a browser driver — `NEEDS_USER_DECISION`), auth beyond loopback (`NEEDS_USER_DECISION`) | medium | features, not structure — decide after P0–P3 |
+| **P3b — Prettier sweep** ✅ **done 2026-10-05** | `pnpm format` reformatted 37 files (595 insertions, 184 deletions — whitespace only). `format:check` passes and joined the frontend CI job | low | a formatter is safe to run once, and CI keeps it from drifting || **P4 — Product gaps** ✅ **done 2026-10-05** | session titles from the first message; pagination + `X-Total-Count`; error taxonomy; the M6 honesty fix; README corrected. **Left open:** console-log capture + screenshots (needs a browser driver — `NEEDS_USER_DECISION`), auth beyond loopback (`NEEDS_USER_DECISION`) | medium | features, not structure — decide after P0–P3 |
 
 | **P5 — The browser driver** ✅ **done 2026-10-05** | the user chose "A. Implement Playwright" for the M6 gap. `vibe/executor/browser.py` (Playwright lifecycle, console capture with level filtering, screenshots, TCP readiness wait, idempotent close); `ToolResult.attachments` + `response_format="content_and_artifact"` so an image reaches the model as a content block while staying out of the SSE stream; `is_error` now propagates to the event stream. **Also found and fixed:** pnpm 12 forwards `--` literally, so Vite ignored `--port` and every session collided on 5173. **Left open:** auth beyond loopback (`NEEDS_USER_DECISION` — design delivered, awaiting the user's scope call) | medium | the last audit phase; closes the loop P4 opened |
 | **P6 — Loopback auth** ✅ **done 2026-10-05** | the user approved the

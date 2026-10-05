@@ -175,6 +175,7 @@
 | Audit P4 — Product gaps | Auto-titles from the first message, pagination + `X-Total-Count`, a stable error taxonomy, the M6 honesty fix, README corrected | **done** 2026-10-05 |
 | Audit P5 — The browser driver | Playwright console capture + screenshots that reach the model; the `ToolResult`→`repr()` defect fixed; the pnpm `--`/Vite-5173 port bug fixed | **done** 2026-10-05 |
 | Audit P3a — Root workspace | One root `package.json` + `pnpm-workspace.yaml`; unified scripts for the frontend workspace and the Python backend | **done** 2026-10-05 |
+| Audit P3b — Prettier sweep | 37 files reformatted (whitespace only); `format:check` added to the frontend CI job | **done** 2026-10-05 |
 | Audit P6 — Loopback auth | Machine-level deny-by-default + `OriginGuard` (CSRF); the `Authenticator` seam | **done** 2026-10-05 |
 
 ## Environment
@@ -468,6 +469,17 @@
   recognized". **Verified:** install 364 packages; build PASS; 86 vitest;
   typecheck; eslint 0 errors / 14 warnings; 190 pytest; ruff clean. Evidence:
   `artifacts/p3a-all.txt`.
+- 2026-10-05 P3b session (the prettier sweep — the user said "start P3a, P3b
+  and P3c"). `pnpm format` reformatted 37 files: 595 insertions, 184
+  deletions, all whitespace/line-width (no semantic change). `format:check`
+  now passes and was added to the frontend CI job, so a drift fails CI
+  instead of accumulating. **Gotcha:** a `format:check` run immediately after
+  `--write` in the same script reported one file still unformatted; a second
+  check passed. Prettier's write and check disagree across a process boundary
+  here — verify with a standalone `format:check`, not back-to-back in one
+  script. **Verified:** 86 vitest, typecheck, build, eslint 0 errors / 14
+  warnings all still PASS. Evidence: `artifacts/p3b-before.txt`,
+  `artifacts/p3b-after.txt`, `artifacts/p3b-verify.txt`.
 - M5 gotchas: (1) zustand v5 selectors that return fresh references
   (`?? []`) loop forever — use `useShallow`; (2) the edit tool rejects
   import-line changes — rewrite whole files instead; (3) vite's watcher

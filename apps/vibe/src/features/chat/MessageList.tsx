@@ -65,9 +65,29 @@ export function MessageList({ sessionId }: { sessionId: string }) {
     <div role="log" aria-live="polite" className="message-list" ref={listRef}>
       {messages.length === 0 && !isStreaming && (
         <div className="chat-intro">
-          <svg className="chat-intro-mark" width="30" height="30" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M3 10l4-4 4 4 4-4 2 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M3 15l4-4 4 4 4-4 2 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
+          <svg
+            className="chat-intro-mark"
+            width="30"
+            height="30"
+            viewBox="0 0 20 20"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 10l4-4 4 4 4-4 2 2"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M3 15l4-4 4 4 4-4 2 2"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.4"
+            />
           </svg>
           <h2>Describe the app you want to build</h2>
           <p>
@@ -75,20 +95,31 @@ export function MessageList({ sessionId }: { sessionId: string }) {
             Dependency installs that fall outside the allowlist wait for your approval.
           </p>
           <div className="chat-intro-hints">
-            <span className="chat-intro-hint"><kbd>Enter</kbd> send</span>
-            <span className="chat-intro-hint"><kbd>Shift</kbd> + <kbd>Enter</kbd> new line</span>
+            <span className="chat-intro-hint">
+              <kbd>Enter</kbd> send
+            </span>
+            <span className="chat-intro-hint">
+              <kbd>Shift</kbd> + <kbd>Enter</kbd> new line
+            </span>
           </div>
         </div>
       )}
       {historyTotal > messages.length && (
         <div className="message-load-more">
-          <Button variant="ghost" size="sm" onClick={() => loadMoreHistory(sessionId).catch(() => {})}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => loadMoreHistory(sessionId).catch(() => {})}
+          >
             Load older messages
           </Button>
         </div>
       )}
       {messages.map((m) => (
-        <div key={m.id} className={m.role === "user" ? "message message-user" : "message message-assistant"}>
+        <div
+          key={m.id}
+          className={m.role === "user" ? "message message-user" : "message message-assistant"}
+        >
           <span className="message-role">{m.role === "user" ? "You" : "Agent"}</span>
           <div className="message-content">
             {m.role === "assistant" ? <Markdown content={m.content} /> : m.content}

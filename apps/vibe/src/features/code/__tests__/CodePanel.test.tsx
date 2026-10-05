@@ -8,7 +8,11 @@ import { useCodeStore } from "../store";
 // Monaco needs a real DOM/canvas; stub it with a simple textarea.
 vi.mock("@monaco-editor/react", () => ({
   default: ({ value, onChange }: { value?: string; onChange?: (v: string) => void }) => (
-    <textarea data-testid="editor" value={value ?? ""} onChange={(e) => onChange?.(e.target.value)} />
+    <textarea
+      data-testid="editor"
+      value={value ?? ""}
+      onChange={(e) => onChange?.(e.target.value)}
+    />
   ),
 }));
 
@@ -27,7 +31,11 @@ describe("CodePanel", () => {
     vi.mocked(api.listFiles).mockResolvedValue(["src/App.tsx", "src/main.tsx"]);
     vi.mocked(api.readFile).mockResolvedValue({ path: "src/App.tsx", content: "hello" });
     vi.mocked(api.writeFile).mockResolvedValue({ ok: true });
-    useCodeStore.setState({ files: ["src/App.tsx", "src/main.tsx"], selectedFile: "src/App.tsx", contents: { "src/App.tsx": "hello" } });
+    useCodeStore.setState({
+      files: ["src/App.tsx", "src/main.tsx"],
+      selectedFile: "src/App.tsx",
+      contents: { "src/App.tsx": "hello" },
+    });
   });
 
   afterEach(() => cleanup());
@@ -54,7 +62,10 @@ describe("CodePanel", () => {
   it("shows a save indicator while saving", async () => {
     let resolveSave: () => void;
     vi.mocked(api.writeFile).mockImplementationOnce(
-      () => new Promise<{ ok: true }>((res) => { resolveSave = () => res({ ok: true }); }),
+      () =>
+        new Promise<{ ok: true }>((res) => {
+          resolveSave = () => res({ ok: true });
+        })
     );
     render(<CodePanel sessionId="s1" />);
     fireEvent.change(screen.getByTestId("editor"), { target: { value: "changed" } });

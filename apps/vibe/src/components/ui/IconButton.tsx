@@ -9,15 +9,22 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   children: ReactNode;
 }
 
-export const IconButton = memo(forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, children, className, ...rest },
-  ref
-) {
-  return (
-    <Tooltip label={label}>
-      <button ref={ref} className={["icon-btn", className].filter(Boolean).join(" ")} aria-label={label} {...rest}>
-        {children}
-      </button>
-    </Tooltip>
-  );
-}));
+export const IconButton = memo(
+  forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+    { label, children, className, ...rest },
+    ref
+  ) {
+    return (
+      <Tooltip label={label}>
+        <button
+          ref={ref}
+          className={["icon-btn", className].filter(Boolean).join(" ")}
+          aria-label={label}
+          {...rest}
+        >
+          {children}
+        </button>
+      </Tooltip>
+    );
+  })
+);

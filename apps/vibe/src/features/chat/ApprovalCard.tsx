@@ -61,7 +61,15 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
       aria-label={`Approval needed for ${count} package${count === 1 ? "" : "s"}`}
     >
       <div className="approval-title">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
           <path d="M8 1.5L15 14H1L8 1.5z" strokeLinejoin="round" />
           <path d="M8 6.5v3" strokeLinecap="round" />
           <circle cx="8" cy="11.2" r="0.4" fill="currentColor" />
@@ -76,7 +84,9 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
 
       <div className="approval-packages">
         {approval.packages.map((p) => (
-          <span key={p} className="approval-package">{p}</span>
+          <span key={p} className="approval-package">
+            {p}
+          </span>
         ))}
       </div>
 
@@ -98,17 +108,35 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
           </label>
         </div>
       ) : (
-        <div className={`approval-status ${status === "approved" ? "approval-status-approved" : "approval-status-denied"}`}>
+        <div
+          className={`approval-status ${status === "approved" ? "approval-status-approved" : "approval-status-denied"}`}
+        >
           {status === "approved" ? (
             <>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
                 <path d="M3 8.5l3.5 3.5L13 4.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               Approved
             </>
           ) : (
             <>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
                 <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
               </svg>
               Denied

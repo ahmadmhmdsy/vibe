@@ -95,8 +95,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isStreamingBySession: { ...s.isStreamingBySession, [sid]: false },
       streamingMessageIdBySession: { ...s.streamingMessageIdBySession, [sid]: null },
     })),
-  requestStop: (sid) =>
-    set((s) => ({ stopRequested: { ...s.stopRequested, [sid]: true } })),
+  requestStop: (sid) => set((s) => ({ stopRequested: { ...s.stopRequested, [sid]: true } })),
   loadHistory: async (sid) => {
     const { messages: history, total } = await api.getMessages(sid, { limit: PAGE_SIZE });
     set((s) => {
@@ -113,7 +112,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // back from the newest message, so that lands exactly before the oldest one
     // on screen -- and a message arriving mid-fetch cannot shift the window.
     const loaded = (get().messagesBySession[sid] ?? []).length;
-    const { messages: older, total } = await api.getMessages(sid, { limit: PAGE_SIZE, offset: loaded });
+    const { messages: older, total } = await api.getMessages(sid, {
+      limit: PAGE_SIZE,
+      offset: loaded,
+    });
     set((s) => ({
       messagesBySession: {
         ...s.messagesBySession,

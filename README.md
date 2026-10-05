@@ -77,9 +77,9 @@ The backend logs to stderr through `vibe.logging_setup`; set
 is never printed twice.
 
 CI runs the backend and frontend jobs on every push and pull request — see
-`.github/workflows/ci.yml`. `prettier --check` is deliberately not part of
-it yet: the tree is not prettier-formatted, and applying it is a separate
-reviewable change.
+`.github/workflows/ci.yml`. The frontend job includes `prettier --check`
+(P3b, 2026-10-05): the tree is now prettier-formatted, so a drift fails CI
+instead of accumulating.
 
 ## Known gaps
 

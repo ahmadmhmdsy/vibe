@@ -27,7 +27,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
-    readonly code?: string,
+    readonly code?: string
   ) {
     super(message);
     this.name = "ApiError";
@@ -61,7 +61,7 @@ async function readBody<T>(resp: Response): Promise<T> {
 
 async function reqWithHeaders<T>(
   path: string,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<{ data: T; headers: Headers }> {
   const resp = await fetch(`${BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -90,10 +90,12 @@ export const api = {
     req<{ ok: true }>(`/sessions/${id}`, { method: "PATCH", body: JSON.stringify({ title }) }),
   setSessionModel: (id: string, model: { provider_id: string; model_id: string }) =>
     req<{ ok: true }>(`/sessions/${id}`, { method: "PATCH", body: JSON.stringify({ model }) }),
-  deleteSession: (id: string) =>
-    req<void>(`/sessions/${id}`, { method: "DELETE" }),
+  deleteSession: (id: string) => req<void>(`/sessions/${id}`, { method: "DELETE" }),
   sendMessage: (id: string, content: string, attachments: Attachment[] = []) =>
-    req<{ content: string; aborted: boolean }>(`/sessions/${id}/messages`, { method: "POST", body: JSON.stringify({ content, attachments }) }),
+    req<{ content: string; aborted: boolean }>(`/sessions/${id}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ content, attachments }),
+    }),
   /** Cancel the in-flight turn for this session. */
   abortSession: (id: string) =>
     req<{ aborted: boolean }>(`/sessions/${id}/abort`, { method: "POST" }),
@@ -101,10 +103,11 @@ export const api = {
   listProviders: () => req<CustomProvider[]>("/providers"),
   createProvider: (p: { name: string; baseUrl: string; apiKey?: string; models: CustomModel[] }) =>
     req<CustomProvider>("/providers", { method: "POST", body: JSON.stringify(p) }),
-  updateProvider: (id: string, changes: Partial<{ name: string; baseUrl: string; apiKey: string; models: CustomModel[] }>) =>
-    req<CustomProvider>(`/providers/${id}`, { method: "PATCH", body: JSON.stringify(changes) }),
-  deleteProvider: (id: string) =>
-    req<void>(`/providers/${id}`, { method: "DELETE" }),
+  updateProvider: (
+    id: string,
+    changes: Partial<{ name: string; baseUrl: string; apiKey: string; models: CustomModel[] }>
+  ) => req<CustomProvider>(`/providers/${id}`, { method: "PATCH", body: JSON.stringify(changes) }),
+  deleteProvider: (id: string) => req<void>(`/providers/${id}`, { method: "DELETE" }),
   listApprovals: (sid: string) => req<Approval[]>(`/sessions/${sid}/approvals`),
   getUsage: (sid: string) => req<UsageStats>(`/sessions/${sid}/usage`),
   /** One page of history, newest last.
@@ -112,27 +115,32 @@ export const api = {
    * paging further back is worthwhile. */
   getMessages: async (
     sid: string,
-    opts: { limit?: number; offset?: number } = {},
+    opts: { limit?: number; offset?: number } = {}
   ): Promise<MessagePage> => {
     const q = new URLSearchParams();
     if (opts.limit !== undefined) q.set("limit", String(opts.limit));
     if (opts.offset) q.set("offset", String(opts.offset));
     const qs = q.toString();
     const suffix = qs ? "?" + qs : "";
-    const { data, headers } = await reqWithHeaders<Message[]>(
-      `/sessions/${sid}/messages${suffix}`,
-    );
+    const { data, headers } = await reqWithHeaders<Message[]>(`/sessions/${sid}/messages${suffix}`);
     // The count travels in a header so this endpoint keeps returning the same
     // bare array as every other collection in the API.
     return { messages: data, total: Number(headers.get("X-Total-Count") ?? data.length) };
   },
-  getPreview: (sid: string) => req<{ url: string | null; is_running: boolean }>(`/sessions/${sid}/preview`),
-  runPreview: (sid: string) => req<{ url: string; is_running: boolean }>(`/sessions/${sid}/preview/run`, { method: "POST" }),
-  stopPreview: (sid: string) => req<{ url: null; is_running: false }>(`/sessions/${sid}/preview/stop`, { method: "POST" }),
+  getPreview: (sid: string) =>
+    req<{ url: string | null; is_running: boolean }>(`/sessions/${sid}/preview`),
+  runPreview: (sid: string) =>
+    req<{ url: string; is_running: boolean }>(`/sessions/${sid}/preview/run`, { method: "POST" }),
+  stopPreview: (sid: string) =>
+    req<{ url: null; is_running: false }>(`/sessions/${sid}/preview/stop`, { method: "POST" }),
   listFiles: (sid: string) => req<string[]>(`/sessions/${sid}/files`),
-  readFile: (sid: string, path: string) => req<{ path: string; content: string }>(`/sessions/${sid}/files/${encodePath(path)}`),
+  readFile: (sid: string, path: string) =>
+    req<{ path: string; content: string }>(`/sessions/${sid}/files/${encodePath(path)}`),
   writeFile: (sid: string, path: string, content: string) =>
-    req<{ ok: true }>(`/sessions/${sid}/files/${encodePath(path)}`, { method: "PUT", body: JSON.stringify({ content }) }),
+    req<{ ok: true }>(`/sessions/${sid}/files/${encodePath(path)}`, {
+      method: "PUT",
+      body: JSON.stringify({ content }),
+    }),
   approve: (aid: string) => req<{ ok: true }>(`/approvals/${aid}/approve`, { method: "POST" }),
   deny: (aid: string) => req<{ ok: true }>(`/approvals/${aid}/deny`, { method: "POST" }),
 };

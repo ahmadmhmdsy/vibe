@@ -14,7 +14,8 @@ import "./code.css";
 type SaveState = "idle" | "saving" | "saved";
 
 export function CodePanel({ sessionId }: { sessionId: string }) {
-  const { files, selectedFile, contents, setSelectedFile, loadFiles, loadFile, saveFile } = useCodeStore();
+  const { files, selectedFile, contents, setSelectedFile, loadFiles, loadFile, saveFile } =
+    useCodeStore();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

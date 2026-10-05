@@ -24,7 +24,9 @@ describe("usePolling", () => {
       usePolling(callback, { interval: 5, backoffBase: 5, recoveryInterval: 10, maxRetries: 2 })
     );
 
-    await waitFor(() => expect(callback.mock.calls.length).toBeGreaterThanOrEqual(3), { timeout: 2000 });
+    await waitFor(() => expect(callback.mock.calls.length).toBeGreaterThanOrEqual(3), {
+      timeout: 2000,
+    });
   });
 
   it("does not poll while disabled", async () => {

@@ -78,20 +78,18 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
             filtered.map((c, i) => (
               <button
                 key={c.id}
-                className={i === selectedIndex ? "command-item command-item-active" : "command-item"}
+                className={
+                  i === selectedIndex ? "command-item command-item-active" : "command-item"
+                }
                 onClick={() => execute(c)}
                 onMouseEnter={() => setSelectedIndex(i)}
                 role="option"
                 aria-selected={i === selectedIndex}
               >
                 <span className="command-item-title">{c.title}</span>
-                {c.description && (
-                  <span className="command-item-description">{c.description}</span>
-                )}
+                {c.description && <span className="command-item-description">{c.description}</span>}
                 {c.shortcut && (
-                  <span className="command-item-shortcut">
-                    {c.shortcut.join(" ")}
-                  </span>
+                  <span className="command-item-shortcut">{c.shortcut.join(" ")}</span>
                 )}
               </button>
             ))

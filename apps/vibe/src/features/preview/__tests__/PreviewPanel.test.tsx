@@ -27,7 +27,10 @@ describe("PreviewPanel", () => {
   });
 
   it("run starts the dev server and shows the iframe", async () => {
-    vi.mocked(api.runPreview).mockResolvedValue({ url: "http://127.0.0.1:5173/", is_running: true });
+    vi.mocked(api.runPreview).mockResolvedValue({
+      url: "http://127.0.0.1:5173/",
+      is_running: true,
+    });
     render(<PreviewPanel sessionId="s1" />);
     fireEvent.click(screen.getByRole("button", { name: /^run$/i }));
     expect(await screen.findByTitle("App preview")).toBeInTheDocument();

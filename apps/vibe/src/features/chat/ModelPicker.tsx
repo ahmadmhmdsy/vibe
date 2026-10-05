@@ -12,7 +12,8 @@ export function ModelPicker({ sessionId }: { sessionId: string | null }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getCatalog()
+    api
+      .getCatalog()
       .then(setProviders)
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -21,7 +22,8 @@ export function ModelPicker({ sessionId }: { sessionId: string | null }) {
   // Reflect the active session's stored model when the session changes.
   useEffect(() => {
     if (!sessionId) return;
-    api.getSession(sessionId)
+    api
+      .getSession(sessionId)
       .then((s) => setModel({ provider_id: s.model.provider_id, model_id: s.model.model_id }))
       .catch(() => {});
   }, [sessionId]);
@@ -31,7 +33,9 @@ export function ModelPicker({ sessionId }: { sessionId: string | null }) {
 
   return (
     <div className="model-picker">
-      <label className="model-picker-label" htmlFor="model-select">Model</label>
+      <label className="model-picker-label" htmlFor="model-select">
+        Model
+      </label>
       <select
         id="model-select"
         className="model-picker-select"
@@ -45,13 +49,19 @@ export function ModelPicker({ sessionId }: { sessionId: string | null }) {
       >
         {!currentExists && (
           <option value="">
-            {loading ? "Loading models..." : providers.length === 0 ? "No providers configured" : "Select a model"}
+            {loading
+              ? "Loading models..."
+              : providers.length === 0
+                ? "No providers configured"
+                : "Select a model"}
           </option>
         )}
         {providers.map((p) => (
           <optgroup key={p.id} label={p.name}>
             {p.models.map((m) => (
-              <option key={m.id} value={`${p.id}/${m.id}`}>{m.name}</option>
+              <option key={m.id} value={`${p.id}/${m.id}`}>
+                {m.name}
+              </option>
             ))}
           </optgroup>
         ))}

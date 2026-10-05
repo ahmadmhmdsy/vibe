@@ -86,7 +86,15 @@ export function Modal({ open, onClose, title, children, wide, role = "dialog" }:
         <div className="modal-header">
           <h2>{title}</h2>
           <button className="icon-btn" aria-label="Close" onClick={onClose}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
               <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
             </svg>
           </button>

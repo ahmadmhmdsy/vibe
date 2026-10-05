@@ -6,7 +6,11 @@ vi.mock("../lib/api", () => ({
   api: {
     listSessions: vi.fn().mockResolvedValue([]),
     getCatalog: vi.fn().mockResolvedValue([]),
-    getSession: vi.fn().mockResolvedValue({ id: "s1", title: "Test session", model: { provider_id: "openai", model_id: "gpt-4o" } }),
+    getSession: vi.fn().mockResolvedValue({
+      id: "s1",
+      title: "Test session",
+      model: { provider_id: "openai", model_id: "gpt-4o" },
+    }),
     createSession: vi.fn().mockResolvedValue({ id: "s1" }),
     listProviders: vi.fn().mockResolvedValue([]),
     listApprovals: vi.fn().mockResolvedValue([]),

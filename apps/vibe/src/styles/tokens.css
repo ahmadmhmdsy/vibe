@@ -51,8 +51,11 @@
   --info-border: rgba(88, 166, 255, 0.4);
 
   /* ── Typography ───────────────────────────────────────────── */
-  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-ui:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
 
   /* Type scale (1.125 ratio — major second) */
   --text-xs: 11px;

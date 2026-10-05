@@ -200,6 +200,17 @@
   source command. Validation: install 364 packages; build PASS; 86 vitest;
   typecheck; eslint 0 errors / 14 warnings; 190 pytest; ruff clean. Evidence:
   [p3a-all.txt](./artifacts/p3a-all.txt).
+- 2026-10-05 P3b — the prettier sweep — **done** (the user said "start P3a, P3b
+  and P3c"). `pnpm format` reformatted 37 files (595 insertions, 184
+  deletions — whitespace/line-width only, no semantic change).
+  `format:check` passes and joined the frontend CI job. **Gotcha:** a
+  `format:check` run immediately after `--write` in the same script reported
+  one file still unformatted; a second check passed — verify with a
+  standalone `format:check`. Validation: 86 vitest, typecheck, build, eslint
+  0 errors / 14 warnings all still PASS. Evidence:
+  [p3b-before.txt](./artifacts/p3b-before.txt),
+  [p3b-after.txt](./artifacts/p3b-after.txt),
+  [p3b-verify.txt](./artifacts/p3b-verify.txt).
 - 2026-10-04 bridge fixes (a third-party frontend↔backend review, verified  claim-by-claim, then every finding plus the defects the review missed):
   EventBus fans out one queue per subscriber; ephemeral stream frames take a
   real monotonic seq without entering the log; the SSE route subscribes before

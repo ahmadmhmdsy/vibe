@@ -24,7 +24,13 @@ export function PreviewPanel({ sessionId }: { sessionId: string }) {
   return (
     <div className="panel-preview preview-panel">
       <div className="preview-toolbar">
-        <Button variant="primary" size="sm" onClick={() => run(sessionId)} disabled={isRunning || loading} loading={loading}>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => run(sessionId)}
+          disabled={isRunning || loading}
+          loading={loading}
+        >
           Run
         </Button>
         <Button variant="secondary" size="sm" onClick={() => stop(sessionId)} disabled={!isRunning}>
@@ -52,10 +58,7 @@ export function PreviewPanel({ sessionId }: { sessionId: string }) {
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
       ) : (
-        <EmptyState
-          title="No preview yet"
-          body="Run the app to see a live preview here."
-        />
+        <EmptyState title="No preview yet" body="Run the app to see a live preview here." />
       )}
     </div>
   );

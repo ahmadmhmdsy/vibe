@@ -21,7 +21,13 @@ interface PollingOptions {
 
 export function usePolling(
   callback: () => Promise<void> | void,
-  { interval, enabled = true, maxRetries = 3, backoffBase = 1000, recoveryInterval = 15000 }: PollingOptions
+  {
+    interval,
+    enabled = true,
+    maxRetries = 3,
+    backoffBase = 1000,
+    recoveryInterval = 15000,
+  }: PollingOptions
 ) {
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
