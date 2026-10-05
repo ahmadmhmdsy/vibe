@@ -105,6 +105,7 @@ Validation labels: `PASS`, `FAIL`, `SKIPPED`, `BLOCKED`,
 | Usage (humans) | [README.md](./README.md) | for command syntax | when commands or usage change |
 | Design spec | [docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md](./docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md) | before any implementation work | only for user-approved spec changes |
 | Conditional rules | [rules/](./rules/README.md) | when the task class matches | only via an approved authoring step |
+| Architecture audit | [docs/architecture/2026-10-04-codebase-audit.md](./docs/architecture/2026-10-04-codebase-audit.md) | before any structural or refactor work | when a finding is fixed or a newer audit supersedes it |
 
 A doc listed above that does not exist yet must be **created the moment its
 concern becomes real** — the map is the index; a doc outside the map does

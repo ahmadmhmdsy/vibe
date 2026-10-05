@@ -4,7 +4,7 @@ REM  vibe - run all tests (backend + frontend)
 REM ============================================================
 
 echo Running backend tests...
-cd /d E:\python_projects\apps_building\services\vibe
+cd /d "%~dp0services\vibe"
 .venv\Scripts\python.exe -m pytest -q
 if %errorlevel% neq 0 (
   echo.
@@ -15,8 +15,8 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Running frontend tests...
-cd /d E:\python_projects\apps_building\apps\vibe
-call pnpm test --run
+cd /d "%~dp0apps\vibe"
+call pnpm test
 if %errorlevel% neq 0 (
   echo.
   echo FRONTEND TESTS FAILED

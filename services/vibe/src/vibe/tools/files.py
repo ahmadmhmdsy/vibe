@@ -1,8 +1,11 @@
 # services/vibe/src/vibe/tools/files.py
 from __future__ import annotations
+
 from pathlib import Path
-from vibe.models import ToolSchema, ToolResult
-from vibe.runtime.base import AgentContext
+
+from vibe.models import ToolResult, ToolSchema
+from vibe.workspace import relative_files
+
 
 def _safe_path(workspace: Path, relpath: str) -> Path | None:
     p = (workspace / relpath).resolve()
@@ -35,7 +38,9 @@ async def _edit_file(args, ctx):
     return ToolResult("", "edit_file", f"edited {args['path']}")
 
 async def _list_files(args, ctx):
-    files = sorted(str(p.relative_to(ctx.workspace_path)) for p in ctx.workspace_path.rglob("*") if p.is_file())
+    # Vendored trees are pruned during the walk: an agent asking for the file
+    # list should not receive thousands of node_modules paths.
+    files = relative_files(ctx.workspace_path)
     return ToolResult("", "list_files", "\n".join(files[:200]))
 
 def register_file_tools(reg) -> None:

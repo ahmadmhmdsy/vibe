@@ -12,6 +12,11 @@ dist/
 
 # Generated workspaces
 vibe-workspaces/
+# The literal directory named "~" that an un-expanded ~/ used to create
+~/
+
+# Local evidence: test output, build reports, verification logs
+artifacts/
 
 # Python
 *.pyc

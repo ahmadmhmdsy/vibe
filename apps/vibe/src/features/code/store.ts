@@ -14,7 +14,7 @@ interface CodeState {
   saveFile: (sid: string, path: string, content: string) => Promise<void>;
 }
 
-export const useCodeStore = create<CodeState>((set, get) => ({
+export const useCodeStore = create<CodeState>((set) => ({
   files: [],
   selectedFile: null,
   contents: {},

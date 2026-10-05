@@ -1,4 +1,6 @@
-// apps/vibe/src/components/ui/Modal.tsx
+// components/ui/Modal.tsx — Accessible modal dialog.
+// Implements focus trap, focus restore, and Escape to close.
+
 import { useEffect, useRef, type ReactNode } from "react";
 
 export interface ModalProps {
@@ -10,24 +12,58 @@ export interface ModalProps {
   role?: "dialog" | "alertdialog";
 }
 
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
 export function Modal({ open, onClose, title, children, wide, role = "dialog" }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+
+    // Store the previously focused element
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
         onClose();
+        return;
+      }
+
+      // Focus trap
+      if (e.key === "Tab") {
+        const focusables = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
+        if (!focusables || focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
+
     document.addEventListener("keydown", onKey, true);
-    // Focus the first focusable element on open.
-    const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
+
+    // Focus the first focusable element on open
+    const focusables = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
     focusables?.[0]?.focus();
-    return () => document.removeEventListener("keydown", onKey, true);
+
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      // Restore focus
+      previousFocusRef.current?.focus();
+    };
   }, [open, onClose]);
 
   if (!open) return null;

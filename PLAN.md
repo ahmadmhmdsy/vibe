@@ -29,15 +29,18 @@ Two rules: **model-visible means logged** (the EventLog is the source of truth);
 
 ## 3. Milestones
 
-| Milestone | Goal |
-|---|---|
-| M1 — Core loop | Single-session chat → generate → install → build → run → preview → auto-fix. Provider seam live. |
-| M2 — Sessions & models | Multi-session management, model picker, provider settings UI. |
-| M3 — Polish | Image input, Monaco hand-editing, supply-chain approval, budgets, a11y, tests. |
-| M4 — Scale | Docker executor, Postgres, auth, deployment — behind the same interfaces. |
+| Milestone | Goal | Status |
+|---|---|---|
+| M1 — Core loop | Single-session chat → generate → install → build → run → preview → auto-fix. Provider seam live. | **done** 2026-09-29 |
+| M2 — Sessions & models | Multi-session management, model picker, provider settings UI. | **done** 2026-09-29 |
+| M3 — Polish | Image input, Monaco hand-editing, supply-chain approval, budgets, a11y, tests. | **done** 2026-09-29 |
+| M4 — Scale | Docker executor, Postgres, auth, deployment — behind the same interfaces. | pending |
+| M5 — Frontend UI/UX overhaul | Design system, shell, honest states, chat, approvals, code, preview. | **done** 2026-09-29 |
 
 ## 4. Open items
 
 - App name (working name "vibe").
-- Image input timing (M3).
-- Monaco hand-editing (M3).
+- M4: Docker executor, Postgres, auth, deployment.
+- Playwright console/screenshot capture (removed offline; restore when network returns).
+- EventLog SQLite persistence (currently in-memory; spec §7.2 shows SQLite events table).
+- Workspace scaffolding (spec §6.2 — Vite+React+TS template on session creation).

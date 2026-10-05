@@ -1,9 +1,12 @@
-// apps/vibe/src/features/settings/SettingsPanel.tsx
+// features/settings/SettingsPanel.tsx — Provider management UI.
+// Lists built-in and custom providers, allows CRUD operations on custom providers.
+
 import { useEffect, useState } from "react";
 import { api, type CustomProvider, type CustomModel } from "../../lib/api";
 import { useSettingsStore } from "./store";
 import { Button } from "../../components/ui/Button";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
 import "./settings.css";
 
 const PROTOCOLS: CustomModel["protocol"][] = ["openai-chat", "openai-responses", "anthropic-messages"];
@@ -20,6 +23,7 @@ const emptyForm: FormState = { id: null, name: "", baseUrl: "", apiKey: "", mode
 
 export function SettingsPanel() {
   const { providers, load } = useSettingsStore();
+  const { toast } = useToast();
   const [customs, setCustoms] = useState<CustomProvider[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +69,7 @@ export function SettingsPanel() {
       setForm(emptyForm);
       await refreshCustoms();
       await load();
+      toast(form.id ? "Provider updated" : "Provider added", "success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save provider.");
     }
@@ -78,6 +83,7 @@ export function SettingsPanel() {
       await api.deleteProvider(id);
       await refreshCustoms();
       await load();
+      toast("Provider deleted", "success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete provider.");
     }
@@ -85,6 +91,11 @@ export function SettingsPanel() {
 
   const setModel = (i: number, patch: Partial<CustomModel>) => {
     setForm((f) => ({ ...f, models: f.models.map((m, j) => (j === i ? { ...m, ...patch } : m)) }));
+  };
+
+  const cancel = () => {
+    setForm(emptyForm);
+    setError(null);
   };
 
   return (
@@ -176,7 +187,7 @@ export function SettingsPanel() {
             <Button variant="primary" onClick={save}>
               Save
             </Button>
-            <Button variant="secondary" onClick={() => { setForm(emptyForm); setError(null); }}>
+            <Button variant="secondary" onClick={cancel}>
               Cancel
             </Button>
           </div>

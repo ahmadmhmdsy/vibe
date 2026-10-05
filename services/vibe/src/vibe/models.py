@@ -1,7 +1,8 @@
 # services/vibe/src/vibe/models.py
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Literal, Any
+from typing import Any, Literal
 
 Role = Literal["user", "assistant", "system", "tool"]
 
@@ -12,12 +13,21 @@ class ToolCall:
     arguments: dict[str, Any]
 
 @dataclass
+class Attachment:
+    """An image attached to a message (reference design, screenshot feedback)."""
+    name: str
+    content_type: str  # e.g. "image/png"
+    data_base64: str
+
+
+@dataclass
 class Message:
     role: Role
     content: str
     tool_calls: list[ToolCall] = field(default_factory=list)
     tool_call_id: str | None = None
     name: str | None = None
+    attachments: list[Attachment] = field(default_factory=list)
 
 @dataclass
 class ToolResult:
@@ -25,6 +35,11 @@ class ToolResult:
     name: str
     content: str
     is_error: bool = False
+    #: Images the tool wants the model to see. They travel beside `content` rather
+    #: than inside it: the registry turns them into LangChain content blocks, and
+    #: they are deliberately kept out of the SSE event payload (a base64 PNG in
+    #: every stream frame would dwarf the rest of the transcript).
+    attachments: list[Attachment] = field(default_factory=list)
 
 @dataclass
 class ModelRef:

@@ -1,0 +1,79 @@
+# .github/workflows/ci.yml
+# Continuous integration: lint, typecheck, test, build for both halves.
+#
+# Runs on windows-latest because that is the platform this app actually
+# targets - the launchers are .bat files and the backend resolves a Windows
+# venv layout. A green run on a platform nobody develops on would be worth
+# less than the honesty of matching the real one.
+#
+# Deliberately NOT run here: prettier (pnpm run format:check). The tree is
+# not yet prettier-formatted, and reformatting it is a separate, reviewable
+# change - see TASKS.md.
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  backend:
+    name: backend (pytest + ruff)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: services/vibe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      # The browser driver is optional at runtime - every capture degrades to
+      # None without it - but CI installs it so a regression in the driver
+      # itself is caught rather than silently skipped.
+      - name: Install the browser driver
+        run: uv run playwright install chromium
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Test (pytest)
+        run: uv run pytest -q
+
+  frontend:
+    name: frontend (eslint + tsc + vitest + build)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/vibe
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads the version from package.json "packageManager".
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/vibe/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (eslint)
+        run: pnpm run lint
+
+      - name: Typecheck (tsc)
+        run: pnpm run typecheck
+
+      - name: Test (vitest)
+        run: pnpm test
+
+      - name: Build (vite)
+        run: pnpm run build

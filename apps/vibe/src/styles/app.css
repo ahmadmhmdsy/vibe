@@ -1,4 +1,11 @@
-/* app.css — application shell layout + responsive breakpoints. */
+/* app.css — application shell layout + responsive breakpoints.
+
+   Layout contract
+   ---------------
+   >=1101px  three columns: sessions sidebar | chat | preview+code
+   <=1100px  two columns; preview+code becomes a right-hand drawer that
+             starts below the header so its own toggle stays reachable
+   <=768px   one panel at a time, chosen by the bottom tab bar */
 
 .app-shell {
   display: flex;
@@ -10,10 +17,15 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  min-height: var(--header-height);
+  padding: var(--space-1) var(--space-3);
   background: var(--bg-raised);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  /* Above the drawers, so a drawer can never swallow the control that
+     opened it. */
+  position: relative;
+  z-index: var(--z-header);
 }
 
 .app-brand {
@@ -21,9 +33,10 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--text-lg);
-  font-weight: 650;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.01em;
   color: var(--text);
-  margin: 0;
+  margin: 0 0 0 var(--space-1);
 }
 
 .app-header-title {
@@ -47,7 +60,7 @@
 }
 
 .app-sidebar {
-  width: 260px;
+  width: var(--sidebar-width);
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   display: flex;
@@ -65,8 +78,8 @@
 }
 
 .app-side {
-  width: 42%;
-  min-width: 320px;
+  width: var(--side-width);
+  min-width: var(--side-min-width);
   flex-shrink: 0;
   border-left: 1px solid var(--border);
   display: flex;
@@ -83,7 +96,7 @@
   display: none;
 }
 
-/* --- intermediate: side column becomes an overlay panel --- */
+/* --- intermediate: the side column becomes an overlay drawer --- */
 @media (max-width: 1100px) {
   .app-header-side-toggle {
     display: inline-flex;
@@ -91,16 +104,18 @@
 
   .app-side {
     position: fixed;
-    top: 0;
+    top: var(--header-height);
     right: 0;
     bottom: 0;
     width: min(480px, 90vw);
+    min-width: 0;
     background: var(--bg);
+    border-left: 1px solid var(--border);
     box-shadow: var(--shadow-2);
     transform: translateX(100%);
     visibility: hidden;
     transition: transform var(--duration) var(--ease-out), visibility 0s linear var(--duration);
-    z-index: 60;
+    z-index: var(--z-drawer);
   }
 
   .app-side-open {
@@ -110,7 +125,7 @@
   }
 }
 
-/* --- mobile: single column + tab bar, sidebar becomes a drawer --- */
+/* --- mobile: single panel + tab bar, sidebar becomes a drawer --- */
 @media (max-width: 768px) {
   .app-header-sessions-toggle {
     display: inline-flex;
@@ -122,11 +137,11 @@
 
   .app-sidebar {
     position: fixed;
-    top: 0;
+    top: var(--header-height);
     left: 0;
     bottom: 0;
     width: min(300px, 85vw);
-    z-index: 60;
+    z-index: var(--z-drawer);
     box-shadow: var(--shadow-2);
     transform: translateX(-100%);
     visibility: hidden;
@@ -139,25 +154,44 @@
     transition: transform var(--duration) var(--ease-out), visibility 0s;
   }
 
-  /* Panels live in .app-side; the active mobile tab picks one. */
+  /* The panel column is back in normal flow here. The tablet rule above
+     left it fixed and translated off-screen, so every one of those
+     declarations has to be undone or the Code/Preview tabs render into
+     empty space. */
   .app-side {
-    display: flex;
-    flex-direction: column;
+    position: static;
+    top: auto;
+    right: auto;
+    bottom: auto;
     width: 100%;
     min-width: 0;
+    flex: 1;
+    transform: none;
+    visibility: visible;
+    box-shadow: none;
     border-left: none;
+    transition: none;
   }
 
-  .app-side > * {
+  /* One panel at a time: the active tab owns the whole column. The
+     [data-mobile-tab] qualifier is load-bearing — the feature sheets are
+     unlayered and set display:flex on .panel-preview/.panel-code, so an
+     equal-specificity rule here would lose to whichever sheet loaded last. */
+  .app-body[data-mobile-tab] .app-side > * {
     display: none;
   }
 
-  .app-main > * {
+  .app-body[data-mobile-tab="chat"] .app-side {
     display: none;
   }
 
-  .app-body[data-mobile-tab="chat"] .app-main > *:first-child {
+  .app-body[data-mobile-tab="chat"] .app-main > * {
     display: flex;
+  }
+
+  .app-body[data-mobile-tab="code"] .app-main,
+  .app-body[data-mobile-tab="preview"] .app-main {
+    display: none;
   }
 
   .app-body[data-mobile-tab="code"] .panel-code,
@@ -170,21 +204,41 @@
     border-top: 1px solid var(--border);
     background: var(--bg-raised);
     flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .app-mobile-tab {
     flex: 1;
-    min-height: 48px;
+    min-height: var(--mobile-tab-height);
     border: none;
     border-radius: 0;
     background: transparent;
     color: var(--text-muted);
     font-size: var(--text-sm);
-    font-weight: 550;
+    font-weight: var(--font-weight-medium);
+  }
+
+  .app-mobile-tab:hover:not(.active) {
+    background: var(--bg-hover);
+    color: var(--text);
   }
 
   .app-mobile-tab.active {
     color: var(--accent);
     box-shadow: inset 0 2px 0 var(--accent);
+  }
+}
+
+/* Narrow phones: the wordmark yields to the session title. It is hidden
+   visually, not removed — it is the h1's only text, so display:none would
+   leave the page with an empty heading. */
+@media (max-width: 430px) {
+  .app-brand span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

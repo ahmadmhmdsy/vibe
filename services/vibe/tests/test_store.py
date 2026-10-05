@@ -1,7 +1,9 @@
 # tests/test_store.py
 import pytest
-from vibe.store import SessionStore
+
 from vibe.models import ModelRef
+from vibe.store import SessionStore
+
 
 @pytest.mark.asyncio
 async def test_create_and_get_session(tmp_path):

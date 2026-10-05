@@ -9,7 +9,7 @@ vi.mock("../../../lib/api", () => ({
   },
 }));
 
-import { api, type Approval } from "../../../lib/api";
+import { type Approval } from "../../../lib/api";
 import { ApprovalCard } from "../ApprovalCard";
 
 const approval: Approval = {

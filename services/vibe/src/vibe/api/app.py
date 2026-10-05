@@ -1,69 +1,192 @@
 # services/vibe/src/vibe/api/app.py
 from __future__ import annotations
 
-from fastapi import FastAPI
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from vibe.api.deps import require_principal
+from vibe.api.errors import ApiError, ErrorCode, body
 from vibe.config import Settings
-from vibe.store import SessionStore
-from vibe.events import EventLog, EventBus
-from vibe.tools.registry import ToolRegistry
-from vibe.tools.files import register_file_tools
-from vibe.tools.executor_tools import register_executor_tools
-from vibe.executor.local import LocalSubprocessExecutor
-from vibe.runtime.langgraph import LangGraphRuntime
-from vibe.autorun.policy import AutoRunPolicy
-from vibe.usage.tracker import UsageTracker
-from vibe.providers.custom import CustomProviderStore
-from vibe.approvals import ApprovalStore
+from vibe.container import Container
+from vibe.logging_setup import configure_logging
+
+logger = logging.getLogger(__name__)
+
+# How often the idle-dev-server reaper wakes up.
+_REAP_INTERVAL_S = 60
+# Methods that change state. A GET cannot be turned into a CSRF vector, so
+# the Origin check only applies to these.
+_STATE_CHANGING = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 
-def _llm_factory(settings: Settings, custom_store):
-    """Return a factory that builds a real langchain chat model from Settings.
+def _lifespan_factory(container: Container):
+    """Build the app's startup/shutdown behaviour.
 
-    LangGraphRuntime calls the factory with a ModelRef and expects a chat
-    model exposing bind_tools()/astream(). The provider classes wrap
-    langchain models but only expose the LlmProvider.chat() protocol, so the
-    underlying chat models are constructed directly here from Settings.
-
-    session_id is the vibe session the model call belongs to; OpenCode Go
-    requires a stable x-opencode-session header for routing/shard affinity.
-
-    Custom (user-defined) providers are looked up from custom_store; the
-    model's protocol decides which LangChain chat model to build.
+    A factory rather than a module-level function because the reaper and the
+    shutdown sweep need the per-app registries, which only exist once the app
+    has been composed.
     """
-    def factory(model_ref, session_id: str | None = None):
-        if model_ref.provider_id == "openai":
-            from langchain_openai import ChatOpenAI
-            return ChatOpenAI(api_key=settings.openai_api_key, model=model_ref.model_id, streaming=True)
-        if model_ref.provider_id == "anthropic":
-            from langchain_anthropic import ChatAnthropic
-            return ChatAnthropic(api_key=settings.anthropic_api_key, model=model_ref.model_id, streaming=True)
-        if model_ref.provider_id == "opencode-go":
-            from langchain_openai import ChatOpenAI
-            headers = {"x-opencode-session": session_id} if session_id else {}
-            return ChatOpenAI(api_key=settings.opencode_api_key,
-                              base_url="https://opencode.ai/zen/go/v1",
-                              model=model_ref.model_id, streaming=True,
-                              default_headers=headers)
-        # Custom provider: look up the row and build from its protocol.
-        custom = custom_store.get(model_ref.provider_id) if custom_store else None
-        if custom is not None:
-            protocol = next((m.get("protocol", "openai-chat") for m in custom.models if m["id"] == model_ref.model_id), "openai-chat")
-            if protocol == "anthropic-messages":
-                from langchain_anthropic import ChatAnthropic
-                return ChatAnthropic(api_key=custom.api_key, base_url=custom.base_url,
-                                     model=model_ref.model_id, streaming=True)
-            from langchain_openai import ChatOpenAI
-            return ChatOpenAI(api_key=custom.api_key, base_url=custom.base_url,
-                              model=model_ref.model_id, streaming=True)
-        raise ValueError(f"unsupported provider: {model_ref.provider_id}")
-    return factory
+    executors = container.executors
+    settings = container.settings
+    store = container.store
+    event_log = container.event_log
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        logger.info("vibe ready: workspace=%s", settings.workspace_dir)
+        # Loopback auth makes a non-loopback bind inert rather than dangerous,
+        # but silence about it would be its own kind of footgun: the day the API
+        # is exposed, the person who exposed it should be told what stands between
+        # it and the network.
+        if settings.host not in ("127.0.0.1", "localhost", "::1"):
+            logger.warning(
+                "VIBE_HOST=%s: bound beyond loopback; loopback auth still refuses non-local peers,",
+                " but every local process can reach this API.",
+                settings.host,
+            )
+        reaper = asyncio.create_task(_reap_idle_dev_servers(executors, settings))
+        try:
+            yield
+        finally:
+            reaper.cancel()
+            await asyncio.gather(reaper, return_exceptions=True)
+            # A dev server left running outlives the process that started it.
+            stopping = len(executors)
+            if stopping:
+                logger.info("shutdown: stopping %d dev server(s)", stopping)
+            for sid in list(executors):
+                executor = executors.pop(sid, None)
+                if executor is not None:
+                    await executor.close()
+            store.close()
+            event_log.close()
+            logger.info("vibe stopped")
+
+    return lifespan
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+async def _reap_idle_dev_servers(executors: dict, settings: Settings) -> None:
+    """Stop dev servers that have been idle past the configured timeout.
+
+    The timeout used to be parsed from the environment and then read by
+    nothing, so a preview left open kept a `pnpm dev` process alive forever.
+    """
+    while True:
+        await asyncio.sleep(_REAP_INTERVAL_S)
+        for sid in list(executors):
+            executor = executors.get(sid)
+            if executor is None:
+                continue
+            try:
+                await executor.stop_if_idle(settings.dev_server_idle_timeout_min)
+            except Exception:
+                # A reaper must never take the server down with it, but a bare
+                # `pass` here made a broken preview indistinguishable from an
+                # idle one (audit H5).
+                logger.warning("idle-dev-server reap failed for session %s", sid, exc_info=True)
+
+
+class OriginGuard:
+    """Refuses state-changing requests from an Origin we do not trust.
+    Loopback auth cannot catch CSRF: a cross-site form POST from the user's
+    own browser arrives from 127.0.0.1 and therefore looks local. The Origin
+    header is the browser's own statement of which page sent the request, and
+    only a page we serve sends one we allow -- so this is a second, independent
+    control rather than a repeat of the authenticator.
+    A request with no Origin header is allowed through. Loopback auth has
+    already gated it, and non-browser clients (curl, a test) send none.
+    """
+    def __init__(self, app, allowed_origins: list[str]) -> None:
+        self._app = app
+        self._allowed = frozenset(o.rstrip("/") for o in allowed_origins)
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http" or scope["method"] not in _STATE_CHANGING:
+            await self._app(scope, receive, send)
+            return
+        headers = dict(scope.get("headers") or [])
+        origin = headers.get(b"origin")
+        if origin is not None:
+            stated = origin.decode("latin-1").rstrip("/")
+            if stated not in self._allowed:
+                logger.warning("refused a %s request from Origin %s", scope["method"], stated)
+                await _error_response(ErrorCode.FORBIDDEN_ORIGIN, "origin not allowed", 403)(scope, receive, send)
+                return
+        await self._app(scope, receive, send)
+
+
+def _error_response(code: ErrorCode, message: str, status: int) -> JSONResponse:
+    return JSONResponse(status_code=status, content=body(code, message))
+
+
+async def _handle_api_error(_: Request, exc: ApiError) -> JSONResponse:
+    return _error_response(exc.code, exc.message, exc.status)
+
+
+# A route that still raises a bare HTTPException has to answer in the same
+# shape, or it would be the one endpoint the frontend cannot parse.
+_STATUS_CODES = {
+    400: ErrorCode.VALIDATION_FAILED,
+    404: ErrorCode.NOT_FOUND,
+    409: ErrorCode.RUN_IN_PROGRESS,
+    422: ErrorCode.VALIDATION_FAILED,
+}
+
+
+async def _handle_http_exception(_: Request, exc: HTTPException) -> JSONResponse:
+    code = _STATUS_CODES.get(exc.status_code, ErrorCode.INTERNAL)
+    return _error_response(code, str(exc.detail), exc.status_code)
+
+
+async def _handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+    # FastAPI's own detail is a list of dicts, which is not something a UI can
+    # show. The first location and reason is what a person needs to fix it.
+    errors = exc.errors()
+    if not errors:
+        return _error_response(ErrorCode.VALIDATION_FAILED, "invalid request", 422)
+    first = errors[0]
+    where = ".".join(str(p) for p in first.get("loc", ()))
+    reason = str(first.get("msg", "invalid request"))
+    return _error_response(ErrorCode.VALIDATION_FAILED, f"{where}: {reason}" if where else reason, 422)
+
+
+async def _handle_unexpected(_: Request, exc: Exception) -> JSONResponse:
+    # Log the real error, return a generic one: an exception message can carry
+    # a filesystem path, an API key, or a provider's raw response body.
+    logger.exception("unhandled error: %s", exc)
+    return _error_response(ErrorCode.INTERNAL, "internal server error", 500)
+
+
+def create_app(settings: Settings | None = None, *, container: Container | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
-    app = FastAPI(title="vibe")
+
+    # `python -m vibe` configures logging before calling us. When the app is
+    # mounted by a host instead (uvicorn --factory, a test), nobody has, and
+    # the records would fall through to the root logger's last-resort handler
+    # and only surface at WARNING.
+    if not logging.getLogger("vibe").handlers:
+        configure_logging()
+
+    # Keep the session index inside the workspace root so a single vibe
+    # install owns both its workspaces and its session metadata.
+    settings.workspace_dir.mkdir(parents=True, exist_ok=True)
+
+    # Every collaborator, composed once, before anything derives from it. Pass a
+    # pre-built container to substitute seams (tests, embedded hosts).
+    container = container or Container.build(settings)
+
+    app = FastAPI(
+        title="vibe",
+        lifespan=_lifespan_factory(container),
+    )
+    # OriginGuard is added before CORSMiddleware so CORS is the outer layer and
+    # the browser still sees its headers on a 403.
+    app.add_middleware(OriginGuard, allowed_origins=settings.cors_origins)
     # CORS: the Vite dev server calls this API cross-origin. The port
     # varies (5173, or the next free one when busy), so the allowlist is
     # configurable via VIBE_CORS_ORIGINS (comma-separated).
@@ -73,77 +196,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # CORS exposes only a handful of simple response headers to JS by
+        # default, so without this the browser hides the pagination count.
+        expose_headers=["X-Total-Count"],
     )
-    app.state.settings = settings
+    app.state.container = container
 
-    # --- seam composition --------------------------------------------------
-    # Keep the session index inside the workspace root so a single vibe
-    # install owns both its workspaces and its session metadata.
-    settings.workspace_dir.mkdir(parents=True, exist_ok=True)
-
-    store = SessionStore(db_path=settings.workspace_dir / "sessions.db")
-    event_log = EventLog()
-    event_bus = EventBus()
-    custom_provider_store = CustomProviderStore(settings.workspace_dir / "providers.json")
-
-    tool_registry = ToolRegistry()
-    register_file_tools(tool_registry)
-    register_executor_tools(tool_registry)
-
-    usage = UsageTracker(log=event_log, bus=event_bus)
-
-    runtime = LangGraphRuntime(llm_factory=_llm_factory(settings, custom_provider_store), tool_registry=tool_registry, usage=usage)
-
-    # Executors and auto-run policies are per-session (each session owns its
-    # own workspace), so they live in registries keyed by session id.
-    executors: dict[str, LocalSubprocessExecutor] = {}
-    autorun_policies: dict[str, AutoRunPolicy] = {}
-
-    app.state.store = store
-    app.state.event_log = event_log
-    app.state.event_bus = event_bus
-    app.state.tool_registry = tool_registry
-    app.state.runtime = runtime
-    app.state.executors = executors
-    app.state.autorun_policies = autorun_policies
-    app.state.usage = usage
-    app.state.custom_provider_store = custom_provider_store
-    app.state.approval_store = ApprovalStore()
-
-    def _get_executor(sid: str, workspace) -> LocalSubprocessExecutor:
-        ex = executors.get(sid)
-        if ex is None:
-            ex = LocalSubprocessExecutor(workspace=workspace)
-            executors[sid] = ex
-        return ex
-
-    def _get_autorun(sid: str, workspace) -> AutoRunPolicy:
-        policy = autorun_policies.get(sid)
-        if policy is None:
-            policy = AutoRunPolicy(executor=_get_executor(sid, workspace),
-                                   runtime=app.state.runtime,
-                                   max_fix_iterations=settings.max_fix_iterations,
-                                   usage=app.state.usage,
-                                   session_token_budget=settings.session_token_budget)
-            autorun_policies[sid] = policy
-        return policy
-
-    # Attached to app.state so routes can reach them without a circular
-    # import (routes are imported by this module below).
-    app.state.get_executor = _get_executor
-    app.state.get_autorun = _get_autorun
+    # One response shape for every failure. FastAPI's defaults gave the frontend
+    # three of them -- detail as a string, detail as a list, and a bare 500 --
+    # and no code it could branch on.
+    app.add_exception_handler(ApiError, _handle_api_error)
+    app.add_exception_handler(HTTPException, _handle_http_exception)
+    app.add_exception_handler(RequestValidationError, _handle_validation_error)
+    app.add_exception_handler(Exception, _handle_unexpected)
 
     @app.get("/health")
     def health():
-        return {"status": "ok"}
+        # The resolved paths are the point: an un-expanded `VIBE_WORKSPACE_DIR`
+        # used to make the same install look empty depending on the directory it
+        # was launched from. This is the one place that shows where data
+        # actually lives.
+        return {
+            "status": "ok",
+            "workspace_dir": str(settings.workspace_dir),
+            "sessions_db": str(settings.workspace_dir / "sessions.db"),
+            "events_db": str(settings.workspace_dir / "events.db"),
+        }
 
-    from vibe.api.routes import sessions, chat, catalog, providers, approvals, messages, preview
-    app.include_router(sessions.router)
-    app.include_router(chat.router)
-    app.include_router(catalog.router)
-    app.include_router(providers.router)
-    app.include_router(approvals.router)
-    app.include_router(messages.router)
-    app.include_router(preview.router)
+    from vibe.api.routes import approvals, catalog, chat, messages, preview, providers, sessions
+    # Every router is mounted behind the authenticator, so the default is deny:
+    # a route added tomorrow is protected without remembering to ask. /health
+    # stays open above because it is a direct @app.get, not part of a router.
+    for _router in (sessions.router, chat.router, catalog.router, providers.router,
+                    approvals.router, messages.router, preview.router):
+        app.include_router(_router, dependencies=[Depends(require_principal)])
 
     return app

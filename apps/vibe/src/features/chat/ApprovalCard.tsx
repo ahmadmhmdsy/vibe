@@ -51,8 +51,15 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
     onDeny();
   };
 
+  const count = approval.packages.length;
+
   return (
-    <div className="approval-card" data-status={status}>
+    <div
+      className="approval-card"
+      data-status={status}
+      role="group"
+      aria-label={`Approval needed for ${count} package${count === 1 ? "" : "s"}`}
+    >
       <div className="approval-title">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
           <path d="M8 1.5L15 14H1L8 1.5z" strokeLinejoin="round" />
@@ -61,34 +68,52 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
         </svg>
         Approval needed
       </div>
+
+      <p className="approval-hint">
+        The agent wants to install {count === 1 ? "this package" : "these packages"} into this
+        session's workspace.
+      </p>
+
       <div className="approval-packages">
         {approval.packages.map((p) => (
           <span key={p} className="approval-package">{p}</span>
         ))}
       </div>
-      <div className="approval-hint">The agent wants to install these packages.</div>
+
       {status === "pending" ? (
-        <>
-          <div className="approval-actions">
-            <Button variant="primary" size="sm" onClick={approve}>
-              Approve
-            </Button>
-            <Button variant="secondary" size="sm" onClick={deny}>
-              Deny
-            </Button>
-            <label className="approval-always">
-              <input
-                type="checkbox"
-                checked={alwaysAllow}
-                onChange={(e) => setAlwaysAllow(e.target.checked)}
-              />
-              Always allow
-            </label>
-          </div>
-        </>
+        <div className="approval-actions">
+          <Button variant="primary" size="sm" onClick={approve}>
+            Approve
+          </Button>
+          <Button variant="secondary" size="sm" onClick={deny}>
+            Deny
+          </Button>
+          <label className="approval-always">
+            <input
+              type="checkbox"
+              checked={alwaysAllow}
+              onChange={(e) => setAlwaysAllow(e.target.checked)}
+            />
+            Always allow
+          </label>
+        </div>
       ) : (
         <div className={`approval-status ${status === "approved" ? "approval-status-approved" : "approval-status-denied"}`}>
-          {status === "approved" ? "Approved" : "Denied"}
+          {status === "approved" ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M3 8.5l3.5 3.5L13 4.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Approved
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
+              </svg>
+              Denied
+            </>
+          )}
         </div>
       )}
     </div>

@@ -1,18 +1,31 @@
-// apps/vibe/src/App.tsx
-import { useState } from "react";
+// apps/vibe/src/App.tsx — Application shell.
+// 3-column layout: sessions sidebar, chat, preview/code side panel.
+
+import { useState, useCallback, lazy, Suspense } from "react";
 import { SessionsPanel } from "./features/sessions/SessionsPanel";
 import { ChatPanel } from "./features/chat/ChatPanel";
-import { PreviewPanel } from "./features/preview/PreviewPanel";
-import { CodePanel } from "./features/code/CodePanel";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { Modal } from "./components/ui/Modal";
 import { IconButton } from "./components/ui/IconButton";
 import { EmptyState } from "./components/ui/EmptyState";
 import { Button } from "./components/ui/Button";
+import { ShortcutsHelp } from "./components/ui/ShortcutsHelp";
+import { CommandPalette } from "./components/ui/CommandPalette";
+import { Loading } from "./components/ui/Loading";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { useSessionsStore } from "./features/sessions/store";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
+import { useIsMobile } from "./hooks/useMediaQuery";
 import { getTheme, toggleTheme, type Theme } from "./lib/theme";
 import "./styles/app.css";
+
+// Lazy load heavy panels
+const PreviewPanel = lazy(() =>
+  import("./features/preview/PreviewPanel").then((m) => ({ default: m.PreviewPanel }))
+);
+const CodePanel = lazy(() =>
+  import("./features/code/CodePanel").then((m) => ({ default: m.CodePanel }))
+);
 
 type MobileTab = "chat" | "code" | "preview";
 
@@ -25,10 +38,62 @@ export default function App() {
   const [sideOpen, setSideOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
   const [theme, setTheme] = useState<Theme>(getTheme);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   useKeyboardShortcut(() => setSettingsOpen((v) => !v), { meta: true, key: "," });
+  useKeyboardShortcut(() => setPaletteOpen((v) => !v), { meta: true, key: "k" });
+  useKeyboardShortcut(() => setShortcutsOpen((v) => !v), { key: "?" });
+
+  // On mobile the side column replaces the chat column, so it has to carry
+  // the document's single main landmark while it owns the viewport.
+  const isMobile = useIsMobile();
+  const sideIsMain = isMobile && mobileTab !== "chat";
+
+  const closeDrawers = useCallback(() => {
+    setSessionsOpen(false);
+    setSideOpen(false);
+  }, []);
+
+  // Escape always dismisses an open drawer, even from inside the composer.
+  useKeyboardShortcut(closeDrawers, { key: "Escape", allowInInput: true });
 
   const onToggleTheme = () => setTheme(toggleTheme());
+
+  const selectMobileTab = (tab: MobileTab) => {
+    setMobileTab(tab);
+    closeDrawers();
+  };
+
+  const commands = [
+    {
+      id: "new-session",
+      title: "New session",
+      description: "Create a new chat session",
+      action: () => create(),
+      shortcut: ["Cmd", "N"],
+    },
+    {
+      id: "toggle-theme",
+      title: "Toggle theme",
+      description: "Switch between dark and light mode",
+      action: onToggleTheme,
+    },
+    {
+      id: "open-settings",
+      title: "Open settings",
+      description: "Configure providers and API keys",
+      action: () => setSettingsOpen(true),
+      shortcut: ["Cmd", ","],
+    },
+    {
+      id: "show-shortcuts",
+      title: "Show keyboard shortcuts",
+      description: "View all available shortcuts",
+      action: () => setShortcutsOpen(true),
+      shortcut: ["?"],
+    },
+  ];
 
   return (
     <div className="app-shell">
@@ -104,9 +169,25 @@ export default function App() {
           )}
         </main>
 
-        <section className={["app-side", sideOpen ? "app-side-open" : ""].join(" ")} aria-label="Preview and code">
-          {activeId && <PreviewPanel sessionId={activeId} />}
-          {activeId && <CodePanel sessionId={activeId} />}
+        <section
+          className={["app-side", sideOpen ? "app-side-open" : ""].join(" ")}
+          aria-label="Preview and code"
+          role={sideIsMain ? "main" : undefined}
+        >
+          {activeId && (
+            <ErrorBoundary resetKey={activeId}>
+              <Suspense fallback={<Loading label="Loading preview" />}>
+                <PreviewPanel sessionId={activeId} />
+              </Suspense>
+            </ErrorBoundary>
+          )}
+          {activeId && (
+            <ErrorBoundary resetKey={activeId}>
+              <Suspense fallback={<Loading label="Loading code" />}>
+                <CodePanel sessionId={activeId} />
+              </Suspense>
+            </ErrorBoundary>
+          )}
         </section>
       </div>
 
@@ -116,7 +197,7 @@ export default function App() {
             key={tab}
             className={mobileTab === tab ? "app-mobile-tab active" : "app-mobile-tab"}
             aria-pressed={mobileTab === tab}
-            onClick={() => setMobileTab(tab)}
+            onClick={() => selectMobileTab(tab)}
           >
             {tab === "chat" ? "Chat" : tab === "code" ? "Code" : "Preview"}
           </button>
@@ -126,6 +207,9 @@ export default function App() {
       <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Settings" wide>
         <SettingsPanel />
       </Modal>
+
+      <ShortcutsHelp open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} />
     </div>
   );
 }

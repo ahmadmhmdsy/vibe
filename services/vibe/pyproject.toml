@@ -10,10 +10,15 @@ dependencies = [
     "langchain-openai==1.6.6",
     "langchain-anthropic==1.7.4",
     "httpx==0.28.1",
+    "playwright>=1.63.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0"]
+dev = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "ruff>=0.16.10",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -21,3 +26,25 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+# The agent workspaces the server creates are data, not source.
+extend-exclude = [".venv", "~"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]
+ignore = [
+    # Formatting is prettier's/ruff-format's concern; this codebase already
+    # runs long in places (prompt strings, provider URLs) and E501 would only
+    # add noise without changing behaviour.
+    "E501",
+    # Tests legitimately assert on truthiness of mocks.
+    "E712",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests import fixtures and reach into internals on purpose.
+"tests/**" = ["B011", "SIM117"]
+

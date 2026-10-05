@@ -17,10 +17,13 @@ class _StubExecutor:
     async def stop_dev_server(self):
         self._dev_server = None
 
+    async def close(self):
+        self._dev_server = None
+
 
 def test_preview_run_status_stop(client, app):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
-    app.state.executors[sid] = _StubExecutor()
+    app.state.container.executors[sid] = _StubExecutor()
 
     # Initially: no dev server.
     resp = client.get(f"/sessions/{sid}/preview")

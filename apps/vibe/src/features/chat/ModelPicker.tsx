@@ -1,4 +1,6 @@
-// apps/vibe/src/features/chat/ModelPicker.tsx
+// features/chat/ModelPicker.tsx — Model selection dropdown.
+// Fetches available providers and models, allows selection per session.
+
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import type { ProviderInfo } from "../../lib/api";
@@ -7,7 +9,14 @@ import { useChatStore } from "./store";
 export function ModelPicker({ sessionId }: { sessionId: string | null }) {
   const { model, setModel } = useChatStore();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
-  useEffect(() => { api.getCatalog().then(setProviders).catch(() => {}); }, []);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getCatalog()
+      .then(setProviders)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   // Reflect the active session's stored model when the session changes.
   useEffect(() => {
@@ -17,24 +26,36 @@ export function ModelPicker({ sessionId }: { sessionId: string | null }) {
       .catch(() => {});
   }, [sessionId]);
 
+  const current = `${model.provider_id}/${model.model_id}`;
+  const currentExists = providers.some((p) => p.models.some((m) => `${p.id}/${m.id}` === current));
+
   return (
-    <select
-      aria-label="Model"
-      value={`${model.provider_id}/${model.model_id}`}
-      onChange={(e) => {
-        const [provider_id, model_id] = e.target.value.split("/");
-        setModel({ provider_id, model_id });
-        if (sessionId) api.setSessionModel(sessionId, { provider_id, model_id }).catch(() => {});
-      }}
-      style={{ padding: 4 }}
-    >
-      {providers.map((p) => (
-        <optgroup key={p.id} label={p.name}>
-          {p.models.map((m) => (
-            <option key={m.id} value={`${p.id}/${m.id}`}>{m.name}</option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+    <div className="model-picker">
+      <label className="model-picker-label" htmlFor="model-select">Model</label>
+      <select
+        id="model-select"
+        className="model-picker-select"
+        value={currentExists ? current : ""}
+        disabled={loading}
+        onChange={(e) => {
+          const [provider_id, model_id] = e.target.value.split("/");
+          setModel({ provider_id, model_id });
+          if (sessionId) api.setSessionModel(sessionId, { provider_id, model_id }).catch(() => {});
+        }}
+      >
+        {!currentExists && (
+          <option value="">
+            {loading ? "Loading models..." : providers.length === 0 ? "No providers configured" : "Select a model"}
+          </option>
+        )}
+        {providers.map((p) => (
+          <optgroup key={p.id} label={p.name}>
+            {p.models.map((m) => (
+              <option key={m.id} value={`${p.id}/${m.id}`}>{m.name}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
   );
 }

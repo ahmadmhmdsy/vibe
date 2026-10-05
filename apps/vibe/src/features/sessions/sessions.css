@@ -11,16 +11,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border);
 }
 
 .sessions-title {
-  font-size: var(--text-sm);
-  font-weight: 650;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .sessions-alert {
@@ -33,7 +34,7 @@
   padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 2px;
 }
 
 .sessions-loading {
@@ -42,13 +43,19 @@
   padding: var(--space-5) 0;
 }
 
+/* One row per session: title + meta on the left, actions revealed on
+   hover/focus so the list stays scannable. */
 .session-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: var(--space-1);
-  padding: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
+}
+
+.session-row:hover {
+  background: var(--bg-hover);
 }
 
 .session-row-active {
@@ -61,6 +68,8 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  flex: 1;
+  min-width: 0;
   background: none;
   border: none;
   padding: 0;
@@ -71,28 +80,64 @@
 
 .session-select:hover {
   background: none;
+  border-color: transparent;
 }
 
 .session-name {
-  font-weight: 550;
+  display: block;
+  max-width: 100%;
+  font-weight: var(--font-weight-medium);
   color: var(--text);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .session-meta {
-  font-size: var(--text-sm);
+  display: block;
+  max-width: 100%;
+  font-size: var(--text-xs);
   color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .session-actions {
   display: flex;
-  gap: var(--space-1);
+  gap: 2px;
+  flex: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.session-row:hover .session-actions,
+.session-row:focus-within .session-actions,
+.session-row-active .session-actions {
+  opacity: 1;
+}
+
+/* Touch devices have no hover state to reveal them. */
+@media (hover: none) {
+  .session-actions {
+    opacity: 1;
+  }
 }
 
 .session-delete {
   color: var(--danger);
 }
 
+.session-delete:hover:not(:disabled) {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
 .session-rename-input {
   width: 100%;
+  min-height: 28px;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
 }

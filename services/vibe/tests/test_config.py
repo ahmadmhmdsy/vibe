@@ -1,7 +1,5 @@
 # services/vibe/tests/test_config.py
-import os
-import pytest
-from vibe.config import Settings, DEFAULT_CORS_ORIGINS
+from vibe.config import DEFAULT_CORS_ORIGINS, Settings
 
 
 def test_default_cors_origins():
@@ -16,7 +14,7 @@ def test_cors_origins_from_env(monkeypatch):
 
 
 def test_cors_middleware_allows_configured_origin(client, app):
-    origin = app.state.settings.cors_origins[0]
+    origin = app.state.container.settings.cors_origins[0]
     resp = client.options(
         "/sessions",
         headers={

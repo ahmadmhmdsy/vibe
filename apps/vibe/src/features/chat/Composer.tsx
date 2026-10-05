@@ -1,24 +1,44 @@
-// apps/vibe/src/features/chat/Composer.tsx
-import { useRef, useState } from "react";
+// features/chat/Composer.tsx — Message input with image attachment.
+// Supports text input, image attachments, drag-and-drop, and send/stop functionality.
+
+import { useEffect, useRef, useState, useCallback } from "react";
 import { api, ApiError, type Attachment } from "../../lib/api";
 import { useChatStore } from "./store";
 import { ErrorBanner } from "../../components/ui/ErrorBanner";
 import { IconButton } from "../../components/ui/IconButton";
 import { Button } from "../../components/ui/Button";
 
+const MAX_CHARS = 4000;
+
 export function Composer({ sessionId }: { sessionId: string }) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const addMessage = useChatStore((s) => s.addMessage);
-  const setStreaming = useChatStore((s) => s.setStreaming);
+  const beginStream = useChatStore((s) => s.beginStream);
+  const endStream = useChatStore((s) => s.endStream);
   const requestStop = useChatStore((s) => s.requestStop);
   const isStreaming = useChatStore((s) => s.isStreamingBySession[sessionId] ?? false);
 
-  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    for (const f of files) {
+  const charCount = text.length;
+  const isOverLimit = charCount > MAX_CHARS;
+  // The limit is only worth showing when it is about to matter.
+  const isNearLimit = charCount > MAX_CHARS * 0.8;
+
+  // Grow with the draft instead of scrolling a one-line box.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [text]);
+
+  const processFiles = useCallback((files: FileList | File[]) => {
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith("image/")) continue;
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
@@ -27,16 +47,37 @@ export function Composer({ sessionId }: { sessionId: string }) {
       };
       reader.readAsDataURL(f);
     }
+  }, []);
+
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processFiles(e.target.files ?? []);
     e.target.value = "";
   };
 
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    processFiles(e.dataTransfer.files);
+  }, [processFiles]);
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
   const send = async () => {
     if (!text.trim() && attachments.length === 0) return;
+    if (isOverLimit) return;
     const snapshot = { text, attachments };
     addMessage(sessionId, { role: "user", content: text });
     setText("");
     setAttachments([]);
-    setStreaming(sessionId, true);
+    beginStream(sessionId);
     setError(null);
     try {
       await api.sendMessage(sessionId, snapshot.text, snapshot.attachments);
@@ -46,17 +87,34 @@ export function Composer({ sessionId }: { sessionId: string }) {
       setAttachments(snapshot.attachments);
       setError(e instanceof ApiError ? `${e.message}. Your message was kept.` : "Failed to send. Your message was kept.");
     } finally {
-      setStreaming(sessionId, false);
+      endStream(sessionId);
     }
   };
 
-  const stop = () => {
+  const stop = async () => {
     requestStop(sessionId);
-    setStreaming(sessionId, false);
+    try {
+      const { aborted } = await api.abortSession(sessionId);
+      // A real abort makes the backend publish turn_complete, which ends the
+      // stream; only a no-op stop has to end it here.
+      if (!aborted) endStream(sessionId);
+    } catch {
+      endStream(sessionId);
+    }
   };
 
   return (
-    <div className="composer">
+    <div
+      className="composer"
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+    >
+      {isDragging && (
+        <div className="composer-drop-zone">
+          Drop images to attach
+        </div>
+      )}
       {error && (
         <div className="composer-error">
           <ErrorBanner message={error} />
@@ -87,26 +145,45 @@ export function Composer({ sessionId }: { sessionId: string }) {
             <path d="M6.5 9.5L13 3a2.1 2.1 0 00-3-3L3.5 6.5M8 2l6 6M2 11.5V14h2.5L13 5.5 10.5 3 2 11.5z" strokeLinejoin="round" />
           </svg>
         </IconButton>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          placeholder="Describe the app you want to build..."
-          aria-label="Describe the app you want to build"
-          className="composer-input"
-          rows={1}
-        />
+        <div className="composer-input-wrap">
+          <label className="sr-only" htmlFor="composer-input">Describe the app you want to build</label>
+          <textarea
+            id="composer-input"
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            placeholder="Describe the app you want to build..."
+            aria-label="Describe the app you want to build"
+            className="composer-input"
+            rows={1}
+            maxLength={MAX_CHARS}
+          />
+          {(isNearLimit || isOverLimit) && (
+            <div className="composer-char-count" aria-live="polite">
+              <span className={isOverLimit ? "composer-char-count-over" : ""}>
+                {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
+              </span>
+            </div>
+          )}
+        </div>
         {isStreaming ? (
-          <Button variant="danger" size="md" onClick={stop}>
+          <Button variant="danger" size="md" className="composer-send" onClick={stop}>
             Stop
           </Button>
         ) : (
-          <Button variant="primary" size="md" onClick={send} disabled={!text.trim() && attachments.length === 0}>
+          <Button
+            variant="primary"
+            size="md"
+            className="composer-send"
+            onClick={send}
+            disabled={(!text.trim() && attachments.length === 0) || isOverLimit}
+          >
             Send
           </Button>
         )}

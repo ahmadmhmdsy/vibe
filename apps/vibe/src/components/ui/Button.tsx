@@ -1,5 +1,6 @@
-// apps/vibe/src/components/ui/Button.tsx
-import { forwardRef, type ButtonHTMLAttributes } from "react";
+// components/ui/Button.tsx — Button component with variants and loading state.
+
+import { forwardRef, memo, type ButtonHTMLAttributes } from "react";
 import { Spinner } from "./Spinner";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -11,7 +12,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+export const Button = memo(forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { variant = "secondary", size = "md", loading = false, disabled, children, className, ...rest },
   ref
 ) {
@@ -22,4 +23,4 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {children}
     </button>
   );
-});
+}));

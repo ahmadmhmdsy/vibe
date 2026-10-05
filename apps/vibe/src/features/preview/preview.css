@@ -9,9 +9,37 @@
 
 .preview-toolbar {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
+  min-height: 42px;
   border-bottom: 1px solid var(--border);
+}
+
+.preview-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  min-width: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.preview-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--success);
+  flex: none;
+}
+
+.preview-status-url {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .preview-alert {
@@ -21,5 +49,5 @@
 .preview-frame {
   flex: 1;
   border: none;
-  background: #ffffff;
+  background: var(--bg-raised);
 }

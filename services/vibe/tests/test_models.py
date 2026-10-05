@@ -1,5 +1,6 @@
 # tests/test_models.py
-from vibe.models import Message, ToolCall, ToolResult, ModelRef, AgentInput, UsageRecord
+from vibe.models import AgentInput, Message, ModelRef, ToolCall, ToolResult, UsageRecord
+
 
 def test_message_with_tool_calls():
     msg = Message(role="assistant", content="", tool_calls=[ToolCall(id="1", name="write_file", arguments={"path": "a.py"})])
