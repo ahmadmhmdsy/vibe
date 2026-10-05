@@ -1,0 +1,6 @@
+packages:
+  - "apps/*"
+
+# pnpm 12: let esbuild run its postinstall (it ships a platform binary).
+allowBuilds:
+  esbuild: true

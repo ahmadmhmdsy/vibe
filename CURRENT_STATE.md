@@ -187,6 +187,19 @@
   [p6-ruff.txt](./artifacts/p6-ruff.txt), [p6-vitest.txt](./artifacts/p6-vitest.txt),
   [p6-typecheck.txt](./artifacts/p6-typecheck.txt),
   [p6-eslint.txt](./artifacts/p6-eslint.txt).
+- 2026-10-05 P3a — root workspace + unified scripts — **done** (the user said
+  "start P3a, P3b and P3c"). A root `package.json` (private, `packageManager`
+  pin, unified scripts) and a root `pnpm-workspace.yaml`
+  (`packages: ["apps/*"]`) own the install; the `allowBuilds: esbuild` setting
+  moved up from `apps/vibe/pnpm-workspace.yaml`, which is gone. One
+  `pnpm install` at the root covers the workspace;
+  `pnpm --filter vibe {dev,build,test,typecheck,lint,format}` run inside
+  `apps/vibe`, and `pnpm test:backend` / `pnpm lint:backend` reach the Python
+  venv. **Gotcha:** pnpm runs scripts through `cmd`, so the backend scripts need
+  a leading `.\` — a bare `.venv\Scripts\python.exe` is parsed as the `.`
+  source command. Validation: install 364 packages; build PASS; 86 vitest;
+  typecheck; eslint 0 errors / 14 warnings; 190 pytest; ruff clean. Evidence:
+  [p3a-all.txt](./artifacts/p3a-all.txt).
 - 2026-10-04 bridge fixes (a third-party frontend↔backend review, verified  claim-by-claim, then every finding plus the defects the review missed):
   EventBus fans out one queue per subscriber; ephemeral stream frames take a
   real monotonic seq without entering the log; the SSE route subscribes before

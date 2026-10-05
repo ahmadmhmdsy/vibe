@@ -174,6 +174,8 @@
 | Audit P3 — Developer experience | Logging, ruff + eslint + prettier config, `vitest run` default, CI | **done** 2026-10-04 |
 | Audit P4 — Product gaps | Auto-titles from the first message, pagination + `X-Total-Count`, a stable error taxonomy, the M6 honesty fix, README corrected | **done** 2026-10-05 |
 | Audit P5 — The browser driver | Playwright console capture + screenshots that reach the model; the `ToolResult`→`repr()` defect fixed; the pnpm `--`/Vite-5173 port bug fixed | **done** 2026-10-05 |
+| Audit P3a — Root workspace | One root `package.json` + `pnpm-workspace.yaml`; unified scripts for the frontend workspace and the Python backend | **done** 2026-10-05 |
+| Audit P6 — Loopback auth | Machine-level deny-by-default + `OriginGuard` (CSRF); the `Authenticator` seam | **done** 2026-10-05 |
 
 ## Environment
 
@@ -452,6 +454,20 @@
   (health open, local GET 200, allowed Origin 201, no Origin 201, foreign
   Origin 403) 5 PASS / 0 FAIL. Evidence:
   `artifacts/p6-{pytest,ruff,vitest,typecheck,eslint}.txt`.
+- 2026-10-05 P3a session (root workspace + unified scripts — the user said
+  "start P3a, P3b and P3c"). A root `package.json` (private, `packageManager`
+  pin, unified scripts) and a root `pnpm-workspace.yaml`
+  (`packages: ["apps/*"]`) now own the install; the `allowBuilds: esbuild`
+  setting moved up from `apps/vibe/pnpm-workspace.yaml`, which is gone (two
+  workspace roots would fight). One `pnpm install` at the root covers the
+  workspace, and `pnpm --filter vibe {dev,build,test,typecheck,lint,format}`
+  run inside `apps/vibe` while `pnpm test:backend` / `pnpm lint:backend`
+  reach the Python venv. **Gotcha:** pnpm runs scripts through `cmd`, so the
+  backend scripts need a leading `.\` — a bare `.venv\Scripts\python.exe` is
+  parsed as the `.` source command and fails with "'.venv' is not
+  recognized". **Verified:** install 364 packages; build PASS; 86 vitest;
+  typecheck; eslint 0 errors / 14 warnings; 190 pytest; ruff clean. Evidence:
+  `artifacts/p3a-all.txt`.
 - M5 gotchas: (1) zustand v5 selectors that return fresh references
   (`?? []`) loop forever — use `useShallow`; (2) the edit tool rejects
   import-line changes — rewrite whole files instead; (3) vite's watcher

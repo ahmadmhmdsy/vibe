@@ -63,6 +63,11 @@ at a time:
 | Typecheck | `apps\vibe` | `pnpm run typecheck` |
 | Format | `apps\vibe` | `pnpm run format` |
 
+The repo is a pnpm workspace: `pnpm install` at the root covers
+`apps/vibe`, and the root `package.json` exposes the same commands —
+`pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm dev` — plus
+`pnpm test:backend` / `pnpm lint:backend` for the Python side.
+
 `pnpm test` is `vitest run` — a single pass that exits. Do not write
 `pnpm test -- --run`: pnpm forwards the `--` and the extra flag reaches
 vitest.
