@@ -66,5 +66,6 @@ def test_messages_endpoint_reports_the_total_in_a_header(client, app):
 
 def test_messages_endpoint_rejects_an_out_of_range_limit(client, app):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
-    assert client.get(f"/sessions/{sid}/messages?limit=0").status_code == 422
-    assert client.get(f"/sessions/{sid}/messages?limit=99999").status_code == 422
+    # R2-T1 unified validation failures on 400 (was FastAPI's bare 422).
+    assert client.get(f"/sessions/{sid}/messages?limit=0").status_code == 400
+    assert client.get(f"/sessions/{sid}/messages?limit=99999").status_code == 400

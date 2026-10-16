@@ -47,8 +47,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ toast }}>
       {children}
       <div className="toast-container" aria-live="polite" aria-atomic="false">
+        {/* The container above is the live region; a role="status" child would
+            nest a second one and announce each toast twice. */}
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.variant}`} role="status">
+          <div key={t.id} className={`toast toast-${t.variant}`}>
             <span className="toast-message">{t.message}</span>
             <IconButton label="Dismiss" onClick={() => dismiss(t.id)}>
               <svg

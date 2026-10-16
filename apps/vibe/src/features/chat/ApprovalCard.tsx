@@ -16,18 +16,25 @@ function loadPolicy(): string[] {
 }
 
 function savePolicy(patterns: string[]) {
-  localStorage.setItem(POLICY_KEY, JSON.stringify(patterns));
+  try {
+    localStorage.setItem(POLICY_KEY, JSON.stringify(patterns));
+  } catch {
+    // Storage unavailable (private mode, quota). The approval still applies to
+    // this request; only remembering it for next time is lost.
+  }
 }
 
 interface ApprovalCardProps {
   approval: Approval;
-  onApprove: () => void;
-  onDeny: () => void;
+  /** May reject; the card stays actionable and reports the failure. */
+  onApprove: () => void | Promise<void>;
+  onDeny: () => void | Promise<void>;
 }
 
 export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps) {
   const [alwaysAllow, setAlwaysAllow] = useState(false);
   const [status, setStatus] = useState<"pending" | "approved" | "denied">("pending");
+  const [error, setError] = useState<string | null>(null);
 
   // Auto-approve when the saved policy covers every requested package.
   useEffect(() => {
@@ -38,17 +45,39 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [approval.id]);
 
+  /** Apply a decision, but only claim success once it is actually recorded.
+   *
+   * Handlers that return nothing stay synchronous; promise-returning ones are
+   * awaited and their rejection becomes a visible error instead of a success
+   * the server never saw.
+   */
+  const settle = (result: void | Promise<void>, onSuccess: () => void, failure: string) => {
+    if (result && typeof (result as Promise<void>).then === "function") {
+      (result as Promise<void>).then(onSuccess, () => setError(failure));
+    } else {
+      onSuccess();
+    }
+  };
+
   const approve = () => {
+    setError(null);
     if (alwaysAllow) {
       savePolicy([...new Set([...loadPolicy(), ...approval.packages])]);
     }
-    setStatus("approved");
-    onApprove();
+    settle(
+      onApprove(),
+      () => setStatus("approved"),
+      "Could not send the approval. Check the connection and try again."
+    );
   };
 
   const deny = () => {
-    setStatus("denied");
-    onDeny();
+    setError(null);
+    settle(
+      onDeny(),
+      () => setStatus("denied"),
+      "Could not send the denial. Check the connection and try again."
+    );
   };
 
   const count = approval.packages.length;
@@ -89,6 +118,12 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
           </span>
         ))}
       </div>
+
+      {error && (
+        <p className="approval-error" role="alert">
+          {error}
+        </p>
+      )}
 
       {status === "pending" ? (
         <div className="approval-actions">

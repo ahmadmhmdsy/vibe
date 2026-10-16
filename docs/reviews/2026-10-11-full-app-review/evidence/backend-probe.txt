@@ -1,0 +1,430 @@
+17:20:09 INFO     vibe.api.app: vibe ready: workspace=C:\Users\AhmadMhmoud\AppData\Local\Temp\tmpq8objpfz\ws
+17:20:09 ERROR    vibe.api.app: unhandled error: 'model'
+Traceback (most recent call last):
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\app.py", line 120, in __call__
+    await self._app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\routes\sessions.py", line 28, in create_session
+    sid = await deps.session_service.create(ModelRef(**body["model"]))
+                                                       ~~~~^^^^^^^^^
+KeyError: 'model'
+17:20:09 ERROR    vibe.api.app: unhandled error: ModelRef.__init__() missing 2 required positional arguments: 'provider_id' and 'model_id'
+Traceback (most recent call last):
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\app.py", line 120, in __call__
+    await self._app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\routes\sessions.py", line 28, in create_session
+    sid = await deps.session_service.create(ModelRef(**body["model"]))
+                                            ~~~~~~~~^^^^^^^^^^^^^^^^^
+TypeError: ModelRef.__init__() missing 2 required positional arguments: 'provider_id' and 'model_id'
+17:20:09 ERROR    vibe.api.app: unhandled error: ModelRef.__init__() got an unexpected keyword argument 'a'
+Traceback (most recent call last):
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\app.py", line 120, in __call__
+    await self._app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\routes\sessions.py", line 28, in create_session
+    sid = await deps.session_service.create(ModelRef(**body["model"]))
+                                            ~~~~~~~~^^^^^^^^^^^^^^^^^
+TypeError: ModelRef.__init__() got an unexpected keyword argument 'a'
+17:20:09 ERROR    vibe.api.app: unhandled error: 'content'
+Traceback (most recent call last):
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\app.py", line 120, in __call__
+    await self._app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\routes\chat.py", line 46, in send_message
+    messages=[Message(role="user", content=body["content"], attachments=attachments)],
+                                           ~~~~^^^^^^^^^^^
+KeyError: 'content'
+17:20:09 ERROR    vibe.api.app: unhandled error: ModelRef.__init__() missing 2 required positional arguments: 'provider_id' and 'model_id'
+Traceback (most recent call last):
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\app.py", line 120, in __call__
+    await self._app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\routes\sessions.py", line 72, in update_session
+    await deps.session_service.set_model(sid, ModelRef(**body["model"]))
+                                              ~~~~~~~~^^^^^^^^^^^^^^^^^
+TypeError: ModelRef.__init__() missing 2 required positional arguments: 'provider_id' and 'model_id'
+17:20:09 INFO     vibe.api.app: shutdown: stopping 1 dev server(s)
+17:20:09 INFO     vibe.api.app: vibe stopped
+17:20:09 INFO     vibe.api.app: vibe ready: workspace=C:\Users\AhmadMhmoud\AppData\Local\Temp\tmpk6fn9uyc\ws
+17:20:09 INFO     vibe.api.routes.chat: run started for session 37380893900b
+17:20:09 INFO     vibe.api.routes.chat: run started for session 37380893900b
+17:20:09 INFO     vibe.api.app: shutdown: stopping 1 dev server(s)
+17:20:09 INFO     vibe.api.app: vibe stopped
+17:20:09 INFO     vibe.api.app: vibe ready: workspace=C:\Users\AhmadMhmoud\AppData\Local\Temp\tmpjqfkkbz5\ws
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\logging\__init__.py", line 1150, in emit
+    msg = self.format(record)
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\logging\__init__.py", line 998, in format
+    return fmt.format(record)
+           ~~~~~~~~~~^^^^^^^^
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\logging\__init__.py", line 711, in format
+    record.message = record.getMessage()
+                     ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\logging\__init__.py", line 400, in getMessage
+    msg = msg % self.args
+          ~~~~^~~~~~~~~~~
+TypeError: not all arguments converted during string formatting
+Call stack:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\threading.py", line 1012, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\threading.py", line 1041, in _bootstrap_inner
+    self.run()
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\threading.py", line 992, in run
+    self._target(*self._args, **self._kwargs)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\anyio\from_thread.py", line 538, in run_blocking_portal
+    run_eventloop(
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\anyio\_core\_eventloop.py", line 83, in run
+    return async_backend.run(func, args, {}, backend_options)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2548, in run
+    return runner.run(wrapper())
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 327, in _run_coro
+    retval = await self._coro
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\anyio\from_thread.py", line 265, in _call_func
+    retval = await retval_or_awaitable
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\testclient.py", line 533, in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\errors.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\cors.py", line 79, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\app.py", line 110, in __call__
+    await self._app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 49, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 2726, in app
+    await self.lifespan(scope, receive, send)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\starlette\routing.py", line 654, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 240, in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 240, in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 240, in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 240, in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 240, in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 240, in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\.venv\Lib\site-packages\fastapi\routing.py", line 240, in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+  File "C:\Users\AhmadMhmoud\AppData\Roaming\uv\python\cpython-3.13.1-windows-x86_64-none\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+  File "E:\python_projects\apps_building\services\vibe\src\vibe\api\app.py", line 48, in lifespan
+    logger.warning(
+Message: 'VIBE_HOST=%s: bound beyond loopback; loopback auth still refuses non-local peers,'
+Arguments: (' but every local process can reach this API.', '0.0.0.0')
+17:20:09 INFO     vibe.api.app: vibe stopped
+17:20:09 INFO     vibe.api.routes.chat: run started for session e033063d012d
+17:20:09 INFO     vibe.api.routes.chat: run started for session e033063d012d
+17:20:10 WARNING  vibe.executor.local: E:\python_projects\apps_building\services\vibe\.venv\Scripts\python.exe timed out after 1s
+17:20:14 INFO     vibe.api.app: vibe ready: workspace=C:\Users\AhmadMhmoud\AppData\Local\Temp\tmp3kjd4enc\ws
+17:20:14 INFO     vibe.api.routes.chat: run started for session 3e77fcc11127
+17:20:14 INFO     vibe.lifecycle: deleting session 3e77fcc11127
+17:20:14 INFO     vibe.api.app: vibe stopped
+
+==============================================================================
+PROBE 1 - unvalidated request bodies: does a missing field 500?
+==============================================================================
+POST /sessions body={}               -> HTTP 500  {"error":{"code":"internal","message":"internal server error"}}
+POST /sessions body={model:{}}       -> HTTP 500  {"error":{"code":"internal","message":"internal server error"}}
+POST /sessions body={model:{a:1}}    -> HTTP 500  {"error":{"code":"internal","message":"internal server error"}}
+POST messages body={}                -> HTTP 500  {"error":{"code":"internal","message":"internal server error"}}
+PATCH session body={model:{}}        -> HTTP 500  {"error":{"code":"internal","message":"internal server error"}}
+POST providers body={}               -> HTTP 400  {"error":{"code":"validation_failed","message":"name and baseUrl are required"}}
+
+==============================================================================
+PROBE 2 - supply-chain allowlist: does an npm alias bypass it?
+==============================================================================
+is_allowlisted('react'                   ) = True
+is_allowlisted('react@^19'               ) = True
+is_allowlisted('react@npm:evil-package'  ) = True
+is_allowlisted('react@github:evil/repo'  ) = True
+is_allowlisted('react@file:../evil'      ) = True
+is_allowlisted('@scope/pkg'              ) = False
+is_allowlisted('@scope/pkg@^1'           ) = False
+
+==============================================================================
+PROBE 3 - conversation memory: what history reaches the model?
+==============================================================================
+model calls seen: 2
+  run 0: messages handed to the model = [('user', 'my name is Ahmad')]
+  run 1: messages handed to the model = [('user', 'what is my name?')]
+history the UI can read: [{'role': 'user', 'content': 'my name is Ahmad'}, {'role': 'assistant', 'content': 'ok'}, {'role': 'user', 'content': 'what is my name?'}, {'role': 'assistant', 'content': 'ok'}]
+
+==============================================================================
+PROBE 6 - VIBE_HOST warning: does formatting the log record raise?
+==============================================================================
+formatting errors raised: ["TypeError('not all arguments converted during string formatting')"]
+records that formatted cleanly: ['vibe ready: workspace=C:\\Users\\AhmadMhmoud\\AppData\\Local\\Temp\\tmpjqfkk', 'vibe stopped']
+
+==============================================================================
+PROBE 4 - concurrent send race: does the 409 guard hold?
+==============================================================================
+run() invocations: 2
+statuses: [200, 200] -> an atomic guard would give exactly one 200 and one 409
+
+==============================================================================
+PROBE 5 - executor timeout: is the child process killed?
+==============================================================================
+tool result: timeout | is_error: True
+child still alive 3.5s after the 1s timeout? True
+
+==============================================================================
+PROBE 7 - failed workspace move during delete: is the session left half-torn-down?
+==============================================================================
+delete raised: PermissionError [WinError 5] Access is denied: 'C:\\Users\\AhmadMhmoud\\AppData\\Local\\Temp\\tm
+session row still present after failed delete? True
+events before=2 after=0
+
+DONE

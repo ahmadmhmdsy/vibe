@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.config import Settings
 from vibe.events import EventBus, EventLog
 from vibe.models import ModelRef
@@ -132,7 +133,9 @@ async def test_sessions_table_is_in_wal_mode(tmp_path):
 @pytest.mark.asyncio
 async def test_schema_version_is_recorded(tmp_path):
     store = SessionStore(tmp_path / "sessions.db")
-    assert store._db.execute("PRAGMA user_version").fetchone()[0] == 1
+    # v2 added owner_id; the file must record the version the code is at, so a
+    # migration that forgets to bump this is caught here.
+    assert store._db.execute("PRAGMA user_version").fetchone()[0] == 2
     store.close()
 
 
@@ -183,7 +186,7 @@ async def test_history_is_replayed_from_sqlite(tmp_path):
     from vibe.api.routes.sessions import events
 
     class _Store:
-        async def get_session(self, sid):
+        async def get_session(self, sid, owner_id=LOOPBACK_OWNER_ID):
             return {"id": sid}
 
     class _App:

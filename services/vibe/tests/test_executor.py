@@ -56,7 +56,14 @@ async def test_install_build_dev_server(tmp_path):
     if not _pnpm_reachable():
         pytest.skip("no network: pnpm install unavailable")
     # scaffold a minimal vite project
-    (tmp_path / "package.json").write_text('{"name":"t","scripts":{"build":"vite build","dev":"vite"}}')
+    (tmp_path / "package.json").write_text(
+        '{"name":"t","scripts":{"build":"vite build","dev":"vite"},'
+        '"devDependencies":{"vite":"^6.0.0"}}'
+    )
+    # pnpm 12.3.4 exits 1 with ERR_PNPM_IGNORED_BUILDS unless a dependency's
+    # build script is approved; the repo approves esbuild in its own
+    # pnpm-workspace.yaml, and the temp dir inherits nothing from the root.
+    (tmp_path / "pnpm-workspace.yaml").write_text("allowBuilds:\n  esbuild: true\n")
     (tmp_path / "index.html").write_text("<html><body><div id='root'></div></body></html>")
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "main.tsx").write_text("export default function App(){return null}")

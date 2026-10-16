@@ -1,0 +1,436 @@
+/* layout.css — the layout contract, in one place and actually enforced.
+
+   The contract this replaces was documented but never true: app.css referred
+   to .panel-preview / .panel-code as the classes that make the side panels
+   display:flex, and neither class is defined in any stylesheet. The measured
+   consequence was a code editor at height 0 on desktop and tablet, and an app
+   shell that scrolled 930px inside a 900px viewport.
+
+   Rules:
+   1. The app shell is one CSS Grid with named regions. Nothing computes its
+      own position with percentage flex math.
+   2. .panel is the only thing that establishes a flex/grid context for a
+      panel. A feature sheet arranges children; it never decides that its
+      panel is a flex container.
+   3. Every scrolling region declares min-height: 0 on the chain above it.
+      The shell itself never scrolls — only regions inside it do.
+   4. Elevation is declared once per element: a border or a shadow, never both. */
+
+@layer components {
+  /* ── App shell ──────────────────────────────────────────────── */
+  .app-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* Three regions on a wide screen. --side-width is a clamp, so the
+     conversation stays the widest column at any window size; the app shell
+     overrides it inline when the user drags the splitter. */
+  .app-body {
+    display: grid;
+    grid-template-columns:
+      var(--sidebar-width)
+      minmax(0, 1fr)
+      var(--splitter-size)
+      var(--side-width);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Each region is pinned to its track, so removing the splitter from the flow
+     cannot shift a panel into the wrong column. */
+  .app-body > .app-sidebar {
+    grid-column: 1;
+  }
+
+  .app-body > .app-main {
+    grid-column: 2;
+  }
+
+  .app-body > .app-side {
+    grid-column: 4;
+  }
+
+  /* The resize handle is rendered inside .app-side, so the control belongs to
+     the landmark it resizes. It is pulled back over the now-empty third track,
+     which keeps the 6px gap between the conversation and the panel identical. */
+  .app-side > .splitter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(-1 * var(--splitter-size));
+  }
+
+  /* Collapsing a column only means something on a wide screen. Below 1100px
+     both columns become drawers, and a desktop collapse must not keep them
+     hidden — or a window resized from a collapsed desktop state would have no
+     way to bring the column back. */
+  @media (min-width: 1101px) {
+    .app-body[data-sidebar="collapsed"] {
+      grid-template-columns: 0 minmax(0, 1fr) var(--splitter-size) var(--side-width);
+    }
+
+    .app-body[data-side="collapsed"] {
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 0 0;
+    }
+
+    .app-body[data-sidebar="collapsed"][data-side="collapsed"] {
+      grid-template-columns: 0 minmax(0, 1fr) 0 0;
+    }
+
+    .app-body[data-sidebar="collapsed"] > .app-sidebar,
+    .app-body[data-side="collapsed"] > .app-side {
+      display: none;
+    }
+  }
+
+  .app-sidebar {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+  }
+
+  .app-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-side {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+  }
+
+  /* ── Panel ──────────────────────────────────────────────────── */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+    min-height: var(--panel-header-height);
+    padding: 0 var(--space-2) 0 var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    margin: 0;
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .panel-header-spacer {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .panel-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex: none;
+  }
+
+  /* The one place a split is established. A feature sheet arranges its own
+     children inside this; it never sets display:flex on .panel itself. */
+  .panel-body {
+    flex: 1;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .panel-body[data-direction="row"] {
+    flex-direction: row;
+  }
+
+  .panel-body[data-direction="column"] {
+    flex-direction: column;
+  }
+
+  /* A region that scrolls. min-height: 0 is what makes it scroll instead of
+     growing the shell. */
+  .scroll-region {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* ── Splitter ───────────────────────────────────────────────── */
+  .splitter {
+    flex: none;
+    position: relative;
+    width: var(--splitter-size);
+    align-self: stretch;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  .splitter::after {
+    content: "";
+    position: absolute;
+    inset: 0 2px;
+    background: var(--border);
+    transition: background var(--duration-fast) var(--ease-out);
+  }
+
+  .splitter:hover::after,
+  .splitter:focus-visible::after,
+  .splitter[data-dragging="true"]::after {
+    background: var(--accent);
+  }
+
+  .splitter:focus-visible {
+    outline: none;
+  }
+
+  .splitter[aria-orientation="horizontal"] {
+    width: auto;
+    height: var(--splitter-size);
+    cursor: row-resize;
+  }
+
+  .splitter[aria-orientation="horizontal"]::after {
+    inset: 2px 0;
+  }
+
+  /* ── Toolbar ────────────────────────────────────────────────── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex: none;
+    min-height: var(--control-lg);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .toolbar[data-variant="header"] {
+    min-height: var(--panel-header-height);
+    padding: 0 var(--space-2) 0 var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .toolbar-spacer {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .toolbar-divider {
+    flex: none;
+    width: 1px;
+    align-self: stretch;
+    margin: var(--space-1);
+    background: var(--border);
+  }
+
+  /* ── Drawer scrim ───────────────────────────────────────────── */
+  .scrim {
+    display: none;
+    position: fixed;
+    inset: var(--header-height) 0 0 0;
+    z-index: calc(var(--z-drawer) - 1);
+    background: var(--bg-overlay);
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    cursor: default;
+    animation: vibe-fade-in var(--duration) var(--ease-out);
+  }
+
+  /* ── Mobile tab bar ─────────────────────────────────────────── */
+  .app-mobile-tabs {
+    display: none;
+  }
+
+  /* ── Intermediate: the side column becomes a right-hand drawer ── */
+  @media (max-width: 1100px) {
+    /* The scrim only exists where a drawer does. */
+    .scrim {
+      display: block;
+    }
+
+    .app-body {
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 0 0;
+    }
+
+    /* The drawer owns the full width; there is nothing to drag. */
+    .app-side > .splitter {
+      display: none;
+    }
+
+    .app-side {
+      position: fixed;
+      top: var(--header-height);
+      right: 0;
+      bottom: 0;
+      width: min(560px, 92vw);
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-2);
+      transform: translateX(100%);
+      visibility: hidden;
+      transition:
+        transform var(--duration) var(--ease-out),
+        visibility 0s linear var(--duration);
+      z-index: var(--z-drawer);
+    }
+
+    .app-side-open {
+      transform: translateX(0);
+      visibility: visible;
+      transition:
+        transform var(--duration) var(--ease-out),
+        visibility 0s;
+    }
+  }
+
+  /* ── Mobile: one panel at a time, plus a bottom tab bar ───────── */
+  @media (max-width: 768px) {
+    /* A single track. The wide-screen rule pins .app-main to column 2, and
+       below 768px that column is 0px wide — which collapsed the conversation
+       to nothing. Both panels are placed in the one cell here instead; only
+       one of them is displayed at a time, so they never overlap. */
+    .app-body {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+    }
+
+    .app-body > .app-main,
+    .app-body > .app-side {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .app-sidebar {
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      bottom: 0;
+      width: min(300px, 85vw);
+      z-index: var(--z-drawer);
+      box-shadow: var(--shadow-2);
+      transform: translateX(-100%);
+      visibility: hidden;
+      transition:
+        transform var(--duration) var(--ease-out),
+        visibility 0s linear var(--duration);
+    }
+
+    .app-sidebar-open {
+      transform: translateX(0);
+      visibility: visible;
+      transition:
+        transform var(--duration) var(--ease-out),
+        visibility 0s;
+    }
+
+    /* The tablet rule above left the side column fixed and translated
+       off-screen; every one of those declarations has to be undone or the
+       Code/Preview tabs render into empty space. */
+    .app-side {
+      position: static;
+      top: auto;
+      right: auto;
+      bottom: auto;
+      width: 100%;
+      flex: 1;
+      transform: none;
+      visibility: visible;
+      box-shadow: none;
+      border-left: none;
+      transition: none;
+    }
+
+    /* One panel at a time: the active tab owns the whole column. */
+    .app-body[data-mobile-tab] .app-main,
+    .app-body[data-mobile-tab] .app-side {
+      display: none;
+    }
+
+    .app-body[data-mobile-tab="chat"] .app-main {
+      display: flex;
+    }
+
+    .app-body[data-mobile-tab="code"] .app-side,
+    .app-body[data-mobile-tab="preview"] .app-side,
+    .app-body[data-mobile-tab="diagnostics"] .app-side {
+      display: flex;
+    }
+
+    .app-mobile-tabs {
+      display: flex;
+      border-top: 1px solid var(--border);
+      background: var(--bg-raised);
+      flex-shrink: 0;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .app-mobile-tab {
+      flex: 1;
+      min-height: var(--mobile-tab-height);
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: var(--font-weight-medium);
+      gap: var(--space-1);
+    }
+
+    .app-mobile-tab:hover:not(.active) {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
+
+    .app-mobile-tab.active {
+      color: var(--accent);
+      box-shadow: inset 0 2px 0 var(--accent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-side,
+    .app-sidebar,
+    .scrim {
+      animation: none;
+      transition: none;
+    }
+  }
+}

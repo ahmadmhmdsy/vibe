@@ -69,4 +69,39 @@ describe("ApprovalCard", () => {
     render(<ApprovalCard approval={approval} onApprove={onApprove} onDeny={() => {}} />);
     expect(onApprove).not.toHaveBeenCalled();
   });
+
+  it("reports a failed approval instead of showing a success it never got", async () => {
+    const onApprove = vi.fn().mockRejectedValue(new Error("offline"));
+    render(<ApprovalCard approval={approval} onApprove={onApprove} onDeny={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: /^approve$/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/could not send the approval/i);
+    // Still actionable: the user can retry.
+    expect(screen.getByRole("button", { name: /^approve$/i })).toBeInTheDocument();
+  });
+
+  it("reports a failed denial", async () => {
+    const onDeny = vi.fn().mockRejectedValue(new Error("offline"));
+    render(<ApprovalCard approval={approval} onApprove={() => {}} onDeny={onDeny} />);
+    fireEvent.click(screen.getByRole("button", { name: /^deny$/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/could not send the denial/i);
+  });
+
+  it("still approves when storage refuses to remember the policy", () => {
+    // Private mode / quota: remember-for-next-time is optional, the decision is
+    // not. localStorage.setItem used to throw straight out of the click handler.
+    const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    const onApprove = vi.fn();
+    try {
+      render(<ApprovalCard approval={approval} onApprove={onApprove} onDeny={() => {}} />);
+      fireEvent.click(screen.getByRole("checkbox", { name: /always allow/i }));
+      fireEvent.click(screen.getByRole("button", { name: /^approve$/i }));
+      expect(onApprove).toHaveBeenCalled();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

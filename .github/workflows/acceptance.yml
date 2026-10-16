@@ -1,0 +1,78 @@
+# .github/workflows/acceptance.yml
+# The local acceptance smoke (R5-T10), separate from ci.yml on purpose.
+#
+# It is separate because it is a different kind of check: ci.yml proves the
+# code compiles, lints and passes its unit tests; this proves the packaged app
+# starts on a machine, serves its own SPA, survives a restart and shows its
+# first-run state. That is the thing a user actually experiences.
+#
+# continue-on-error is true while this workflow has not yet run green twice on
+# CI (the plan's condition for promoting it). Flip it to false after two green
+# runs, not before - a check that is red on its first day teaches people to
+# ignore it.
+#
+# Steps 3, 4 and 5 of the script need a configured provider. On CI there is
+# none, so they SKIP with their reason printed - which is the honest outcome,
+# not a failure. Steps 1, 2 and 7 (doctor, serve the SPA, first-run state) run
+# everywhere.
+name: acceptance
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Nightly, 03:17 UTC. Off the hour on purpose: the actions scheduler is
+    # busiest on the hour and delays queued jobs there.
+    - cron: "17 3 * * *"
+
+jobs:
+  acceptance-local:
+    name: local acceptance (windows)
+    runs-on: windows-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: services/vibe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install the backend
+        run: uv sync --extra dev
+
+      - name: Install the browser driver
+        run: uv run playwright install chromium
+
+      # No inputs: the action reads "packageManager" from the root
+      # package.json, exactly as the frontend job in ci.yml does.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install the frontend and build the SPA
+        working-directory: .
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      # The script resolves the venv relative to the repo, so CI points it at
+      # the interpreter uv just created rather than letting it fall back to
+      # whatever "python" is on PATH.
+      - name: Run the acceptance script
+        working-directory: .
+        shell: pwsh
+        run: |
+          ./scripts/acceptance-local.ps1 -Port 7411 -NoProviderPort 7412
+
+      - name: Upload the acceptance log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-local
+          path: artifacts/acceptance-local.txt

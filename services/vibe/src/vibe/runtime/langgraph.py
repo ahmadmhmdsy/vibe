@@ -28,6 +28,17 @@ def _to_lc_message(m: Message):
         return SystemMessage(content=m.content)
     return ToolMessage(content=m.content, tool_call_id=m.tool_call_id, name=m.name)
 
+def build_messages(input: AgentInput) -> list:
+    """The message list the model sees: standing instructions, then the transcript.
+
+    Split out of run() so the shape can be asserted without a graph or an LLM.
+    """
+    messages = [_to_lc_message(m) for m in input.messages]
+    if input.system:
+        messages.insert(0, _to_lc_message(Message(role="system", content=input.system)))
+    return messages
+
+
 def _text_of(content) -> str:
     """The text of a tool message, ignoring any image blocks.
 
@@ -105,7 +116,7 @@ class LangGraphRuntime:
 
     async def run(self, input: AgentInput, ctx: AgentContext) -> AsyncIterator[AgentEvent]:
         app = self._build_graph(input.model, ctx)
-        messages = [_to_lc_message(m) for m in input.messages]
+        messages = build_messages(input)
         async for chunk in app.astream({"messages": messages}, stream_mode="updates"):
             for node_name, node_output in chunk.items():
                 if node_name == "call_model":

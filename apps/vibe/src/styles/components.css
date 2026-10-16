@@ -230,34 +230,35 @@
     flex: 1;
   }
 
-  /* --- Tooltip --- */
+  /* --- Tooltip ---
+     Rendered through a portal onto document.body with fixed positioning, so
+     a tooltip is never clipped by the scroll container or the overflow:hidden
+     panel it lives in. Only the visible tooltip exists in the DOM: the old
+     approach left one aria-hidden-less role="tooltip" node per control on the
+     page (measured: 79 of them, 0 with aria-hidden, 0 referenced by
+     aria-describedby). */
   .tooltip-wrap {
-    position: relative;
     display: inline-flex;
+    min-width: 0;
   }
 
   .tooltip {
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg-active);
+    position: fixed;
+    top: 0;
+    left: 0;
+    max-width: min(280px, calc(100vw - 16px));
+    padding: var(--space-1) var(--space-2);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-md);
+    background: var(--bg-active);
     box-shadow: var(--shadow-2);
     color: var(--text);
     font-size: var(--text-xs);
-    padding: var(--space-1) var(--space-2);
+    line-height: var(--line-height-tight);
     white-space: nowrap;
-    opacity: 0;
     pointer-events: none;
-    transition: opacity var(--duration-fast) var(--ease-out);
     z-index: var(--z-tooltip);
-  }
-
-  .tooltip-wrap:hover .tooltip,
-  .tooltip-wrap:focus-within .tooltip {
-    opacity: 1;
+    animation: vibe-fade-in var(--duration-fast) var(--ease-out);
   }
 
   /* --- Toast --- */

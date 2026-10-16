@@ -6,9 +6,12 @@ from dataclasses import asdict
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
-from vibe.api.deps import App, require_session
+from vibe.api.deps import App, Owner, require_session
 from vibe.api.errors import ApiError, ErrorCode
+from vibe.api.schemas import CreateSessionIn, UpdateSessionIn, WriteFileIn
 from vibe.api.sse import format_sse
+from vibe.auth import LOOPBACK_OWNER_ID
+from vibe.lifecycle import WorkspaceBusyError
 from vibe.models import ModelRef
 from vibe.workspace import relative_files
 
@@ -24,30 +27,41 @@ router = APIRouter()
 
 
 @router.post("/sessions", status_code=201)
-async def create_session(body: dict, deps: App):
-    sid = await deps.session_service.create(ModelRef(**body["model"]))
+async def create_session(body: CreateSessionIn, deps: App,
+                         owner: Owner = LOOPBACK_OWNER_ID):
+    sid = await deps.session_service.create(
+        ModelRef(provider_id=body.model.provider_id, model_id=body.model.model_id), owner
+    )
     return {"id": sid}
 
 
 @router.get("/sessions")
-async def list_sessions(deps: App):
-    sessions = await deps.session_service.list()
+async def list_sessions(deps: App, owner: Owner = LOOPBACK_OWNER_ID):
+    sessions = await deps.session_service.list(owner)
     return [{"id": s.id, "title": s.title, "model": {"provider_id": s.model_ref.provider_id, "model_id": s.model_ref.model_id},
              "created_at": s.created_at, "updated_at": s.updated_at} for s in sessions]
 
 
 @router.get("/sessions/{sid}")
-async def get_session(sid: str, request: Request, deps: App):
-    s = await require_session(deps, sid)
-    return {"id": s.id, "title": s.title, "model": {"provider_id": s.model_ref.provider_id, "model_id": s.model_ref.model_id}}
+async def get_session(sid: str, request: Request, deps: App,
+                      owner: Owner = LOOPBACK_OWNER_ID):
+    s = await require_session(deps, sid, owner)
+    # Same shape as a list row, including the timestamps the frontend's Session
+    # type already declares (BE-10/FE-15): a client should not need a second
+    # type for one session.
+    return {"id": s.id, "title": s.title,
+            "model": {"provider_id": s.model_ref.provider_id, "model_id": s.model_ref.model_id},
+            "created_at": s.created_at, "updated_at": s.updated_at}
 
 
 @router.get("/sessions/{sid}/usage")
-async def session_usage(sid: str, request: Request, deps: App):
-    await require_session(deps, sid)
+async def session_usage(sid: str, request: Request, deps: App,
+                        owner: Owner = LOOPBACK_OWNER_ID):
+    await require_session(deps, sid, owner)
+    # Container.usage has no default and build always constructs a UsageTracker,
+    # so the old `if usage is None` branch could never run, its NOT_FOUND was a
+    # message no client could ever receive, and no test covered it (BE-10).
     usage = deps.usage
-    if usage is None:
-        raise ApiError(ErrorCode.NOT_FOUND, "usage tracking unavailable")
     total = await usage.session_total(sid)
     by_model = await usage.session_by_model(sid)
     return {
@@ -64,17 +78,20 @@ async def session_usage(sid: str, request: Request, deps: App):
 
 
 @router.patch("/sessions/{sid}")
-async def update_session(sid: str, request: Request, body: dict, deps: App):
-    await require_session(deps, sid)
-    if "title" in body:
-        await deps.session_service.rename(sid, body["title"])
-    if "model" in body:
-        await deps.session_service.set_model(sid, ModelRef(**body["model"]))
+async def update_session(sid: str, request: Request, body: UpdateSessionIn, deps: App,
+                         owner: Owner = LOOPBACK_OWNER_ID):
+    await require_session(deps, sid, owner)
+    if body.title is not None:
+        await deps.session_service.rename(sid, body.title, owner)
+    if body.model is not None:
+        await deps.session_service.set_model(
+            sid, ModelRef(provider_id=body.model.provider_id, model_id=body.model.model_id), owner
+        )
     return {"ok": True}
 
 
 @router.delete("/sessions/{sid}", status_code=204)
-async def delete_session(sid: str, deps: App):
+async def delete_session(sid: str, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     # Deliberately idempotent: deleting an already-deleted session is a no-op,
     # not a 404, so a double-click cannot surface an error.
     #
@@ -82,12 +99,18 @@ async def delete_session(sid: str, deps: App):
     # directory, a dev-server subprocess, an executor, an autorun policy, its
     # event log and any pending approvals. Deleting only the row left all of
     # them behind (audit H3).
-    await deps.session_service.delete(sid)
+    try:
+        await deps.session_service.delete(sid, owner)
+    except WorkspaceBusyError as exc:
+        # The files are still open somewhere. Say so instead of a bare 500: the
+        # session is untouched and deleting again works once it is closed.
+        raise ApiError(ErrorCode.WORKSPACE_BUSY, str(exc)) from exc
 
 
 @router.get("/sessions/{sid}/files")
-async def list_files(sid: str, request: Request, deps: App):
-    await require_session(deps, sid)
+async def list_files(sid: str, request: Request, deps: App,
+                     owner: Owner = LOOPBACK_OWNER_ID):
+    await require_session(deps, sid, owner)
     ws = deps.session_service.workspace_path(sid)
     if not ws.exists():
         return []
@@ -95,8 +118,9 @@ async def list_files(sid: str, request: Request, deps: App):
 
 
 @router.get("/sessions/{sid}/files/{path:path}")
-async def read_file(sid: str, request: Request, path: str, deps: App):
-    await require_session(deps, sid)
+async def read_file(sid: str, request: Request, path: str, deps: App,
+                    owner: Owner = LOOPBACK_OWNER_ID):
+    await require_session(deps, sid, owner)
     try:
         content = deps.session_service.read_text(sid, path)
     except FileNotFoundError:
@@ -105,18 +129,20 @@ async def read_file(sid: str, request: Request, path: str, deps: App):
 
 
 @router.put("/sessions/{sid}/files/{path:path}")
-async def write_file(sid: str, request: Request, path: str, body: dict, deps: App):
-    await require_session(deps, sid)
+async def write_file(sid: str, request: Request, path: str, body: WriteFileIn, deps: App,
+                     owner: Owner = LOOPBACK_OWNER_ID):
+    await require_session(deps, sid, owner)
     try:
-        deps.session_service.write_text(sid, path, body.get("content", ""))
+        deps.session_service.write_text(sid, path, body.content)
     except ValueError:
         raise ApiError(ErrorCode.VALIDATION_FAILED, "path outside workspace") from None
     return {"ok": True}
 
 
 @router.get("/sessions/{sid}/events")
-async def events(sid: str, request: Request, deps: App):
-    await require_session(deps, sid)
+async def events(sid: str, request: Request, deps: App,
+                 owner: Owner = LOOPBACK_OWNER_ID):
+    await require_session(deps, sid, owner)
     after_seq = _parse_after_seq(request.query_params.get("after_seq", 0))
     log = deps.event_log
     bus = deps.event_bus

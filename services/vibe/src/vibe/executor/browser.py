@@ -6,15 +6,18 @@ autorun loop and the executor tools had to treat that as `no driver` rather
 than `clean`. This module supplies the driver: Playwright, launched on first
 use, one page per capture.
 
-Every method degrades to None when Playwright or the browser binary is
-missing, so a machine without a browser still runs -- it just cannot see
-the app. That is the contract the stubs had, with a real answer when the
-dependency is present.
+Every capture answers with a `Capture`: a value, or the reason there is none.
+When Playwright or the browser binary is missing the reason is `no-driver`, so
+a machine without a browser still runs -- it just cannot see the app. A server
+that never came up and a capture that failed name themselves too, because they
+are fixed differently (BE-09).
 """
 from __future__ import annotations
 
 import asyncio
 import logging
+
+from vibe.executor.base import CAPTURE_FAILED, NO_DRIVER, UNREACHABLE, Capture
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,20 @@ _SETTLE_MS = 750
 
 def _keep(message_type: str, level: str) -> bool:
     return _SEVERITY.get(message_type, 0) >= _MIN_SEVERITY.get(level, 2)
+
+
+async def _close(page, url: str) -> None:
+    """Close a capture page without letting cleanup replace the capture's answer.
+
+    An exception raised in a `finally` block overrides the value being returned,
+    so a page that died mid-capture would turn "capture-failed" into a traceback.
+    """
+    if page is None:
+        return
+    try:
+        await page.close()
+    except Exception as e:  # a page that is already gone cannot be closed
+        logger.debug("could not close the capture page for %s: %s", url, e)
 
 
 class BrowserDriver:
@@ -92,51 +109,75 @@ class BrowserDriver:
         return False
 
 
-    async def read_console_logs(self, url: str, tail: int = 200, level: str = "error") -> str | None:
-        """Console output from the page at `url`, or None when no browser exists.
+    async def read_console(self, url: str, tail: int = 200, level: str = "error") -> Capture:
+        """Console output from the page at `url`, or the reason there is none.
 
         The listeners are attached *before* navigating, so nothing printed
         during load is missed -- and so the page's own output is never confused
         with the dev server's stdout banner.
+
+        A missing driver and a dev server that never came up are different
+        problems with different fixes, so they are different answers here: the
+        first means "install a browser", the second means "your server died".
+        Collapsing them is what told users to install Playwright for a crashed
+        Vite (BE-09).
         """
         browser = await self._ensure()
         if browser is None:
-            return None
+            return Capture(NO_DRIVER)
         if not await self._reachable(url):
             logger.warning("dev server at %s never became reachable; nothing was read", url)
-            return None
-        page = await browser.new_page()
+            return Capture(UNREACHABLE)
+        page = None
         records: list[str] = []
         try:
+            # new_page is inside the guard: a browser whose context will not open
+            # is a failed capture, not an unhandled exception in the tool layer.
+            page = await browser.new_page()
             page.on("console", lambda m: records.append(m.text) if _keep(m.type, level) else None)
             page.on("pageerror", lambda e: records.append(f"pageerror: {e}"))
             await page.goto(url, wait_until="load", timeout=self._timeout_ms)
             await page.wait_for_timeout(_SETTLE_MS)
-            return "\n".join(records[-tail:])
+            return Capture(value="\n".join(records[-tail:]))
         except Exception as e:
             logger.warning("console capture failed for %s: %s", url, e)
-            return None
+            return Capture(CAPTURE_FAILED)
         finally:
-            await page.close()
+            await _close(page, url)
 
-    async def screenshot(self, url: str) -> bytes | None:
-        """A PNG of the page at `url`, or None when no browser exists."""
+    async def capture_screenshot(self, url: str) -> Capture:
+        """A PNG of the page at `url`, or the reason there is none."""
         browser = await self._ensure()
         if browser is None:
-            return None
+            return Capture(NO_DRIVER)
         if not await self._reachable(url):
             logger.warning("dev server at %s never became reachable; no screenshot was taken", url)
-            return None
-        page = await browser.new_page()
+            return Capture(UNREACHABLE)
+        page = None
         try:
+            page = await browser.new_page()
             await page.goto(url, wait_until="load", timeout=self._timeout_ms)
             await page.wait_for_timeout(_SETTLE_MS)
-            return await page.screenshot(type="png")
+            return Capture(value=await page.screenshot(type="png"))
         except Exception as e:
             logger.warning("screenshot failed for %s: %s", url, e)
-            return None
+            return Capture(CAPTURE_FAILED)
         finally:
-            await page.close()
+            await _close(page, url)
+
+    # The None-returning forms stay, because "nobody read this" is a real state
+    # that callers still branch on (the autorun check must not read None as
+    # "clean"); they are now a lossy view over the reason above.
+
+    async def read_console_logs(self, url: str, tail: int = 200, level: str = "error") -> str | None:
+        """Console text, or None when no capture happened. See `read_console`."""
+        capture = await self.read_console(url, tail=tail, level=level)
+        return capture.value if capture.ok and isinstance(capture.value, str) else None
+
+    async def screenshot(self, url: str) -> bytes | None:
+        """PNG bytes, or None when no capture happened. See `capture_screenshot`."""
+        capture = await self.capture_screenshot(url)
+        return capture.value if capture.ok and isinstance(capture.value, bytes) else None
 
     async def close(self) -> None:
         """Shut the browser down. Safe to call more than once."""

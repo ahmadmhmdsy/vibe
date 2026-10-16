@@ -14,7 +14,7 @@ class _Lifecycle:
     def __init__(self):
         self.deleted = []
 
-    async def delete(self, sid):
+    async def delete(self, sid, owner_id=None):
         self.deleted.append(sid)
 
 

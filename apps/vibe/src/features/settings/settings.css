@@ -1,125 +1,223 @@
-/* settings.css — settings modal content. */
+/* apps/vibe/src/features/settings/settings.css
+   Settings modal content. Token-driven only; every rule lives in @layer
+   components so an unlayered rule cannot beat the shared design system. */
+@layer components {
+  .settings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 0;
+  }
 
-.settings {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
+  /* The panels stack inside the modal's scrolling body, not inside a
+     fixed-height split, so let their content determine the height. */
+  .settings .tab-panel {
+    overflow: visible;
+  }
 
-.settings section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
+  .settings-tab-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+  }
 
-.settings h3 {
-  margin: 0;
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
+  /* A section header inside a tab: keep the rule and the action row, drop the
+     panel chrome that assumes a full-height panel. */
+  .settings-section-header {
+    min-height: 0;
+    padding: 0 0 var(--space-2);
+  }
 
-.provider-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
+  .settings-section-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
 
-.provider-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border);
-}
+  .settings-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+  }
 
-.provider-row:last-child {
-  border-bottom: none;
-}
+  .provider-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
 
-.provider-name {
-  font-weight: var(--font-weight-medium);
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
+  .provider-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
 
-.provider-actions {
-  display: flex;
-  gap: var(--space-1);
-  flex: none;
-}
+  .provider-row-main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    min-width: 0;
+  }
 
-.key-badge {
-  font-size: var(--text-xs);
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  border: 1px solid;
-  white-space: nowrap;
-  flex: none;
-}
+  .provider-row-spacer {
+    flex: 1;
+    min-width: var(--space-2);
+  }
 
-.key-badge-on {
-  color: var(--success);
-  border-color: var(--success-border);
-  background: var(--success-bg);
-}
+  .provider-row-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex: none;
+  }
 
-.key-badge-off {
-  color: var(--danger);
-  border-color: var(--danger-border);
-  background: var(--danger-bg);
-}
+  .provider-name {
+    min-width: 0;
+    font-weight: var(--font-weight-medium);
+    overflow-wrap: anywhere;
+  }
 
-.settings-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: 520px;
-}
+  .provider-base {
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
+  .provider-key-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
 
-.field-label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-muted);
-}
+  .provider-key-controls input {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
 
-.model-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-}
+  .settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: var(--measure-narrow);
+  }
 
-.model-row input {
-  flex: 1 1 120px;
-  min-width: 0;
-}
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+  }
 
-.model-row select {
-  width: auto;
-  flex: 0 1 auto;
-}
+  .field-label {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+  }
 
-.settings-error {
-  color: var(--danger);
-  font-size: var(--text-sm);
-  margin: 0;
-}
+  .field-hint {
+    margin: 0;
+    color: var(--text-faint);
+    font-size: var(--text-xs);
+    line-height: var(--line-height);
+  }
 
-.settings-actions {
-  display: flex;
-  gap: var(--space-2);
+  /* A fieldset brings a border and padding that the .field layout does not
+     want; only its role as a group is useful here. */
+  .settings-models {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    gap: var(--space-2);
+  }
+
+  /* Wraps on its own at narrow widths instead of needing a breakpoint. */
+  .model-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .settings-error {
+    margin: 0;
+    color: var(--danger);
+    font-size: var(--text-sm);
+    line-height: var(--line-height);
+  }
+
+  .settings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .settings-source {
+    margin: 0;
+    max-width: var(--measure);
+    font-size: var(--text-sm);
+    line-height: var(--line-height);
+  }
+
+  .settings-default {
+    max-width: var(--measure);
+    font-size: var(--text-sm);
+  }
+
+  .settings-default-summary {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+
+  .settings-default-value {
+    margin: var(--space-2) 0 0;
+    max-height: 12rem;
+    padding: var(--space-2) var(--space-3);
+    overflow: auto;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--line-height);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .settings-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .settings-skeleton-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  /* Monospace because the value is instructions to a model, and a fixed width
+     makes the structure of a long prompt readable (BE-19). */
+  .system-prompt-input {
+    min-height: 9rem;
+    max-width: var(--measure);
+    font-family: var(--font-mono);
+    line-height: var(--line-height);
+  }
 }

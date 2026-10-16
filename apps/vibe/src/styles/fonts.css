@@ -1,0 +1,19 @@
+/* fonts.css — the two bundled typefaces.
+
+   Self-hosted through @fontsource, so Vite emits the woff2 files as build
+   assets and the browser loads them from this app. Nothing is fetched from a
+   font CDN at runtime: this is a local-first product and a Google Fonts
+   request would be the only thing in it that phones home.
+
+   IBM Plex Sans (variable weight) is the interface voice — a technical
+   humanist with real character at 12-14px, and an engineering tool should not
+   wear the same system stack as every Electron app. IBM Plex Mono is its
+   designed companion and carries code, paths, and measured values.
+
+   The platform stack stays in --font-ui as the fallback, so a failed font
+   load degrades to the old rendering instead of to Times New Roman. */
+
+@import "@fontsource-variable/ibm-plex-sans/wght.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+@import "@fontsource/ibm-plex-mono/latin-600.css";

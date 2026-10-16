@@ -1,0 +1,5 @@
+$ prettier --check .
+Checking formatting...
+[warn] src/components/ui/__tests__/CommandPalette.test.tsx
+[warn] Code style issues found in the above file. Run Prettier with --write to fix.
+[ELIFECYCLE] Command failed with exit code 1.

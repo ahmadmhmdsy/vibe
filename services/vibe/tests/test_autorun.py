@@ -105,3 +105,100 @@ async def test_autorun_skips_when_no_changes(tmp_path):
     await policy.maybe_run(ctx, [])
     assert ex.build_count == 0
     assert rt.calls == 0
+
+
+class ScriptedFixRuntime:
+    """Streams a scripted turn, and keeps the input it was handed.
+
+    FixRuntime above yields a text chunk and is enough to count calls; this one
+    lets a test assert what the loop *did* with the events.
+    """
+
+    def __init__(self, script):
+        self.script = script
+        self.inputs = []
+
+    async def run(self, input, ctx):
+        self.inputs.append(input)
+        for event in self.script:
+            yield event
+
+
+class RecordingBus(EventBus):
+    """An EventBus that keeps the type of everything published to it."""
+
+    def __init__(self):
+        super().__init__()
+        self.published = []
+
+    async def publish(self, session_id, event):
+        self.published.append(event.type)
+        await super().publish(session_id, event)
+
+
+def _fix_ctx(tmp_path, ex, bus, log, **extra):
+    return AgentContext(session_id="s1", workspace_path=tmp_path, executor=ex,
+                        event_bus=bus, store=SessionStore(db_path=tmp_path / "t.db"),
+                        event_log=log, **extra)
+
+
+@pytest.mark.asyncio
+async def test_fix_turn_events_reach_the_log_and_the_bus(tmp_path):
+    """BE-08: a fix turn used to be consumed and thrown away.
+
+    Its tool calls and its prose existed nowhere the user could see, and the
+    prompt that started it was missing from the transcript too — while
+    "model-visible means logged" is the rule everywhere else.
+    """
+    from vibe.events import EventLog
+
+    ex = FlakyExecutor()  # the first build fails, so exactly one fix turn runs
+    rt = ScriptedFixRuntime([
+        AgentEvent(kind="tool_call", data={"tool_call": {"name": "write_file"}}),
+        AgentEvent(kind="text_chunk", data={"text": "fixing the build"}),
+        AgentEvent(kind="turn_complete", data={}),
+    ])
+    log = EventLog()
+    bus = RecordingBus()
+    policy = AutoRunPolicy(executor=ex, runtime=rt, max_fix_iterations=3)
+    await policy.maybe_run(_fix_ctx(tmp_path, ex, bus, log), ["src/App.tsx"])
+
+    events = await log.get("s1")
+    types = [e.type for e in events]
+    assert "tool_call" in types, "a fix turn must be logged like any other turn"
+    assert "user/message" in types, "the prompt the model saw must be in the transcript"
+    assert any(e.type == "assistant/message" and "fixing the build" in e.payload["content"]
+               for e in events), types
+    # The bus is what a connected client is streaming: logging without publishing
+    # would leave the UI showing a turn it never heard about.
+    assert bus.published.count("tool_call") == 1
+    assert "turn_complete" in bus.published
+    assert "assistant/message" in bus.published
+
+
+@pytest.mark.asyncio
+async def test_fix_turn_carries_the_system_prompt(tmp_path):
+    """The fix loop is the same agent, so it gets the same standing instructions."""
+    from vibe.events import EventLog
+    from vibe.prompts import DEFAULT_SYSTEM_PROMPT
+
+    ex = FlakyExecutor()
+    rt = ScriptedFixRuntime([AgentEvent(kind="turn_complete", data={})])
+    policy = AutoRunPolicy(executor=ex, runtime=rt, max_fix_iterations=3)
+    await policy.maybe_run(_fix_ctx(tmp_path, ex, EventBus(), EventLog()), ["src/App.tsx"])
+    assert rt.inputs[0].system == DEFAULT_SYSTEM_PROMPT
+
+
+@pytest.mark.asyncio
+async def test_autorun_stops_between_iterations_when_the_user_pressed_stop(tmp_path):
+    """Stop has to stop the fix loop, not only the chat turn that preceded it."""
+    from vibe.events import EventLog
+
+    ex = FlakyExecutor()
+    rt = ScriptedFixRuntime([AgentEvent(kind="turn_complete", data={})])
+    policy = AutoRunPolicy(executor=ex, runtime=rt, max_fix_iterations=3)
+    ctx = _fix_ctx(tmp_path, ex, EventBus(), EventLog(), is_aborted=lambda: True)
+    await policy.maybe_run(ctx, ["src/App.tsx"])
+    assert ex.build_count == 0, "a stopped turn must not even start a build"
+    assert rt.inputs == []
+

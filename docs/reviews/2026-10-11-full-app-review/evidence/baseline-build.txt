@@ -1,0 +1,14 @@
+$ tsc -b && vite build
+vite v6.4.3 building for production...
+transforming...
+✓ 252 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                          1.16 kB │ gzip:   0.58 kB
+dist/assets/PreviewPanel-aGs4Pm9l.css    0.75 kB │ gzip:   0.36 kB
+dist/assets/CodePanel-BBlrVGfp.css       1.47 kB │ gzip:   0.54 kB
+dist/assets/index-BgiMRbeX.css          29.60 kB │ gzip:   5.97 kB
+dist/assets/PreviewPanel-Bop2NP4m.js     1.68 kB │ gzip:   0.74 kB
+dist/assets/CodePanel-DFu4FGKz.js       17.21 kB │ gzip:   6.01 kB
+dist/assets/index-ByCfdiGP.js          389.93 kB │ gzip: 121.04 kB
+✓ built in 8.21s

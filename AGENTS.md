@@ -103,9 +103,12 @@ Validation labels: `PASS`, `FAIL`, `SKIPPED`, `BLOCKED`,
 | Memory (lessons & decisions) | [MEMORY.md](./MEMORY.md) | before touching anything non-obvious | every hard-won gotcha or user decision |
 | Environment (stable policy) | [ENVIRONMENT.md](./ENVIRONMENT.md) | before running anything | after any tooling/version change |
 | Usage (humans) | [README.md](./README.md) | for command syntax | when commands or usage change |
+| Local setup guide (humans) | [docs/guides/local-setup.md](./docs/guides/local-setup.md) | for the longer walkthrough: providers, first app, offline, backups, running the checks | when install steps, prerequisites, or the check scripts change |
 | Design spec | [docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md](./docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md) | before any implementation work | only for user-approved spec changes |
 | Conditional rules | [rules/](./rules/README.md) | when the task class matches | only via an approved authoring step |
-| Architecture audit | [docs/architecture/2026-10-04-codebase-audit.md](./docs/architecture/2026-10-04-codebase-audit.md) | before any structural or refactor work | when a finding is fixed or a newer audit supersedes it |
+| Architecture audit | [docs/architecture/2026-10-04-codebase-audit.md](./docs/architecture/2026-10-04-codebase-audit.md) | before any structural or refactor work | when a finding is fixed or a newer audit supersedes it; the [2026-10-11 code review](./docs/reviews/2026-10-11-full-app-review/README.md) is the newer artifact for structure findings |
+| Code review | [docs/reviews/README.md](./docs/reviews/README.md) | before fixing a known defect | a finding is fixed or a newer review supersedes it |
+| Implementation plans | [docs/superpowers/plans/](./docs/superpowers/plans/) | before executing a phase | a plan is written or a phase lands |
 
 A doc listed above that does not exist yet must be **created the moment its
 concern becomes real** — the map is the index; a doc outside the map does

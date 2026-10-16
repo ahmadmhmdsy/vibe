@@ -1,5 +1,6 @@
 # tests/conftest.py
 
+import asyncio
 from dataclasses import replace
 
 import pytest
@@ -55,3 +56,78 @@ def app(tmp_path):
 def client(app):
     from fastapi.testclient import TestClient
     return TestClient(app)
+
+
+class CountingRuntime:
+    """Streams one chunk and counts how many runs actually started.
+
+    The count is the point: a guard that lets two concurrent sends through
+    shows up as calls == 2, not as a status code the test has to guess at.
+    """
+
+    def __init__(self, delay: float = 0.05):
+        self.calls = 0
+        self._delay = delay
+
+    async def run(self, input, ctx):
+        self.calls += 1
+        await asyncio.sleep(self._delay)
+        yield AgentEvent(kind="text_chunk", data={"text": "ok"})
+        yield AgentEvent(kind="turn_complete", data={})
+
+
+class RecordingRuntime:
+    """Records the messages handed to the model on every run."""
+
+    def __init__(self):
+        self.inputs: list = []
+
+    async def run(self, input, ctx):
+        self.inputs.append(list(input.messages))
+        yield AgentEvent(kind="text_chunk", data={"text": "ok"})
+        yield AgentEvent(kind="turn_complete", data={})
+
+
+@pytest.fixture
+def container(app):
+    return app.state.container
+
+
+@pytest.fixture
+def event_log(container):
+    return container.event_log
+
+
+@pytest.fixture
+def lifecycle(container):
+    return container.lifecycle
+
+
+@pytest.fixture
+def counting_runtime():
+    return CountingRuntime()
+
+
+@pytest.fixture
+def recording_runtime():
+    return RecordingRuntime()
+
+
+@pytest.fixture
+def store_path(container):
+    """The provider store's file, inside the tmp workspace."""
+    return container.settings.workspace_dir / "providers.json"
+
+
+@pytest.fixture
+def store(container):
+    return container.custom_provider_store
+
+
+@pytest.fixture
+def session_id(client):
+    """Create a session through the real route and return its id."""
+    resp = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}})
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+

@@ -9,8 +9,11 @@
 
 @layer reset, base, components, utilities;
 
+@import "./fonts.css";
 @import "./tokens.css";
 @import "./components.css";
+@import "./layout.css";
+@import "./primitives.css";
 
 @layer reset {
   *,
@@ -32,6 +35,9 @@
     /* The app shell owns its own scroll containers; never rubber-band the
        document behind them. */
     overscroll-behavior: none;
+    /* Carry the family on the root too: anything that escapes the body
+       cascade would otherwise fall back to the UA serif. */
+    font-family: var(--font-ui);
   }
 
   body {
@@ -308,5 +314,47 @@
   }
   .gap-4 {
     gap: var(--space-4);
+  }
+
+  .gap-5 {
+    gap: var(--space-5);
+  }
+
+  .justify-center {
+    justify-content: center;
+  }
+
+  .justify-end {
+    justify-content: flex-end;
+  }
+
+  .flex-1 {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .flex-none {
+    flex: none;
+  }
+
+  .relative {
+    position: relative;
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .measure {
+    max-width: var(--measure);
+  }
+
+  .measure-narrow {
+    max-width: var(--measure-narrow);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
   }
 }

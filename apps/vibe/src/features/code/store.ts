@@ -21,12 +21,15 @@ export const useCodeStore = create<CodeState>((set) => ({
   setFiles: (files) => set({ files }),
   setSelectedFile: (selectedFile) => set({ selectedFile }),
   setContent: (path, content) => set((s) => ({ contents: { ...s.contents, [path]: content } })),
+  // Both reads propagate their failure. They used to resolve to an empty
+  // string or an empty list, so a backend outage was indistinguishable from
+  // "this session has no files" and CodePanel's error handling never ran.
   loadFiles: async (sid) => {
-    const files = await api.listFiles(sid).catch(() => [] as string[]);
+    const files = await api.listFiles(sid);
     set({ files });
   },
   loadFile: async (sid, path) => {
-    const { content } = await api.readFile(sid, path).catch(() => ({ path, content: "" }));
+    const { content } = await api.readFile(sid, path);
     set((s) => ({ contents: { ...s.contents, [path]: content } }));
   },
   saveFile: async (sid, path, content) => {

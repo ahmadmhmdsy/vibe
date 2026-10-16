@@ -33,6 +33,35 @@ def test_rename_and_delete_session(client):
     resp = client.delete(f"/sessions/{sid}")
     assert resp.status_code == 204
 
+def test_delete_says_the_workspace_is_busy_instead_of_failing_generically(client, monkeypatch):
+    """A locked workspace used to be an unhandled PermissionError: HTTP 500.
+
+    The acceptance run hit exactly this (a preview still holding a file in the
+    session workspace) and got {"code": "internal"}, which tells the user
+    nothing and hides that the session is still there. It is now a named 409.
+    """
+    from pathlib import Path
+
+    from vibe import lifecycle as lifecycle_module
+
+    monkeypatch.setattr(lifecycle_module, "_TRASH_MOVE_DELAY", 0)
+    sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
+    workspace = Path(client.get("/health").json()["workspace_dir"]) / sid
+    workspace.mkdir(parents=True, exist_ok=True)
+
+    def boom(self, target):
+        raise PermissionError(5, "Access is denied")
+
+    monkeypatch.setattr(Path, "rename", boom)
+
+    resp = client.delete(f"/sessions/{sid}")
+    assert resp.status_code == 409, resp.text
+    assert resp.json()["error"]["code"] == "workspace_busy"
+    # The session is untouched: the caller can close the program holding it and
+    # delete again, which is the whole point of not reporting a generic 500.
+    assert client.get(f"/sessions/{sid}").status_code == 200
+
+
 def test_file_sync_write_read_list(client):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
     # write a file (hand-edit sync)

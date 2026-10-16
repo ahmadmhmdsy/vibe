@@ -1,4 +1,6 @@
 # tests/test_events.py
+import sqlite3
+
 import pytest
 
 from vibe.events import Event, EventBus, EventLog, EventStore
@@ -142,3 +144,78 @@ async def test_a_fake_event_store_can_stand_in_for_the_real_one():
                         cache_hit_rate=0.0, total_tokens=3, cost_usd=0.0)
     await tracker.record("s1", usage)
     assert fake.appended and fake.appended[0][1] == "usage"
+
+
+@pytest.mark.asyncio
+async def test_a_duplicate_seq_append_retries_above_the_durable_max(tmp_path):
+    """Two allocators over one database must not lose the event that races.
+
+    Each EventLog seeds its per-session counter from its own memory and only
+    reads the durable maximum on that session's first allocation (BE-21). A
+    second allocator -- a second instance here, a restarted process in the live
+    run -- can therefore hand out a seq the other already stored, and the insert
+    that lost the race took the whole request down with a bare
+    sqlite3.IntegrityError. The loser must re-seed and take a fresh number above
+    the durable maximum instead.
+    """
+    db = tmp_path / "events.db"
+    first = EventLog(db)
+    second = EventLog(db)
+    try:
+        # Both hand out seq 1 as an ephemeral number; only `first` stores it.
+        assert first.next_seq("s1") == 1
+        assert second.next_seq("s1") == 1
+        assert await first.append("s1", "user/message", {"content": "hi"}) == 2
+        # `second`'s stale counter still believes 2 is free: this used to raise.
+        seq = await second.append("s1", "usage", {"provider": "openai"})
+    finally:
+        first.close()
+        second.close()
+
+    assert seq == 3
+    reader = EventLog(db)
+    try:
+        stored = await reader.get("s1")
+    finally:
+        reader.close()
+    assert [(e.seq, e.type) for e in stored] == [(2, "user/message"), (3, "usage")]
+
+
+class _AlwaysConflictingDb:
+    """A connection whose INSERT always loses the race, to exhaust the retries."""
+
+    def __init__(self, real):
+        self._real = real
+
+    def execute(self, sql, params=()):
+        if sql.lstrip().upper().startswith("INSERT INTO EVENTS"):
+            raise sqlite3.IntegrityError(
+                "UNIQUE constraint failed: events.session_id, events.seq")
+        return self._real.execute(sql, params)
+
+    def commit(self):
+        self._real.commit()
+
+
+@pytest.mark.asyncio
+async def test_a_duplicate_seq_that_never_clears_raises_the_named_error(tmp_path):
+    """Bounded retries, then a named error -- never a raw IntegrityError.
+
+    A UNIQUE violation on the events primary key must not reach the route as
+    sqlite3.IntegrityError. When even the re-seeded attempts all lose, the
+    caller gets EventSeqConflict instead.
+    """
+    log = EventLog(tmp_path / "events.db")
+    real = log._db
+    log._db = _AlwaysConflictingDb(real)
+    try:
+        with pytest.raises(Exception) as caught:
+            await log.append("s1", "usage", {"provider": "openai"})
+    finally:
+        log._db = real
+        log.close()
+    assert not isinstance(caught.value, sqlite3.IntegrityError), (
+        "a UNIQUE collision must not reach the caller as sqlite3.IntegrityError")
+    from vibe.events import EventSeqConflict
+
+    assert isinstance(caught.value, EventSeqConflict)

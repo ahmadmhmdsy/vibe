@@ -6,6 +6,15 @@ vi.mock("../../../lib/api", () => ({
   api: {
     sendMessage: vi.fn().mockResolvedValue({ content: "ok", aborted: false }),
     abortSession: vi.fn().mockResolvedValue({ aborted: true }),
+    // The composer toolbar renders the real ModelPicker, which reads the
+    // catalog and reflects the session's stored model.
+    getCatalog: vi.fn().mockResolvedValue([]),
+    getSession: vi.fn().mockResolvedValue({
+      id: "s1",
+      title: "t",
+      model: { provider_id: "openai", model_id: "gpt-4o" },
+    }),
+    setSessionModel: vi.fn().mockResolvedValue({ ok: true }),
   },
   ApiError: class ApiError extends Error {
     status: number;
@@ -22,11 +31,14 @@ import { useChatStore } from "../store";
 
 afterEach(() => {
   cleanup();
+  // clearAllMocks, not just mockResolvedValue: a fresh test must not inherit the
+  // previous one's call history.
+  vi.clearAllMocks();
   useChatStore.setState({
-    messagesBySession: {},
+    timelineBySession: {},
     isStreamingBySession: {},
-    streamingMessageIdBySession: {},
     stopRequested: {},
+    pendingDraftBySession: {},
     model: { provider_id: "openai", model_id: "gpt-4o" },
   });
   vi.mocked(api.sendMessage).mockResolvedValue({ content: "ok", aborted: false });
@@ -50,6 +62,23 @@ describe("Composer", () => {
     expect(screen.getByRole("button", { name: /send/i })).toBeEnabled();
   });
 
+  it("sends on Enter and starts the turn", async () => {
+    render(<Composer sessionId="s1" />);
+    const textbox = screen.getByRole("textbox");
+    fireEvent.change(textbox, { target: { value: "hello" } });
+    fireEvent.keyDown(textbox, { key: "Enter" });
+    await waitFor(() => expect(api.sendMessage).toHaveBeenCalledWith("s1", "hello", []));
+    expect(useChatStore.getState().timelineBySession.s1.items).toHaveLength(1);
+  });
+
+  it("does not send on Shift+Enter", () => {
+    render(<Composer sessionId="s1" />);
+    const textbox = screen.getByRole("textbox");
+    fireEvent.change(textbox, { target: { value: "hello" } });
+    fireEvent.keyDown(textbox, { key: "Enter", shiftKey: true });
+    expect(api.sendMessage).not.toHaveBeenCalled();
+  });
+
   it("shows an error and keeps the text when sending fails", async () => {
     vi.mocked(api.sendMessage).mockRejectedValueOnce(new ApiError("API error: 400", 400));
     render(<Composer sessionId="s1" />);
@@ -57,6 +86,43 @@ describe("Composer", () => {
     fireEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/API error: 400/);
     expect(screen.getByRole("textbox")).toHaveValue("hello");
+  });
+
+  it("withdraws the optimistic bubble on failure so a retry is not a duplicate", async () => {
+    vi.mocked(api.sendMessage).mockRejectedValueOnce(new ApiError("API error: 500", 500));
+    render(<Composer sessionId="s1" />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "hello" } });
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+    await screen.findByRole("alert");
+
+    // The message the server never received must not stay in the transcript.
+    expect(useChatStore.getState().timelineBySession.s1?.items ?? []).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+    await waitFor(() =>
+      expect(useChatStore.getState().timelineBySession.s1?.items ?? []).toHaveLength(1)
+    );
+    expect(useChatStore.getState().timelineBySession.s1!.items[0]).toMatchObject({
+      content: "hello",
+      pending: true,
+    });
+  });
+
+  it("keeps the keyboard hint out of the accessibility tree's way", () => {
+    const { container } = render(<Composer sessionId="s1" />);
+    const hint = container.querySelector(".composer-hint");
+    expect(hint).not.toBeNull();
+    expect(hint!.textContent).toMatch(/enter/i);
+    expect(hint!.textContent).toMatch(/new line/i);
+  });
+
+  it("shows the character count only as the limit approaches", () => {
+    const { container } = render(<Composer sessionId="s1" />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "x".repeat(10) } });
+    expect(container.querySelector(".composer-char-count")).toBeNull();
+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "x".repeat(3300) } });
+    expect(container.querySelector(".composer-char-count")).not.toBeNull();
   });
 
   it("shows a stop button while streaming", () => {
@@ -88,7 +154,7 @@ describe("Composer", () => {
 
   it("clears the stop latch when the next turn starts", async () => {
     // Nothing was running, so the stop ends the stream locally and the composer
-    // returns to its Send state — the latch must not stick to the next turn.
+    // returns to its Send state - the latch must not stick to the next turn.
     vi.mocked(api.abortSession).mockResolvedValueOnce({ aborted: false });
     useChatStore.setState({ isStreamingBySession: { s1: true } });
     render(<Composer sessionId="s1" />);

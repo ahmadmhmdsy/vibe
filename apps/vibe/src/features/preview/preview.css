@@ -1,53 +1,44 @@
-/* preview.css — preview panel. */
+/* preview.css — preview panel: header (identity + status + actions), frame.
 
-.preview-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
+   The panel's flex context comes from the layout contract (.panel +
+   .panel-body[data-direction="column"]); this sheet only sizes the frame. */
 
-.preview-toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  min-height: 42px;
-  border-bottom: 1px solid var(--border);
-}
+@layer components {
+  /* The panel fills whatever column the shell gives it (side column or tab).
+     flex + min-height: 0 is the same chain the shell sets on its own children,
+     so a panel nested in a wrapper still gets a bounded height. */
+  .preview-panel {
+    flex: 1;
+    min-height: 0;
+  }
 
-.preview-status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-left: auto;
-  min-width: 0;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
+  /* Identity in the panel header: the dev-server URL, not a title. */
+  .preview-url {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-.preview-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--success);
-  flex: none;
-}
+  /* The frame is the panel body's only flexible child, so it fills the height
+     that .panel gives the body. min-height: 0 keeps that from being a floor. */
+  .preview-frame {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    border: 0;
+    background: var(--bg-raised);
+  }
 
-.preview-status-url {
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.preview-alert {
-  padding: var(--space-2) var(--space-3) 0;
-}
-
-.preview-frame {
-  flex: 1;
-  border: none;
-  background: var(--bg-raised);
+  /* Failure state: a readable banner at the top rather than a banner stretched
+     across the whole body. */
+  .preview-state {
+    flex: none;
+    padding: var(--space-3);
+  }
 }

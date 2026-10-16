@@ -76,10 +76,12 @@ def test_invalid_after_seq_is_a_coded_400(client):
     assert resp.json()["error"]["code"] == "validation_failed"
 
 
-def test_out_of_range_pagination_is_a_coded_422(client):
+def test_out_of_range_pagination_is_a_coded_400(client):
+    # R2-T1 unified every rejected body/query on 400 validation_failed; this
+    # used to be FastAPI's bare 422.
     sid = _make_session(client)
     resp = client.get(f"/sessions/{sid}/messages?limit=0")
-    assert resp.status_code == 422
+    assert resp.status_code == 400
     assert resp.json()["error"]["code"] == "validation_failed"
     assert "limit" in resp.json()["error"]["message"]
 

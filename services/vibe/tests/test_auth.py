@@ -116,6 +116,58 @@ def test_the_origin_guard_does_not_apply_to_reads(client):
     assert r.status_code == 200
 
 
+# --- the Origin guard: same-origin is trusted without an allowlist entry -------
+#
+# In prod the app serves the SPA itself, so the page's Origin is the server's
+# own host:port and no allowlist entry could name it without knowing the port
+# in advance. A same-origin request is therefore accepted even though it is not
+# listed. TestClient sends "Host: testserver", so every case here states Host.
+
+_SESSION_BODY = {"model": {"provider_id": "openai", "model_id": "gpt-4o"}}
+
+
+def _post_from(client, origin: str, host: str):
+    return client.post("/sessions", json=_SESSION_BODY, headers={"Origin": origin, "Host": host})
+
+
+def test_a_same_origin_request_on_an_explicit_port_is_accepted(client):
+    """The prod-mode case: the app serves the SPA on its own 127.0.0.1:7322.
+
+    The Origin here is deliberately not in the allowlist (the default list only
+    names localhost:5173 and 127.0.0.1:5173), so this passes only because the
+    stated Origin is same-origin with the request's own Host.
+    """
+    r = _post_from(client, "http://127.0.0.1:7322", "127.0.0.1:7322")
+    assert r.status_code == 201
+
+
+def test_a_different_port_on_the_same_host_is_refused(client):
+    """A page on another local port is a different origin, not ours."""
+    r = _post_from(client, "http://127.0.0.1:7321", "127.0.0.1:7322")
+    assert r.status_code == 403
+    assert r.json()["error"]["code"] == "forbidden_origin"
+
+
+def test_a_default_port_is_normalized_against_an_explicit_one(client):
+    """http://127.0.0.1 and 127.0.0.1:80 are the same origin."""
+    r = _post_from(client, "http://127.0.0.1", "127.0.0.1:80")
+    assert r.status_code == 201
+
+
+def test_a_scheme_mismatch_is_refused(client):
+    """https://127.0.0.1:7322 is a different origin from the http one."""
+    r = _post_from(client, "https://127.0.0.1:7322", "127.0.0.1:7322")
+    assert r.status_code == 403
+    assert r.json()["error"]["code"] == "forbidden_origin"
+
+
+def test_localhost_is_not_treated_as_127_0_0_1(client):
+    """The two names reach the same machine but are distinct origins."""
+    r = _post_from(client, "http://localhost:7322", "127.0.0.1:7322")
+    assert r.status_code == 403
+    assert r.json()["error"]["code"] == "forbidden_origin"
+
+
 # --- the seam -----------------------------------------------------------------
 
 def test_a_swapped_authenticator_is_the_one_that_runs(app):

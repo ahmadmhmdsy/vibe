@@ -1,7 +1,8 @@
 # services/vibe/src/vibe/api/routes/messages.py
 from fastapi import APIRouter, Query, Response
 
-from vibe.api.deps import App, require_session
+from vibe.api.deps import App, Owner, require_session
+from vibe.auth import LOOPBACK_OWNER_ID
 
 router = APIRouter()
 
@@ -19,6 +20,7 @@ async def get_messages(
     deps: App,
     limit: int = Query(_DEFAULT_LIMIT, ge=1, le=_MAX_LIMIT),
     offset: int = Query(0, ge=0),
+    owner: Owner = LOOPBACK_OWNER_ID,
 ):
     """Reconstruct chat history for a session from the EventLog.
 
@@ -28,7 +30,7 @@ async def get_messages(
     `offset` counts back from the most recent message, so a chat client pages
     backwards: offset 0 is the latest page, offset `limit` the one before it.
     """
-    await require_session(deps, sid)
+    await require_session(deps, sid, owner)
     page = await deps.message_service.page(sid, limit=limit, offset=offset)
     # The count travels in a header so this endpoint keeps returning the same
     # bare array as every other collection in the API.

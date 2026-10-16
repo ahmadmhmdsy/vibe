@@ -51,6 +51,9 @@ class AgentInput:
     session_id: str
     messages: list[Message]
     model: ModelRef
+    #: Standing instructions prepended to this run (BE-19). None means the caller
+    #: deliberately sent a bare transcript.
+    system: str | None = None
 
 @dataclass
 class AgentEvent:

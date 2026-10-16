@@ -36,6 +36,12 @@ class Principal:
     name: str
 
 
+# The identity of the single loopback user, in its one home. Every consumer
+# reads it from the Principal that LoopbackAuthenticator returns -- a hard-coded
+# "local" at a call site is what tests/test_seams.py refuses, because identity
+# is the first thing that has to become per-user when this app is scaled.
+LOOPBACK_OWNER_ID = "local"
+
 # Peer addresses that mean "this machine". Starlette populates request.client
 # from the socket, and TestClient -- which the whole suite runs through --
 # reports "testclient" rather than a loopback address.
@@ -77,4 +83,4 @@ class LoopbackAuthenticator:
     async def authenticate(self, request: Request) -> Principal | None:
         if not _is_local(request):
             return None
-        return Principal(id="local", name="local")
+        return Principal(id=LOOPBACK_OWNER_ID, name=LOOPBACK_OWNER_ID)

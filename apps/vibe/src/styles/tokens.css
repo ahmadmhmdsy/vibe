@@ -1,7 +1,11 @@
 /* tokens.css — Complete design token system for the vibe IDE.
    Dark-first: :root is dark; [data-theme="light"] overrides.
    Every color, spacing, typography, and motion value used by components
-   comes from here — no hard-coded values in components. */
+   comes from here — no hard-coded values in components.
+
+   See apps/vibe/DESIGN.md for the rules that govern how these are used:
+   one accent, elevation declared once (border XOR shadow), tracking never
+   below -0.04em, and no information carried by colour alone. */
 
 :root {
   /* Native surfaces (form controls, scrollbars, select popups) follow
@@ -52,13 +56,17 @@
 
   /* ── Typography ───────────────────────────────────────────── */
   --font-ui:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial,
-    sans-serif;
+    "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono:
-    ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+    "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono",
+    monospace;
 
-  /* Type scale (1.125 ratio — major second) */
-  --text-xs: 11px;
+  /* Type scale (1.125 ratio — major second).
+     2xs micro labels · xs dense controls and meta · sm control labels ·
+     base body · lg lead and panel titles · xl section · 2xl display */
+  --text-2xs: 11px;
+  --text-xs: 12px;
   --text-sm: 13px;
   --text-base: 14px;
   --text-lg: 16px;
@@ -73,7 +81,20 @@
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
+  /* Kept for compatibility. The interface uses 400/500/600 only: hierarchy
+     comes from size and colour, not from a heavier bold. */
   --font-weight-bold: 700;
+
+  /* Optical tracking. Negative tracking on display sizes, positive on the
+     small uppercase labels. Never below --tracking-tighter. */
+  --tracking-tighter: -0.03em;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+
+  /* Reading measure, in characters. */
+  --measure: 68ch;
+  --measure-narrow: 52ch;
 
   /* ── Spacing (4px base grid) ─────────────────────────────── */
   --space-0: 0;
@@ -131,9 +152,28 @@
   /* ── Layout ───────────────────────────────────────────────── */
   --header-height: 48px;
   --sidebar-width: 260px;
-  --side-width: 42%;
+  --sidebar-min-width: 220px;
+  /* The preview/code column. The conversation stays the widest column: this
+     is a clamp, not a percentage, so a 1440px window never lets the side
+     column overtake chat. Overridden inline when the user drags the splitter. */
+  --side-width: clamp(320px, 34%, 560px);
+  --side-width-min: 320px;
+  --side-width-max: 560px;
   --side-min-width: 320px;
   --mobile-tab-height: 48px;
+
+  /* ── Controls ─────────────────────────────────────────────── */
+  --control-sm: 28px;
+  --control-md: 32px;
+  --control-lg: 36px;
+  /* The minimum a finger should have to hit. Applied at coarse-pointer
+     breakpoints rather than everywhere, so the IDE stays dense on a mouse. */
+  --touch-target: 44px;
+  --splitter-size: 6px;
+
+  /* ── Panels ───────────────────────────────────────────────── */
+  --panel-header-height: 40px;
+  --panel-min: 240px;
 
   /* ── Focus ring ───────────────────────────────────────────── */
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);

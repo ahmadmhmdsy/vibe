@@ -19,16 +19,52 @@ ALLOWLIST: frozenset[str] = frozenset({
 })
 
 
-def is_allowlisted(package: str) -> bool:
-    """True if the package (name only, no version spec) is in the allowlist."""
-    # Strip any version range: "react@^19" -> "react", "@scope/pkg@^1" -> "@scope/pkg".
-    # A scoped name keeps its leading "@" and its scope segment, so it cannot be
-    # recovered by splitting on "@" alone.
+# A specifier can point somewhere else entirely: "react@npm:evil" installs
+# evil, "react@file:../evil" a local path, "react@github:evil/repo" a git repo.
+# Only a plain version range or dist-tag may follow the name.
+_PROTOCOLS = ("npm:", "github:", "git:", "git+", "file:", "link:", "portal:", "workspace:", "http:", "https:")
+# Characters that never appear in a version range we accept. "react@^19 nope"
+# would otherwise ride the allowlist, because the junk range is never inspected.
+_JUNK = frozenset("<>|$ \t\n\r")
+
+
+def _split_spec(package: str) -> tuple[str, str]:
+    """Split "react@^19" into ("react", "^19") and "@scope/pkg@^1" into
+    ("@scope/pkg", "^1").
+
+    A scoped name keeps its leading "@", so its scope separator must not be
+    mistaken for the spec separator.
+    """
     if package.startswith("@"):
-        parts = package.split("@")
-        name = "@" + parts[1] if len(parts) > 1 else package
-    else:
-        name = package.split("@")[0]
+        scope, _, rest = package.partition("/")
+        if rest and "@" in rest:
+            name, _, spec = rest.partition("@")
+            return f"{scope}/{name}", spec
+        return package, ""
+    name, _, spec = package.partition("@")
+    return name, spec
+
+
+def is_allowlisted(package: str) -> bool:
+    """True if the specifier names an allowlisted package and cannot redirect.
+
+    Name only, no version spec, is what the allowlist is about -- so every part
+    of the specifier that npm would resolve elsewhere is refused first.
+    """
+    if not isinstance(package, str) or any(c in _JUNK for c in package):
+        return False
+    name, spec = _split_spec(package)
+    if not name or name in (".", ".."):
+        return False
+    if name.startswith("@"):
+        # Exactly one scope separator and no path separator anywhere.
+        scope, _, bare = name.partition("/")
+        if bare.count("/") or bare.endswith("/") or "\\" in name or len(scope) < 2 or not bare:
+            return False
+    elif "/" in name or "\\" in name:
+        return False
+    if spec.lower().startswith(_PROTOCOLS):
+        return False
     return name in ALLOWLIST
 
 

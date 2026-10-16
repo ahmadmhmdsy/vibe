@@ -71,7 +71,15 @@ volatile current facts. Where they live instead:
 - Network: PyPI REACHABLE as of 2026-10-04 (verified by `uv add ruff` and
   `uv run --with pyyaml`). npm registry REACHABLE. GitHub Actions is
   assumed reachable — the CI workflow in `.github/workflows/ci.yml` has
-  never been executed, so treat it as unverified until a run appears.
+  never been executed, so treat it as **`SKIPPED`**, never assumed green.
+  **Two known reasons its first run would have failed (found 2026-10-11):**
+  (1) the frontend Format (prettier) step failed on one untracked test file
+  (DOC-01) — fixed by R0-T2 of the hardening program, which re-formatted
+  `apps/vibe/src/components/ui/__tests__/CommandPalette.test.tsx` by exact path;
+  the repo-wide check is re-verified in `artifacts/hardening-r0-docs.txt`.
+  (2) after P3a the install is owned by the **root** workspace, so
+  `cache-dependency-path: apps/vibe/pnpm-lock.yaml` keys on a lockfile pnpm does
+  not use for a workspace install — tracked as R5-T10 of the plan.
   Subagent foreground dispatch times out at 10 min — use background dispatch.
 
 ## Capability table (durable)
@@ -80,11 +88,11 @@ volatile current facts. Where they live instead:
 |---|---|
 | Local subprocess execution | available (LocalSubprocessExecutor) |
 | Docker isolation | available on the machine; M4 scale path |
-| Playwright browser capture | REMOVED from deps (offline, not cached). Post-M1 refinement — restore when network returns. |
+| Playwright browser capture | **available** — driver implemented (`executor/browser.py`: `playwright.async_api` import, `chromium.launch`), `playwright>=1.63.0` a runtime dependency (`services/vibe/pyproject.toml`), and the browser binary installed with `playwright install chromium` (a fresh clone needs that step — R5-T1 puts it in the setup path). Re-verified 2026-10-11: `playwright 1.63.0` in the venv |
 | LLM providers | OpenAI / Anthropic / OpenCode Go / custom (provider seam) |
 | Monaco editor | available via @monaco-editor/react (CDN loader; offline needs local config) |
 | react-markdown | available (v10.1.0) for LLM output rendering |
 | zustand | available (v5.0.0) for state management |
 | Backend linting | available (ruff 0.16.10, clean) |
-| Frontend linting/formatting | available (eslint 10 flat config: 0 errors / 14 triaged warnings; prettier configured but not yet applied) |
+| Frontend linting/formatting | available (eslint 10 flat config: 0 errors / 9 triaged warnings — `artifacts/p3c-eslint-after.txt`; prettier applied 2026-10-05 (P3b) and enforced by `pnpm format:check` in the frontend CI job) |
 | CI | defined (.github/workflows/ci.yml) but NEVER EXECUTED — unverified |

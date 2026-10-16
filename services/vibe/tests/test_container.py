@@ -4,6 +4,7 @@ import dataclasses
 import pytest
 
 from vibe.approvals import ApprovalStore
+from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.config import Settings
 from vibe.container import Container
 from vibe.events import EventBus, EventLog
@@ -65,7 +66,10 @@ def test_per_session_executor_is_stable_and_overridable(tmp_path):
     assert c.get_executor("s1", ws) is c.get_executor("s1", ws)
 
     sentinel = object()
-    overridden = Container.build(_settings(tmp_path), get_executor=lambda sid, workspace: sentinel)
+    overridden = Container.build(
+        _settings(tmp_path),
+        get_executor=lambda sid, workspace, *, owner_id=LOOPBACK_OWNER_ID: sentinel,
+    )
     assert overridden.get_executor("s1", ws) is sentinel
 
 

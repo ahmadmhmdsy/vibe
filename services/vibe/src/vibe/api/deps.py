@@ -1,5 +1,5 @@
 # services/vibe/src/vibe/api/deps.py
-"""Route-level access to the container.
+"""Route-level access to the container, and the one place identity enters.
 
 Handlers used to take a `Request` and pull collaborators off `app.state` by
 name. They now declare the container as a dependency, so what a route needs is
@@ -12,7 +12,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from vibe.api.errors import ApiError, ErrorCode
-from vibe.auth import Principal
+from vibe.auth import LOOPBACK_OWNER_ID, Principal
 from vibe.container import Container
 from vibe.store import Session
 
@@ -39,14 +39,40 @@ async def require_principal(request: Request, deps: App) -> Principal:
     return principal
 
 
-async def require_session(deps: Container, sid: str) -> Session:
-    """Load a session, or 404.
+#: The authenticated caller, as a dependency.
+PrincipalDep = Annotated[Principal, Depends(require_principal)]
+
+
+async def current_owner(principal: PrincipalDep) -> str:
+    """The owner every session-scoped read, registry key and delete uses.
+
+    This is the single point where identity enters a request. A route declares
+    `owner: Owner` and passes it down; no route spells an owner itself. Today
+    the loopback authenticator returns one owner, so this is the identity the
+    app has always had -- but it is now *read* rather than assumed, so an
+    authenticator that returns a real user needs no change below it.
+    """
+    return principal.id
+
+
+#: The current owner id, as a dependency.
+Owner = Annotated[str, Depends(current_owner)]
+
+
+async def require_session(deps: Container, sid: str,
+                          owner_id: str = LOOPBACK_OWNER_ID) -> Session:
+    """Load one of this owner's sessions, or 404.
 
     Every session-scoped route calls this first. It used to be inlined in each
     handler, so a route added without it failed on a missing session with a
     KeyError from the store rather than a 404 the client could act on.
+
+    The owner defaults to the loopback owner so a direct call from a test or a
+    script keeps working; a request reaches here through `Owner`, which reads
+    the principal. A session belonging to someone else is indistinguishable from
+    one that does not exist, which is the answer that leaks nothing.
     """
-    session = await deps.store.get_session(sid)
+    session = await deps.store.get_session(sid, owner_id)
     if session is None:
         raise ApiError(ErrorCode.SESSION_NOT_FOUND, "session not found")
     return session

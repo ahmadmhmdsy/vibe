@@ -11,12 +11,14 @@ from pathlib import Path
 
 import pytest
 
+from vibe import lifecycle as lifecycle_module
 from vibe.approvals import ApprovalStore
+from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.events import EventLog
 from vibe.executor.base import DevServerHandle
-from vibe.lifecycle import SessionLifecycle
+from vibe.lifecycle import SessionLifecycle, WorkspaceBusyError
 from vibe.models import ModelRef
-from vibe.runs import RunRegistry
+from vibe.runs import RunRegistry, SessionKey
 from vibe.store import SessionStore
 
 
@@ -67,8 +69,11 @@ async def test_delete_takes_everything_the_session_owned_with_it(tmp_path):
     await event_log.append(sid, "user/message", {"content": "hi"})
 
     executor = RecordingExecutor()
-    executors = {sid: executor}
-    policies = {sid: object()}
+    # The registries are keyed by (owner, session), so the test's dicts must be
+    # too: keyed by the bare id they would prove nothing about the real lookup.
+    key = SessionKey(owner_id=LOOPBACK_OWNER_ID, session_id=sid)
+    executors = {key: executor}
+    policies = {key: object()}
     approvals = ApprovalStore()
     approvals.create(sid, ["left-pad"])
     runs = RunRegistry()
@@ -88,8 +93,8 @@ async def test_delete_takes_everything_the_session_owned_with_it(tmp_path):
     assert list((tmp_path / ".trash").iterdir()), "it must be recoverable, not destroyed"
     assert await event_log.get(sid) == []
     assert executor.stopped == 1, "the dev server subprocess must be stopped"
-    assert sid not in executors
-    assert sid not in policies
+    assert key not in executors
+    assert key not in policies
     assert approvals.list(sid) == []
     assert runs.is_running(sid) is False
 
@@ -117,7 +122,11 @@ async def test_delete_aborts_if_the_workspace_cannot_be_moved(tmp_path, monkeypa
         raise OSError("directory is locked")
 
     monkeypatch.setattr(Path, "rename", boom)
-    with pytest.raises(OSError):
+    # The retry helper wraps the OS error in a named condition so the API can
+    # answer 409 workspace_busy instead of 500. The property is unchanged: the
+    # row is still here, because the move failed.
+    monkeypatch.setattr(lifecycle_module, "_TRASH_MOVE_DELAY", 0)
+    with pytest.raises(WorkspaceBusyError):
         await lc.delete(sid)
 
     assert await store.get_session(sid) is not None

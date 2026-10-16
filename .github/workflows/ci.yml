@@ -60,7 +60,11 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: apps/vibe/pnpm-lock.yaml
+          # The install moved to the workspace root in P3a, so pnpm resolves
+          # the root lockfile. This used to point at apps/vibe/pnpm-lock.yaml,
+          # which pnpm no longer reads - a cache keyed on the wrong file goes
+          # stale without ever failing.
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

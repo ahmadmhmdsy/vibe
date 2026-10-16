@@ -1,0 +1,166 @@
+/* app/shell.css — styles for the application shell.
+   Imported by App.tsx. Everything here is inside @layer components, so it
+   composes with the primitives rather than overriding them by accident. */
+
+@layer components {
+  /* ── Header ─────────────────────────────────────────────────── */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+    height: var(--header-height);
+    padding: 0 var(--space-3);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-raised);
+    /* Above the drawers so its own toggles stay clickable while one is open. */
+    position: relative;
+    z-index: var(--z-header);
+  }
+
+  .app-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+    color: var(--text);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-tight);
+    user-select: none;
+  }
+
+  .app-header-divider {
+    flex: none;
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+  }
+
+  .app-header-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-header-spacer {
+    flex: 1;
+    min-width: var(--space-2);
+  }
+
+  /* A button that looks like a search field. It opens the command palette
+     rather than focusing an input, which is why it is not a SearchField. */
+  .app-header-search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 0 1 300px;
+    min-width: 0;
+    height: var(--control-md);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    color: var(--text-faint);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-normal);
+    text-align: left;
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .app-header-search:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-hover);
+    color: var(--text-muted);
+  }
+
+  .app-header-search-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── Side panel host ────────────────────────────────────────── */
+  .app-side-tabs {
+    display: flex;
+    align-items: center;
+    flex: none;
+    min-height: 36px;
+    padding: 0 var(--space-2) 0 var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Shorter than the panel-header default, because the panel below has its own
+     header row and two full-height bars would eat a fifth of the column. */
+  .app-side-tabs .tab {
+    min-height: 36px;
+  }
+
+  .app-side-content {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ── Main column ────────────────────────────────────────────── */
+  .app-main > .empty-state {
+    margin: auto;
+    padding: var(--space-6);
+  }
+
+  /* ── Mobile tab bar ─────────────────────────────────────────── */
+  .app-mobile-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+  }
+
+  /* ── Responsive header ──────────────────────────────────────── */
+  @media (max-width: 900px) {
+    /* Collapse the palette trigger to its icon; the label and the chord are
+       the first things that can go. */
+    .app-header-search {
+      flex: 0 0 var(--control-md);
+      justify-content: center;
+      padding: 0;
+    }
+
+    .app-header-search-label,
+    .app-header-search .kbd-group {
+      display: none;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .app-brand span {
+      display: none;
+    }
+
+    .app-header-divider {
+      display: none;
+    }
+  }
+
+  /* A mouse pointer means the app can stay dense. A coarse pointer means the
+     hit targets have to grow, so the header controls get a real finger size. */
+  @media (pointer: coarse) {
+    .app-header .icon-btn,
+    .app-mobile-tab {
+      min-width: var(--touch-target);
+      min-height: var(--touch-target);
+    }
+  }
+}

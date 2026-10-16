@@ -28,8 +28,19 @@ export function ModelPicker({ sessionId }: { sessionId: string | null }) {
       .catch(() => {});
   }, [sessionId]);
 
+  // Carry the ids as data. Deriving them by splitting the option value on "/"
+  // truncated any model id that itself contains a slash.
+  const options = providers.flatMap((p) =>
+    p.models.map((m) => ({
+      value: `${p.id}/${m.id}`,
+      provider_id: p.id,
+      model_id: m.id,
+      name: m.name,
+      provider: p.name,
+    }))
+  );
   const current = `${model.provider_id}/${model.model_id}`;
-  const currentExists = providers.some((p) => p.models.some((m) => `${p.id}/${m.id}` === current));
+  const currentExists = options.some((o) => o.value === current);
 
   return (
     <div className="model-picker">
@@ -42,9 +53,11 @@ export function ModelPicker({ sessionId }: { sessionId: string | null }) {
         value={currentExists ? current : ""}
         disabled={loading}
         onChange={(e) => {
-          const [provider_id, model_id] = e.target.value.split("/");
-          setModel({ provider_id, model_id });
-          if (sessionId) api.setSessionModel(sessionId, { provider_id, model_id }).catch(() => {});
+          const picked = options.find((o) => o.value === e.target.value);
+          if (!picked) return;
+          const next = { provider_id: picked.provider_id, model_id: picked.model_id };
+          setModel(next);
+          if (sessionId) api.setSessionModel(sessionId, next).catch(() => {});
         }}
       >
         {!currentExists && (

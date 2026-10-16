@@ -12,6 +12,7 @@ from conftest import swap
 
 from vibe.api.errors import ApiError, ErrorCode
 from vibe.api.routes.chat import abort_run, send_message
+from vibe.api.schemas import SendMessageIn
 from vibe.models import AgentEvent, ModelRef, UsageRecord
 from vibe.usage.tracker import UsageTracker
 
@@ -98,7 +99,8 @@ async def test_abort_cancels_the_running_turn(app):
     swap(app, runtime=runtime)
     sid = await app.state.container.store.create_session(ModelRef("openai", "gpt-4o"))
 
-    task = asyncio.create_task(send_message(sid, {"content": "build it"}, app.state.container))
+    # R2-T1: the route signature is now SendMessageIn, so a direct call builds one.
+    task = asyncio.create_task(send_message(sid, SendMessageIn(content="build it"), app.state.container))
     await asyncio.wait_for(runtime.started.wait(), timeout=2)
     assert app.state.container.runs.is_running(sid)
 
@@ -133,10 +135,10 @@ async def test_second_send_while_running_is_rejected(app):
     swap(app, runtime=runtime)
     sid = await app.state.container.store.create_session(ModelRef("openai", "gpt-4o"))
 
-    task = asyncio.create_task(send_message(sid, {"content": "one"}, app.state.container))
+    task = asyncio.create_task(send_message(sid, SendMessageIn(content="one"), app.state.container))
     await asyncio.wait_for(runtime.started.wait(), timeout=2)
     with pytest.raises(ApiError) as err:
-        await send_message(sid, {"content": "two"}, app.state.container)
+        await send_message(sid, SendMessageIn(content="two"), app.state.container)
     assert err.value.status == 409
     assert err.value.code is ErrorCode.RUN_IN_PROGRESS
 

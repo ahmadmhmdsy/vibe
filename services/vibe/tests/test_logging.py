@@ -13,6 +13,7 @@ import logging
 
 import pytest
 
+from vibe.config import Settings
 from vibe.logging_setup import DEFAULT_LEVEL, configure_logging
 
 
@@ -61,14 +62,16 @@ def test_level_name_is_case_insensitive():
 
 
 def test_level_comes_from_the_environment(monkeypatch):
+    # The environment still sets the level, but it reaches logging through
+    # Settings: config.py is the only module that reads it (guardrail L-6).
     monkeypatch.setenv("VIBE_LOG_LEVEL", "debug")
-    assert configure_logging() == logging.DEBUG
+    assert configure_logging(settings=Settings.from_env()) == logging.DEBUG
 
 
 def test_blank_environment_level_falls_back(monkeypatch):
     # An empty VIBE_LOG_LEVEL must not be read as level 0 ("NOTSET").
     monkeypatch.setenv("VIBE_LOG_LEVEL", "")
-    assert configure_logging() == logging.getLevelName(DEFAULT_LEVEL)
+    assert configure_logging(settings=Settings.from_env()) == logging.getLevelName(DEFAULT_LEVEL)
 
 
 def test_records_from_child_loggers_reach_the_handler():

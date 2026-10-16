@@ -11,6 +11,7 @@ import pytest
 from vibe.api.errors import ApiError, ErrorCode
 from vibe.api.routes.sessions import events
 from vibe.api.sse import format_sse
+from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.events import Event, EventBus, EventLog
 
 
@@ -25,7 +26,7 @@ class _Store:
     """Only the sessions that exist resolve; anything else is a 404."""
     def __init__(self, known=("s1",)):
         self._known = set(known)
-    async def get_session(self, sid):
+    async def get_session(self, sid, owner_id=LOOPBACK_OWNER_ID):
         return {"id": sid} if sid in self._known else None
 
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.lifecycle import SessionLifecycle
 from vibe.models import ModelRef
 from vibe.store import SessionStore
@@ -51,24 +52,31 @@ class SessionService:
             return None
         return p
 
-    async def create(self, model_ref: ModelRef) -> str:
-        return await self._store.create_session(model_ref)
+    # Every call that reaches a stored row names its owner. The default keeps
+    # the local single-user path and existing callers working, and each route
+    # passes the authenticated owner explicitly so the value is never assumed.
 
-    async def list(self) -> list:
-        return await self._store.list_sessions()
+    async def create(self, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID) -> str:
+        return await self._store.create_session(model_ref, owner_id)
 
-    async def rename(self, sid: str, title: str) -> None:
-        await self._store.rename_session(sid, title)
+    async def list(self, owner_id: str = LOOPBACK_OWNER_ID) -> list:
+        return await self._store.list_sessions(owner_id)
 
-    async def retitle_from_message(self, sid: str, text: str) -> bool:
+    async def rename(self, sid: str, title: str,
+                     owner_id: str = LOOPBACK_OWNER_ID) -> None:
+        await self._store.rename_session(sid, title, owner_id)
+
+    async def retitle_from_message(self, sid: str, text: str,
+                                   owner_id: str = LOOPBACK_OWNER_ID) -> bool:
         """Title the session from a message, unless it was renamed by hand."""
-        return await self._store.retitle_from_message(sid, text)
+        return await self._store.retitle_from_message(sid, text, owner_id)
 
-    async def set_model(self, sid: str, model_ref: ModelRef) -> None:
-        await self._store.set_model(sid, model_ref)
+    async def set_model(self, sid: str, model_ref: ModelRef,
+                        owner_id: str = LOOPBACK_OWNER_ID) -> None:
+        await self._store.set_model(sid, model_ref, owner_id)
 
-    async def delete(self, sid: str) -> None:
-        await self._lifecycle.delete(sid)
+    async def delete(self, sid: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:
+        await self._lifecycle.delete(sid, owner_id)
 
     def read_text(self, sid: str, relpath: str) -> str:
         p = self.resolve_file(sid, relpath)

@@ -1,0 +1,138 @@
+/* apps/vibe/src/features/onboarding/onboarding.css
+   First-run guidance. Token-driven only; every rule lives in @layer components
+   so an unlayered rule cannot beat the shared design system. */
+@layer components {
+  .first-run {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-7) var(--space-4) var(--space-8);
+  }
+
+  .first-run-inner {
+    width: 100%;
+    max-width: var(--measure);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .first-run-title {
+    margin: 0;
+    font-size: var(--text-2xl);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--line-height-tight);
+  }
+
+  .first-run-lead,
+  .first-run-why {
+    margin: 0;
+    max-width: var(--measure-narrow);
+    font-size: var(--text-base);
+    line-height: var(--line-height);
+  }
+
+  .first-run-lead {
+    color: var(--text-muted);
+  }
+
+  .first-run-primary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+
+  .first-run-shortcut {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .first-run-section-label {
+    margin-top: var(--space-4);
+  }
+
+  .first-run-steps {
+    margin: 0;
+    padding-left: var(--space-5);
+    max-width: var(--measure-narrow);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--line-height);
+  }
+
+  .first-run-steps li {
+    margin: 0;
+  }
+
+  .first-run-examples {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  /* A prompt, not a menu item: room for a sentence, and a trailing arrow that
+     says "this goes somewhere". */
+  .first-run-example {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: var(--control-lg);
+    padding: var(--space-3);
+    text-align: left;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-size: var(--text-sm);
+    line-height: var(--line-height);
+    /* Token durations, so prefers-reduced-motion (which zeroes them) also
+       removes this transition. */
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .first-run-example:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-strong);
+  }
+
+  .first-run-example-icon {
+    color: var(--text-faint);
+  }
+
+  .first-run-example-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .first-run-example-go {
+    color: var(--text-faint);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .first-run-example:hover .first-run-example-go,
+  .first-run-example:focus-visible .first-run-example-go {
+    color: var(--accent);
+  }
+
+  .first-run-example-hint {
+    margin: 0;
+    max-width: var(--measure-narrow);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
+}

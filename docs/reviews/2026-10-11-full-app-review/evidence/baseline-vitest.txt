@@ -1,0 +1,29 @@
+$ vitest run
+
+ RUN  v2.1.9 E:/python_projects/apps_building/apps/vibe
+
+ ✓ src/lib/__tests__/sse.test.ts (6 tests) 12ms
+ ✓ src/lib/__tests__/api.test.ts (6 tests) 13ms
+ ✓ src/features/chat/__tests__/store.test.ts (9 tests) 15ms
+ ✓ src/hooks/__tests__/useKeyboardShortcut.test.tsx (7 tests) 89ms
+ ✓ src/hooks/__tests__/useMediaQuery.test.tsx (4 tests) 81ms
+ ✓ src/features/chat/__tests__/ApprovalCard.test.tsx (6 tests) 453ms
+ ✓ src/components/ui/__tests__/CommandPalette.test.tsx (7 tests) 581ms
+ ✓ src/components/ui/__tests__/ui.test.tsx (13 tests) 625ms
+ ✓ src/features/chat/__tests__/Composer.test.tsx (8 tests) 710ms
+ ✓ src/features/code/__tests__/CodePanel.test.tsx (4 tests) 1317ms
+   ✓ CodePanel > shows a save indicator while saving 899ms
+ ✓ src/lib/__tests__/format.test.ts (6 tests) 35ms
+ ✓ src/features/preview/__tests__/PreviewPanel.test.tsx (4 tests) 278ms
+ ✓ src/features/sessions/__tests__/SessionsPanel.test.tsx (4 tests) 485ms
+ ✓ src/hooks/__tests__/usePolling.test.tsx (3 tests) 299ms
+ ✓ src/lib/__tests__/theme.test.ts (4 tests) 16ms
+ ✓ src/features/chat/__tests__/MessageList.test.tsx (8 tests) 298ms
+ ✓ src/__tests__/App.test.tsx (4 tests) 283ms
+ ✓ src/features/chat/__tests__/ChatPanel.test.tsx (1 test) 164ms
+
+ Test Files  18 passed (18)
+      Tests  104 passed (104)
+   Start at  17:17:30
+   Duration  10.10s (transform 3.43s, setup 23.25s, collect 11.21s, tests 5.76s, environment 44.97s, prepare 4.73s)
+

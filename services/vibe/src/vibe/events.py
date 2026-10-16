@@ -11,12 +11,52 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
+from vibe.auth import LOOPBACK_OWNER_ID
+
 # A subscriber that falls this far behind is not reading anymore; its oldest
 # events are dropped rather than growing the queue without bound.
 _MAX_QUEUED_PER_SUBSCRIBER = 1000
 
-# Bump when the events table shape changes; _migrate() applies the steps.
-_SCHEMA_VERSION = 1
+# Bump when the events table shape changes; EventLog._open() applies the steps.
+#   1 -> 2: index (session_id, type, seq) (BE-12/R3-T8).
+#   2 -> 3: owner_id column + index (owner_id, session_id, seq) (R6-T1/L-1).
+_SCHEMA_VERSION = 3
+
+# How many times one append() re-seeds the session counter and retries when
+# another allocator already stored the seq it picked. Bounded on purpose: an
+# unbounded loop against a writer that never stops would hang the request, and
+# the caller deserves a named failure rather than a stall (BE-21).
+_INSERT_ATTEMPTS = 3
+
+
+class EventSeqConflict(RuntimeError):
+    """A durable event could not be given a seq above the stored maximum.
+
+    Raised after `_INSERT_ATTEMPTS` collisions on the events primary key. It
+    replaces the raw ``sqlite3.IntegrityError`` so a caller can tell "this one
+    event could not be numbered" apart from a genuine storage failure, and so a
+    duplicate-seq append never reaches the route as an IntegrityError.
+    """
+
+    def __init__(self, session_id: str, attempts: int) -> None:
+        super().__init__(
+            f"could not allocate an event seq for session {session_id}"
+            f" after {attempts} attempt(s)"
+        )
+        self.session_id = session_id
+        self.attempts = attempts
+
+
+def _is_duplicate_seq(error: sqlite3.IntegrityError) -> bool:
+    """True when the violation is the events ``(session_id, seq)`` primary key.
+
+    ``sqlite_errorname`` is exact; the message is the fallback for a SQLite
+    build that does not expose it. Any other IntegrityError (a NULL, a missing
+    column) is not a lost race and must not be retried away.
+    """
+    if getattr(error, "sqlite_errorname", "") == "SQLITE_CONSTRAINT_PRIMARYKEY":
+        return True
+    return "events.session_id, events.seq" in str(error)
 
 
 @dataclass
@@ -81,8 +121,10 @@ class EventLog:
         con.execute("PRAGMA journal_mode=WAL")
         con.execute("PRAGMA synchronous=NORMAL")
         con.execute("PRAGMA busy_timeout=5000")
+        # Applied step by step so an existing database is *migrated*, not
+        # recreated: the version in the file decides what is still missing.
         version = con.execute("PRAGMA user_version").fetchone()[0]
-        if version < _SCHEMA_VERSION:
+        if version < 1:
             con.execute(
                 "CREATE TABLE IF NOT EXISTS events ("
                 " session_id TEXT NOT NULL,"
@@ -91,9 +133,51 @@ class EventLog:
                 " payload TEXT NOT NULL,"
                 " PRIMARY KEY (session_id, seq))"
             )
+        if version < 2:
+            # Message paging and UsageTracker read one session's events of one
+            # type. Without this index the planner can only use the primary
+            # key's (session_id, seq) autoindex and must filter the type in
+            # Python; at 25 local sessions that is invisible. Splitting the
+            # store protocol so those calls push the filter into SQL is real
+            # work with a real compatibility cost, so it stays deferred -- this
+            # is the index that work would need, and nothing else (BE-12).
+            con.execute(
+                "CREATE INDEX IF NOT EXISTS idx_events_session_type_seq"
+                " ON events (session_id, type, seq)"
+            )
+        if version < 3:
+            EventLog._add_owner_column(con)
+        if version < _SCHEMA_VERSION:
             con.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
             con.commit()
         return con
+
+    @staticmethod
+    def _add_owner_column(con: sqlite3.Connection) -> None:
+        """Step v3: every event row names its owner, and is indexed by it.
+
+        The events table is keyed by (session_id, seq) and a session id is a
+        globally unique uuid, so today a read cannot cross owners: the owner
+        filter would be redundant. The column is still recorded now because
+        adding it later means rewriting every existing row once the log is
+        large, while adding it here costs one defaulted column, and the index is
+        the one owner-scoped reads would need if session ids ever stop being
+        globally unique.
+
+        ADD COLUMN has no IF NOT EXISTS, so the column list is checked first --
+        a re-run after a crash between the ALTER and the version bump must be a
+        no-op rather than an error.
+        """
+        columns = {row["name"] for row in con.execute("PRAGMA table_info(events)")}
+        if "owner_id" not in columns:
+            con.execute(
+                "ALTER TABLE events ADD COLUMN owner_id TEXT NOT NULL"
+                f" DEFAULT '{LOOPBACK_OWNER_ID}'"
+            )
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_events_owner_session_seq"
+            " ON events (owner_id, session_id, seq)"
+        )
 
     def _max_seq(self, session_id: str) -> int:
         """Highest seq already recorded for a session (0 if none).
@@ -132,18 +216,45 @@ class EventLog:
         if self._db is None:
             self._events.setdefault(session_id, []).append(event)
             return seq
+        # `_insert` renumbers the event if another allocator already stored its
+        # seq, so the seq returned here is the one actually recorded.
         await asyncio.to_thread(self._insert, event)
-        return seq
+        return event.seq
 
     def _insert(self, event: Event) -> None:
         # default=str: a payload that is not JSON-native degrades to a string
         # instead of taking the whole request down with it.
+        #
+        # The seq came from an in-memory counter that can be stale: a second
+        # EventLog, or a restarted process overlapping this one, may have stored
+        # that number already. Losing that race used to take the whole request
+        # down with a bare sqlite3.IntegrityError, so the insert re-seeds from
+        # the durable maximum and retries a bounded number of times (BE-21).
         with self._lock:
-            self._db.execute(
-                "INSERT INTO events (session_id, seq, type, payload) VALUES (?, ?, ?, ?)",
-                (event.session_id, event.seq, event.type, json.dumps(event.payload, default=str)),
-            )
-            self._db.commit()
+            for attempt in range(1, _INSERT_ATTEMPTS + 1):
+                try:
+                    self._db.execute(
+                        "INSERT INTO events (session_id, seq, type, payload, owner_id)"
+                        " VALUES (?, ?, ?, ?, ?)",
+                        (event.session_id, event.seq, event.type,
+                         json.dumps(event.payload, default=str), LOOPBACK_OWNER_ID),
+                    )
+                    self._db.commit()
+                    return
+                except sqlite3.IntegrityError as error:
+                    if not _is_duplicate_seq(error):
+                        raise
+                    if attempt == _INSERT_ATTEMPTS:
+                        raise EventSeqConflict(event.session_id, attempt) from error
+                    # Take a fresh number above the durable maximum, under the
+                    # same lock. `max` keeps the counter from dropping below a
+                    # seq already streamed to a client, so a number the client
+                    # has seen is never handed out again.
+                    self._seq[event.session_id] = max(
+                        self._seq.get(event.session_id, 0), self._max_seq(event.session_id)
+                    )
+                    event.seq = self._seq[event.session_id] + 1
+                    self._seq[event.session_id] = event.seq
 
     async def get(self, session_id: str, after_seq: int = 0) -> list[Event]:
         if self._db is None:

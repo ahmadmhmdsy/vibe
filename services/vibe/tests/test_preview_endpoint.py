@@ -1,4 +1,8 @@
 # services/vibe/tests/test_preview_endpoint.py
+from vibe.auth import LOOPBACK_OWNER_ID
+from vibe.runs import SessionKey
+
+
 class _StubExecutor:
     """In-memory executor: no real subprocesses."""
 
@@ -23,7 +27,11 @@ class _StubExecutor:
 
 def test_preview_run_status_stop(client, app):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
-    app.state.container.executors[sid] = _StubExecutor()
+    # The executor registry is keyed by (owner, session); keyed by the bare id
+    # the route would find nothing and build a real subprocess executor.
+    app.state.container.executors[
+        SessionKey(owner_id=LOOPBACK_OWNER_ID, session_id=sid)
+    ] = _StubExecutor()
 
     # Initially: no dev server.
     resp = client.get(f"/sessions/{sid}/preview")

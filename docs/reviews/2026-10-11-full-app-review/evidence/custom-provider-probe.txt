@@ -1,0 +1,15 @@
+Probe 2: custom-provider store robustness (2026-10-11)
+Script: probes/custom_provider_probe.py   (temp workspace only, no real data touched)
+
+C1  GET /catalog with a stored model missing 'id': 500 {"error":{"code":"internal","message":"internal server error"}}
+C1b GET /providers in the same state:              200
+C3  POST /providers with a model missing 'id':     201  (invalid state is creatable)
+C3b GET /catalog after that POST:                  500
+C4  PATCH {"apiKey": ""} -> 200, key_configured=False  (the API CAN clear; the UI does not send it)
+C2  GET /providers with corrupt JSON:              500 {"error":{"code":"internal",...}}
+C2b GET /catalog  with corrupt JSON:               500
+
+Server tracebacks (excerpt):
+  catalog.py:25  models=[{"id": m["id"], ...} for m in p.models]   -> KeyError: 'id'
+  providers.py:21 / catalog.py:28 -> custom.py:43 json.loads(...)  -> JSONDecodeError
+No recovery path: both endpoints stay 500 until the file is removed or fixed by hand.

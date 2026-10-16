@@ -22,6 +22,22 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  // Reset the query and selection each time the palette opens. Done during
+  // render (not in an effect) so the first paint of an open palette is already
+  // clean — an effect would flash the previous query for one frame.
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (open) {
+      setQuery("");
+      setSelectedIndex(0);
+    }
+  }
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   const filtered = commands.filter(
     (c) =>
@@ -29,21 +45,16 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
       c.description?.toLowerCase().includes(query.toLowerCase())
   );
 
-  useEffect(() => {
-    if (open) {
-      setQuery("");
-      setSelectedIndex(0);
-      inputRef.current?.focus();
-    }
-  }, [open]);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
-
   const execute = (command: Command) => {
     command.action();
     onClose();
+  };
+
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    // Reset the selection when the query changes so the first match is always
+    // highlighted. Done in the event handler, not an effect.
+    setSelectedIndex(0);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -67,7 +78,7 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
           className="command-palette-input"
           placeholder="Type a command..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={onInputChange}
           onKeyDown={onKeyDown}
           aria-label="Search commands"
         />

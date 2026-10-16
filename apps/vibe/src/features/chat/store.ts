@@ -1,127 +1,124 @@
-// apps/vibe/src/features/chat/store.ts
+// features/chat/store.ts — chat state.
+//
+// The transcript is an event log, not a list the client patches piecemeal: the
+// composer adds one optimistic row, the SSE stream folds every published event
+// through the pure reducer in ./timeline, and opening a session replays the
+// server's log so the whole turn — tool calls included — is on screen.
+// Everything else here (streaming latch, stop latch, drafts, model) is small
+// per-session bookkeeping around that.
+
 import { create } from "zustand";
-import { api, type Message } from "../../lib/api";
+import {
+  addOptimisticUser,
+  applyEvent,
+  emptyTimeline,
+  removeItem,
+  type TimelineState,
+} from "./timeline";
+import type { StreamEvent } from "../../lib/sse";
 
-export interface ChatMessage {
-  /** Stable identity: index keys made React reuse the wrong node after an insert. */
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  tool_calls?: { id: string; name: string; arguments: Record<string, unknown> }[];
+/** A one-shot text handoff to a session's composer. The id makes each handoff
+ * distinguishable from one the composer already adopted, which is what lets the
+ * composer adopt it during render rather than in an effect. */
+export interface PendingDraft {
+  id: number;
+  text: string;
 }
 
-/** Monotonic within a page load; ids only need to be unique inside one list.
- * The "msg-" prefix keeps them from colliding with ids built elsewhere. */
-let idCounter = 0;
-export function nextMessageId(): string {
-  idCounter += 1;
-  return `msg-${idCounter}`;
-}
+/** Monotonic within a page load; the id only has to order handoffs. */
+let draftCounter = 0;
 
-/** Messages fetched per page. Matches the backend default, so opening a
- * session is one request rather than a page plus a follow-up. */
-const PAGE_SIZE = 200;
-
-const toChatMessage = (m: Message): ChatMessage => ({
-  id: nextMessageId(),
-  role: m.role,
-  content: m.content,
-});
+/**
+ * One shared empty timeline.
+ *
+ * A zustand selector must return a stable reference or the component re-renders
+ * on every unrelated store read, so selectors fall back to this constant rather
+ * than calling emptyTimeline() themselves. Nothing mutates it: every reducer
+ * call returns a new state object.
+ */
+export const EMPTY_TIMELINE: TimelineState = emptyTimeline();
 
 interface ChatState {
-  messagesBySession: Record<string, ChatMessage[]>;
+  /** The folded transcript per session, keyed by session id. */
+  timelineBySession: Record<string, TimelineState>;
   isStreamingBySession: Record<string, boolean>;
-  /** The assistant message currently accepting streamed text, per session. */
-  streamingMessageIdBySession: Record<string, string | null>;
   stopRequested: Record<string, boolean>;
-  /** How many messages the server holds per session, so the UI can tell
-   * whether loading older ones would return anything. */
-  historyTotalBySession: Record<string, number>;
   model: { provider_id: string; model_id: string };
   setModel: (m: { provider_id: string; model_id: string }) => void;
-  addMessage: (sid: string, m: Omit<ChatMessage, "id">) => void;
+  /** A draft handed to a session by something other than typing — today, the
+   * first-run example prompts. Consumed once, so a remount cannot refill a box
+   * the user already cleared or sent. */
+  pendingDraftBySession: Record<string, PendingDraft>;
+  setPendingDraft: (sid: string, text: string) => void;
+  takePendingDraft: (sid: string) => PendingDraft | undefined;
+  /** Fold one streamed event into a session's transcript. */
+  applyStreamEvent: (sid: string, event: StreamEvent) => void;
+  /** Drop a session's transcript. Called before an SSE replay from seq 0 so a
+   * session switch cannot blend two logs into one list. */
+  resetTimeline: (sid: string) => void;
+  /** Add the composer's optimistic user message and return its item id, so the
+   * caller can withdraw exactly that row if the send fails. */
+  addOptimisticUserMessage: (sid: string, content: string) => string;
+  /** Withdraw one timeline item by id. */
+  removeTimelineItem: (sid: string, id: string) => void;
   beginStream: (sid: string) => void;
-  appendChunk: (sid: string, text: string) => void;
   endStream: (sid: string) => void;
   requestStop: (sid: string) => void;
-  loadHistory: (sid: string) => Promise<void>;
-  /** Fetch the page of messages immediately before the oldest one held. */
-  loadMoreHistory: (sid: string) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
-  messagesBySession: {},
+  timelineBySession: {},
   isStreamingBySession: {},
-  streamingMessageIdBySession: {},
   stopRequested: {},
-  historyTotalBySession: {},
   model: { provider_id: "opencode-go", model_id: "kimi-k3" },
   setModel: (model) => set({ model }),
-  addMessage: (sid, m) =>
+  pendingDraftBySession: {},
+  setPendingDraft: (sid, text) =>
     set((s) => ({
-      messagesBySession: {
-        ...s.messagesBySession,
-        [sid]: [...(s.messagesBySession[sid] ?? []), { ...m, id: nextMessageId() }],
-      },
+      pendingDraftBySession: { ...s.pendingDraftBySession, [sid]: { id: ++draftCounter, text } },
     })),
+  takePendingDraft: (sid) => {
+    const draft = get().pendingDraftBySession[sid];
+    if (draft === undefined) return undefined;
+    set((s) => {
+      const next = { ...s.pendingDraftBySession };
+      delete next[sid];
+      return { pendingDraftBySession: next };
+    });
+    return draft;
+  },
+  applyStreamEvent: (sid, event) =>
+    set((s) => {
+      const current = s.timelineBySession[sid] ?? EMPTY_TIMELINE;
+      const next = applyEvent(current, event);
+      // A replayed duplicate or an empty chunk leaves the reducer's state object
+      // identical; skipping the store write keeps subscribers from re-rendering.
+      if (next === current) return {};
+      return { timelineBySession: { ...s.timelineBySession, [sid]: next } };
+    }),
+  resetTimeline: (sid) =>
+    set((s) => ({ timelineBySession: { ...s.timelineBySession, [sid]: emptyTimeline() } })),
+  addOptimisticUserMessage: (sid, content) => {
+    const current = get().timelineBySession[sid] ?? EMPTY_TIMELINE;
+    const next = addOptimisticUser(current, content);
+    const added = next.items[next.items.length - 1];
+    set((s) => ({ timelineBySession: { ...s.timelineBySession, [sid]: next } }));
+    return added.id;
+  },
+  removeTimelineItem: (sid, id) =>
+    set((s) => {
+      const current = s.timelineBySession[sid] ?? EMPTY_TIMELINE;
+      const next = removeItem(current, id);
+      if (next === current) return {};
+      return { timelineBySession: { ...s.timelineBySession, [sid]: next } };
+    }),
   beginStream: (sid) =>
     set((s) => ({
-      // Point the stream at a fresh message: text for this turn must never land
-      // in the previous turn's bubble, and the stop latch is per-turn.
-      streamingMessageIdBySession: { ...s.streamingMessageIdBySession, [sid]: null },
       isStreamingBySession: { ...s.isStreamingBySession, [sid]: true },
+      // The stop latch is per-turn: the next turn must not inherit it.
       stopRequested: { ...s.stopRequested, [sid]: false },
     })),
-  appendChunk: (sid, text) =>
-    set((s) => {
-      const msgs = [...(s.messagesBySession[sid] ?? [])];
-      const targetId = s.streamingMessageIdBySession[sid] ?? null;
-      const index = targetId ? msgs.findIndex((m) => m.id === targetId) : -1;
-      if (index >= 0) {
-        // Append only to the message this turn is streaming into; a finished
-        // message is never mutated by a late or replayed chunk.
-        msgs[index] = { ...msgs[index], content: msgs[index].content + text };
-        return { messagesBySession: { ...s.messagesBySession, [sid]: msgs } };
-      }
-      const id = nextMessageId();
-      msgs.push({ id, role: "assistant", content: text });
-      return {
-        messagesBySession: { ...s.messagesBySession, [sid]: msgs },
-        streamingMessageIdBySession: { ...s.streamingMessageIdBySession, [sid]: id },
-      };
-    }),
   endStream: (sid) =>
-    set((s) => ({
-      isStreamingBySession: { ...s.isStreamingBySession, [sid]: false },
-      streamingMessageIdBySession: { ...s.streamingMessageIdBySession, [sid]: null },
-    })),
+    set((s) => ({ isStreamingBySession: { ...s.isStreamingBySession, [sid]: false } })),
   requestStop: (sid) => set((s) => ({ stopRequested: { ...s.stopRequested, [sid]: true } })),
-  loadHistory: async (sid) => {
-    const { messages: history, total } = await api.getMessages(sid, { limit: PAGE_SIZE });
-    set((s) => {
-      // Don't clobber messages the user already sent this session.
-      if ((s.messagesBySession[sid] ?? []).length > 0) return {};
-      return {
-        messagesBySession: { ...s.messagesBySession, [sid]: history.map(toChatMessage) },
-        historyTotalBySession: { ...s.historyTotalBySession, [sid]: total },
-      };
-    });
-  },
-  loadMoreHistory: async (sid) => {
-    // The offset is however many the client already holds. The backend counts
-    // back from the newest message, so that lands exactly before the oldest one
-    // on screen -- and a message arriving mid-fetch cannot shift the window.
-    const loaded = (get().messagesBySession[sid] ?? []).length;
-    const { messages: older, total } = await api.getMessages(sid, {
-      limit: PAGE_SIZE,
-      offset: loaded,
-    });
-    set((s) => ({
-      messagesBySession: {
-        ...s.messagesBySession,
-        [sid]: [...older.map(toChatMessage), ...(s.messagesBySession[sid] ?? [])],
-      },
-      historyTotalBySession: { ...s.historyTotalBySession, [sid]: total },
-    }));
-  },
 }));

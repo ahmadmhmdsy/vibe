@@ -83,3 +83,50 @@ async def test_install_non_allowlisted_denied_skips(tmp_path):
     r = await task
     assert "date-fns" not in ex.installed
     assert "skipped" in r.content
+
+
+# --- R1-T4: promoted from the 2026-10-11 review (probe 2, BE-02) ---
+#
+# is_allowlisted truncates at the first "@", so "react@npm:evil-package" is
+# judged by the name "react" while npm installs evil-package. The cases below
+# are the specifiers that ride the allowlist today; the already-rejected ones
+# sit beside them so the boundary is pinned in one place.
+
+ALLOWED_SPECIFIERS = ["react", "react@^19", "react@19.0.0", "@types/react",
+                      "@types/react@^19", "@vitejs/plugin-react", "zustand@^5"]
+
+DENIED_SPECIFIERS = ["evil-package", "react-malicious", "", " ", "../evil",
+                     "@scope", "date-fns", "lodash"]
+
+# "react@^19 nope" is not a real version range. It is here because the obvious
+# fix -- rejecting an alias/protocol prefix -- would still let it resolve to the
+# allowlisted name "react", so R2-T2 also refuses range characters that can
+# never be part of a version we accept.
+BYPASS_SPECIFIERS = [
+    "react@npm:evil-package",       # alias installs something else entirely
+    "react@npm:@evil/pkg",          # alias to a scoped package
+    "@types/react@npm:evil",        # scoped alias
+    "react@github:evil/repo",       # git protocol
+    "react@git+https://evil/x.git",
+    "react@file:../evil",           # local path
+    "react@link:../evil",
+    "react@http://evil/x.tgz",
+    "react@workspace:*",
+    "react@^19 nope",
+]
+
+
+@pytest.mark.parametrize("spec", ALLOWED_SPECIFIERS)
+def test_allowlisted_specifiers(spec):
+    assert is_allowlisted(spec) is True
+
+
+@pytest.mark.parametrize("spec", DENIED_SPECIFIERS)
+def test_denied_specifiers(spec):
+    assert is_allowlisted(spec) is False
+
+
+@pytest.mark.parametrize("spec", BYPASS_SPECIFIERS)
+def test_alias_and_protocol_specifiers_are_denied(spec):
+    assert is_allowlisted(spec) is False
+

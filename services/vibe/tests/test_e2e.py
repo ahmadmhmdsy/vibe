@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from vibe.api.app import create_app
+from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.config import Settings
 from vibe.container import Container
 from vibe.events import EventBus, EventLog
@@ -42,7 +43,9 @@ async def test_e2e_core_loop(tmp_path):
         event_bus=EventBus(),
         runtime=E2ERuntime(),
         tool_registry=registry,
-        get_autorun=lambda sid, ws: NoOpAutorun(),
+        # The factory seam takes the owner as a keyword; the stub mirrors the
+        # real signature so a change to it breaks here rather than at runtime.
+        get_autorun=lambda sid, ws, *, owner_id=LOOPBACK_OWNER_ID: NoOpAutorun(),
     )
     client = TestClient(create_app(settings, container=container))
     # create session

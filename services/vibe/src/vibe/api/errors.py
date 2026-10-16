@@ -27,6 +27,9 @@ class ErrorCode(StrEnum):
     RUN_IN_PROGRESS = "run_in_progress"
     # The request conflicts with existing state, such as a duplicate name.
     CONFLICT = "conflict"
+    # The session's own files are still open in another program, so the session
+    # cannot be finished off yet. Retrying after closing it will work.
+    WORKSPACE_BUSY = "workspace_busy"
     # The request was understood but its contents were not usable.
     VALIDATION_FAILED = "validation_failed"
     # The selected provider has no credentials, or is not one we can build.
@@ -47,6 +50,7 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
     ErrorCode.NOT_FOUND: 404,
     ErrorCode.RUN_IN_PROGRESS: 409,
     ErrorCode.CONFLICT: 409,
+    ErrorCode.WORKSPACE_BUSY: 409,
     ErrorCode.VALIDATION_FAILED: 400,
     ErrorCode.PROVIDER_NOT_CONFIGURED: 400,
     ErrorCode.UNAUTHENTICATED: 401,

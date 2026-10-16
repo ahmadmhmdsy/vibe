@@ -19,25 +19,27 @@ test substitutes a stub.
 """
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 from vibe.approvals import ApprovalStore
-from vibe.auth import Authenticator, LoopbackAuthenticator
+from vibe.auth import LOOPBACK_OWNER_ID, Authenticator, LoopbackAuthenticator
 from vibe.autorun.policy import AutoRunPolicy
 from vibe.config import Settings
 from vibe.events import EventBus, EventLog, EventStore
+from vibe.executor.base import Executor
 from vibe.executor.browser import BrowserDriver
 from vibe.executor.local import LocalSubprocessExecutor
 from vibe.lifecycle import SessionLifecycle
 from vibe.providers.custom import CustomProviderStore
 from vibe.providers.registry import build_llm_factory
-from vibe.runs import RunRegistry
+from vibe.runs import RunRegistry, SessionKey
 from vibe.runtime.base import AgentRuntime
 from vibe.runtime.langgraph import LangGraphRuntime
 from vibe.services.messages import MessageService
 from vibe.services.sessions import SessionService
+from vibe.settings_store import SettingsStore, effective_override
 from vibe.store import SessionStore
 from vibe.tools.executor_tools import register_executor_tools
 from vibe.tools.files import register_file_tools
@@ -55,6 +57,25 @@ def _build_authenticator(settings: Settings) -> Authenticator:
     if settings.auth_mode == "loopback":
         return LoopbackAuthenticator()
     raise ValueError(f"unknown VIBE_AUTH_MODE: {settings.auth_mode!r} (expected 'loopback')")
+
+
+class ExecutorFactory(Protocol):
+    """Builds (or reuses) the executor that runs one session's commands.
+
+    A session-level resource is addressed by owner *and* session, so the factory
+    takes both. The owner keyword defaults to the loopback owner for the local
+    single-user app and for tests, and every route passes the principal's id.
+    """
+
+    def __call__(self, session_id: str, workspace: Path, *,
+                 owner_id: str = LOOPBACK_OWNER_ID) -> Executor: ...
+
+
+class AutoRunFactory(Protocol):
+    """Builds (or reuses) the auto-run fix-loop policy for one session."""
+
+    def __call__(self, session_id: str, workspace: Path, *,
+                 owner_id: str = LOOPBACK_OWNER_ID) -> AutoRunPolicy: ...
 
 
 def _default_tool_registry() -> ToolRegistry:
@@ -77,15 +98,16 @@ class Container:
     runtime: AgentRuntime
     usage: UsageTracker
     custom_provider_store: CustomProviderStore
+    settings_store: SettingsStore
     approval_store: ApprovalStore
     runs: RunRegistry
     lifecycle: SessionLifecycle
     session_service: SessionService
     message_service: MessageService
-    executors: dict[str, LocalSubprocessExecutor]
-    autorun_policies: dict[str, AutoRunPolicy]
-    get_executor: Callable[[str, Path], LocalSubprocessExecutor]
-    get_autorun: Callable[[str, Path], AutoRunPolicy]
+    executors: dict[SessionKey, Executor]
+    autorun_policies: dict[SessionKey, AutoRunPolicy]
+    get_executor: ExecutorFactory
+    get_autorun: AutoRunFactory
 
     @classmethod
     def build(cls, settings: Settings, **overrides) -> Container:
@@ -106,6 +128,10 @@ class Container:
         event_bus = overrides.pop("event_bus", None) or EventBus()
         custom_provider_store = (overrides.pop("custom_provider_store", None)
                                  or CustomProviderStore(settings.workspace_dir / "providers.json"))
+        # The GUI-writable half of BE-19. Workspace-scoped, and read per turn, so
+        # a prompt saved in Settings applies without a restart.
+        settings_store = (overrides.pop("settings_store", None)
+                          or SettingsStore(settings.workspace_dir / "settings.json"))
         tool_registry = overrides.pop("tool_registry", None) or _default_tool_registry()
         usage = overrides.pop("usage", None) or UsageTracker(log=event_log, bus=event_bus)
         runtime = overrides.pop("runtime", None) or LangGraphRuntime(
@@ -117,28 +143,40 @@ class Container:
         runs = overrides.pop("runs", None) or RunRegistry()
 
         # Executors and auto-run policies are per-session (each session owns its
-        # own workspace), so they live in registries keyed by session id.
-        executors: dict[str, LocalSubprocessExecutor] = {}
-        autorun_policies: dict[str, AutoRunPolicy] = {}
+        # own workspace), so they live in registries keyed by owner *and* session:
+        # a session id is a generated uuid, so the same id under two owners is a
+        # different session and must not share a dev server or a fix loop.
+        executors: dict[SessionKey, Executor] = {}
+        autorun_policies: dict[SessionKey, AutoRunPolicy] = {}
 
-        def get_executor(sid: str, workspace: Path) -> LocalSubprocessExecutor:
-            ex = executors.get(sid)
+        def get_executor(
+            sid: str, workspace: Path, *, owner_id: str = LOOPBACK_OWNER_ID
+        ) -> Executor:
+            key = SessionKey(owner_id=owner_id, session_id=sid)
+            ex = executors.get(key)
             if ex is None:
                 ex = LocalSubprocessExecutor(workspace=workspace, browser=BrowserDriver(
                     headless=settings.browser_headless,
                     timeout_ms=settings.browser_timeout_ms))
-                executors[sid] = ex
+                executors[key] = ex
             return ex
 
-        def get_autorun(sid: str, workspace: Path) -> AutoRunPolicy:
-            policy = autorun_policies.get(sid)
+        def get_autorun(
+            sid: str, workspace: Path, *, owner_id: str = LOOPBACK_OWNER_ID
+        ) -> AutoRunPolicy:
+            key = SessionKey(owner_id=owner_id, session_id=sid)
+            policy = autorun_policies.get(key)
             if policy is None:
-                policy = AutoRunPolicy(executor=get_executor(sid, workspace),
-                                       runtime=runtime,
-                                       max_fix_iterations=settings.max_fix_iterations,
-                                       usage=usage,
-                                       session_token_budget=settings.session_token_budget)
-                autorun_policies[sid] = policy
+                policy = AutoRunPolicy(
+                    executor=get_executor(sid, workspace, owner_id=owner_id),
+                    runtime=runtime,
+                    max_fix_iterations=settings.max_fix_iterations,
+                    usage=usage,
+                    session_token_budget=settings.session_token_budget,
+                    # A callable, not a snapshot: the fix loop must see a prompt
+                    # saved after the app started (BE-19).
+                    system_prompt=lambda: effective_override(settings, settings_store))
+                autorun_policies[key] = policy
             return policy
 
         # A test may replace either factory outright. get_autorun reads
@@ -159,6 +197,7 @@ class Container:
             approvals=approval_store,
             runs=runs,
             workspace_dir=settings.workspace_dir,
+            trash_retention_days=settings.trash_retention_days,
         )
         # Thin facades over the seams above, built from the same (possibly
         # overridden) instances so a test's stub is the one they talk to.
@@ -175,6 +214,7 @@ class Container:
             runtime=runtime,
             usage=usage,
             custom_provider_store=custom_provider_store,
+            settings_store=settings_store,
             approval_store=approval_store,
             runs=runs,
             lifecycle=lifecycle,

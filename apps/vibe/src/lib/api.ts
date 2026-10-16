@@ -2,8 +2,11 @@ export interface Session {
   id: string;
   title: string;
   model: { provider_id: string; model_id: string };
-  created_at: string;
-  updated_at: string;
+  /** Optional: both `GET /sessions` and `GET /sessions/{id}` return these
+   * (R3-T6). Optional so an optimistic client-side session is valid before the
+   * server echoes it back. */
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ProviderInfo {
@@ -14,7 +17,35 @@ export interface ProviderInfo {
   key_configured: boolean;
 }
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:7321";
+/** GET/PATCH /settings (BE-19).
+ *
+ * `source` names the layer that won: the environment (`VIBE_SYSTEM_PROMPT`),
+ * the prompt saved in this workspace's settings.json, or the built-in default.
+ * The Settings panel must not offer a field the environment would ignore, so it
+ * disables the textarea when `source` is "env".
+ */
+export interface SystemPromptSettings {
+  system_prompt: {
+    /** The raw environment value; "" when the environment set nothing. */
+    configured: string;
+    /** What the model will actually receive. */
+    effective: string;
+    default: string;
+    source: "default" | "file" | "env";
+  };
+}
+
+/** The one place a frontend API origin is built.
+ *
+ * Both the REST calls below and the SSE client in ./sse read this, so the app
+ * has exactly one default origin. A production build is served by the API
+ * process itself (R5-T3), so its default is same-origin: a relative URL keeps
+ * working when the chosen port is not 7321. Development keeps the absolute
+ * default because there is no Vite proxy for /sessions; `start.bat dev` sets
+ * VITE_API_URL explicitly, so only a bare `pnpm run dev` relies on this.
+ */
+export const API_BASE =
+  import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "" : "http://localhost:7321");
 
 /** Error thrown by every api method on a non-2xx response.
  *
@@ -63,7 +94,7 @@ async function reqWithHeaders<T>(
   path: string,
   init?: RequestInit
 ): Promise<{ data: T; headers: Headers }> {
-  const resp = await fetch(`${BASE}${path}`, {
+  const resp = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...init,
   });
@@ -100,6 +131,13 @@ export const api = {
   abortSession: (id: string) =>
     req<{ aborted: boolean }>(`/sessions/${id}/abort`, { method: "POST" }),
   getCatalog: () => req<ProviderInfo[]>("/catalog"),
+  getSettings: () => req<SystemPromptSettings>("/settings"),
+  /** Save the workspace system prompt; an empty string clears the override. */
+  setSystemPrompt: (systemPrompt: string) =>
+    req<SystemPromptSettings>("/settings", {
+      method: "PATCH",
+      body: JSON.stringify({ system_prompt: systemPrompt }),
+    }),
   listProviders: () => req<CustomProvider[]>("/providers"),
   createProvider: (p: { name: string; baseUrl: string; apiKey?: string; models: CustomModel[] }) =>
     req<CustomProvider>("/providers", { method: "POST", body: JSON.stringify(p) }),

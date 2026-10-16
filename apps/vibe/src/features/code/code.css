@@ -1,103 +1,119 @@
-/* code.css — code panel (file tree + Monaco). */
+/* code.css — code panel: file tree | splitter | editor.
 
-.code-panel {
-  flex-direction: row;
-}
+   The panel's flex context comes from the layout contract (.panel +
+   .panel-body[data-direction]), so this sheet only sizes the panes. Every
+   scrolling region is the primitive's .scroll-region, and every height is
+   chained through min-height: 0 so the shell never grows. */
 
-.code-file-list {
-  width: 200px;
-  flex-shrink: 0;
-  overflow: auto;
-  border-right: 1px solid var(--border);
-  padding: var(--space-2);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+@layer components {
+  /* The panel fills whatever column the shell gives it (side column or tab).
+     flex + min-height: 0 is the same chain the shell sets on its own children,
+     so a panel nested in a wrapper still gets a bounded height. */
+  .code-panel {
+    flex: 1;
+    min-height: 0;
+  }
 
-.code-loading {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-4) 0;
-}
+  /* Identity in the panel header: the selected file, not a title. */
+  .code-file-path {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-.code-file {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
-  border-color: transparent;
-  background: transparent;
-}
+  .code-file-count {
+    flex: none;
+    color: var(--text-faint);
+    font-size: var(--text-2xs);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+  }
 
-.code-file:hover {
-  background: var(--bg-hover);
-  border-color: transparent;
-  color: var(--text);
-}
+  /* The file tree pane. Its width is the Splitter's value, applied inline. */
+  .code-tree {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
 
-.code-file-active,
-.code-file-active:hover {
-  background: var(--accent-subtle);
-  border-color: transparent;
-  color: var(--accent);
-}
+  .code-tree-status {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-4) 0;
+  }
 
-.code-editor {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-}
+  /* The editor pane fills the rest of the row and owns the height chain:
+     .code-editor (flex: 1, min-height: 0) > .code-editor-body (same) > Monaco. */
+  .code-editor {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-/* Overlays, not flow: a save chip must never shift the editor. */
-.code-save-status {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  z-index: 12;
-  pointer-events: none;
-}
+  .code-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    flex: none;
+    min-height: var(--control-lg);
+    padding: 0 var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
 
-.code-save-status span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border);
-  background: var(--bg-raised);
-  box-shadow: var(--shadow-1);
-  font-size: var(--text-xs);
-}
+  .code-save-state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
 
-.code-save-status-saved {
-  color: var(--success);
-  border-color: var(--success-border) !important;
-}
+  .code-save-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
 
-.code-save-status-error {
-  color: var(--danger);
-  border-color: var(--danger-border) !important;
-}
+  .code-save-error {
+    min-width: 0;
+    color: var(--danger);
+    font-size: var(--text-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-.code-error {
-  position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-  right: var(--space-2);
-  z-index: 11;
-}
+  .code-editor-body {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    /* Matches Monaco's own theme background so a slow load never flashes. */
+    background: var(--bg);
+  }
 
-.code-save-error {
-  position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-  right: var(--space-2);
-  z-index: 11;
+  .code-editor-body > .empty-state {
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+  }
+
+  /* Above Monaco, so an open-file failure is readable without resizing it. */
+  .code-editor-alert {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    right: var(--space-2);
+    z-index: 2;
+  }
 }

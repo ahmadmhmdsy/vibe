@@ -1,6 +1,7 @@
 // apps/vibe/src/lib/__tests__/api.test.ts
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { api, ApiError } from "../api";
+import { API_BASE, api, ApiError } from "../api";
+import { SSEClient } from "../sse";
 
 /** Stub fetch with a hand-built response. Only the fields the code reads are
  * needed, so the whole Response interface would be noise. */
@@ -81,5 +82,69 @@ describe("api body parsing", () => {
     });
     await api.getMessages("s1", { limit: 1, offset: 2 });
     expect(String(fetchMock.mock.calls[0][0])).toContain("/sessions/s1/messages?limit=1&offset=2");
+  });
+});
+// R6-T7 (L-7): the frontend has exactly one API origin. The REST client and the
+// SSE client used to build their own copies of the default, so a changed port or
+// a VITE_API_URL override could leave the chat stream pointing somewhere the API
+// client was not. This is the guardrail that keeps it single.
+
+/** Every source file, loaded as text by Vite itself.
+ *
+ * import.meta.glob reads the real files without node:fs, so this guardrail adds
+ * no dependency the app does not already ship and needs no node typings.
+ */
+const SOURCES = import.meta.glob("/src/**/*.{ts,tsx}", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+const ORIGIN = /localhost|127\.0\.0\.1/;
+/** The one file allowed to name a default origin. */
+const API_HOME = "src/lib/api.ts";
+
+const asPosix = (key: string) => key.replace(/^\//, "");
+
+describe("one API origin", () => {
+  it("builds every API URL from the single base", () => {
+    // Control: the scanner must see the pattern at all, otherwise an empty
+    // offender list would only prove the regex is wrong.
+    expect(ORIGIN.test('const u = "http://localhost:7321/sessions";')).toBe(true);
+
+    // Control: the glob must actually have read the tree, or an empty offender
+    // list would only prove the pattern matched nothing.
+    expect(Object.keys(SOURCES).length).toBeGreaterThan(20);
+
+    const offenders = Object.entries(SOURCES)
+      .filter(([key]) => !key.includes("__tests__"))
+      .filter(([key]) => asPosix(key) !== API_HOME)
+      .filter(([, text]) => ORIGIN.test(text))
+      .map(([key]) => asPosix(key));
+    expect(offenders).toEqual([]);
+
+    // ...and the one allowed home really does hold the default, so the empty
+    // result above is not an artefact of the file having moved or gone empty.
+    expect(ORIGIN.test(SOURCES["/src/lib/api.ts"])).toBe(true);
+  });
+
+  it("defaults the SSE client to the shared base", () => {
+    const urls: string[] = [];
+    class FakeEventSource {
+      onopen: (() => void) | null = null;
+      onmessage: ((m: { data: string }) => void) | null = null;
+      onerror: (() => void) | null = null;
+      url: string;
+      constructor(url: string) {
+        this.url = url;
+        urls.push(url);
+      }
+      close(): void {}
+    }
+    vi.stubGlobal("EventSource", FakeEventSource);
+
+    const client = new SSEClient();
+    client.connect("sess1", () => {});
+    expect(urls[0]).toBe(API_BASE + "/sessions/sess1/events?after_seq=0");
+    client.disconnect();
   });
 });

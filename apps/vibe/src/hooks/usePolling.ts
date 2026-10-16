@@ -30,7 +30,13 @@ export function usePolling(
   }: PollingOptions
 ) {
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+
+  // Keep the ref current without writing to it during render (which the
+  // react-hooks/refs rule forbids). This effect runs after every render, so
+  // the ref always holds the latest callback by the time a poll fires.
+  useEffect(() => {
+    callbackRef.current = callback;
+  });
 
   const retriesRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,6 +59,14 @@ export function usePolling(
     const tick = async () => {
       if (cancelled) return;
 
+      // A hidden tab keeps timers but should not keep hitting the backend;
+      // none of the polled state is visible. The loop stays alive so becoming
+      // visible resumes immediately (see the visibilitychange listener below).
+      if (typeof document !== "undefined" && document.hidden) {
+        timerRef.current = setTimeout(tick, interval);
+        return;
+      }
+
       try {
         await callbackRef.current();
         retriesRef.current = 0;
@@ -73,9 +87,23 @@ export function usePolling(
 
     tick();
 
+    // Coming back to the tab should refresh at once, not after the next tick.
+    const onVisibility = () => {
+      if (cancelled || document.hidden) return;
+      retriesRef.current = 0;
+      clear();
+      void tick();
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+
     return () => {
       cancelled = true;
       clear();
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
     };
   }, [interval, enabled, maxRetries, backoffBase, recoveryInterval, clear]);
 
