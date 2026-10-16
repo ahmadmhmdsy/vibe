@@ -41,6 +41,7 @@ Two rules: **model-visible means logged** (the EventLog is the source of truth);
 | M4 — Scale | Docker executor, Postgres, auth, deployment — behind the same interfaces. | **deferred** — local-first; seams kept (see M6 and §2 of the hardening plan) |
 | M5 — Frontend UI/UX overhaul | Design system, shell, honest states, chat, approvals, code, preview. | **done** 2026-09-29 |
 | M6 — Local production readiness | One-command local install and run, production serving mode, first-run guidance, retention and recovery, honest states. | **pending** — [plan](./docs/superpowers/plans/2026-10-11-local-production-hardening.md) |
+| M8 — Competitor parity & expansion | Close the top gaps vs Dyad/Lovable/Bolt: import a project, Git, checkpoints, plan-before-build, generated-app persistence, quick wins (local models, MCP, code scan) — each as a seam. (M7 = the UI/UX overhaul, tracked in [TASKS.md](./TASKS.md).) | **proposed** — user-gated; [plan](./docs/superpowers/plans/2026-10-16-competitor-parity.md), [research](./docs/research/2026-10-16-competitive-analysis.md) |
 
 ## 4. Open items
 
@@ -51,6 +52,8 @@ Two rules: **model-visible means logged** (the EventLog is the source of truth);
   Verified **not implemented** 2026-10-11: `services/vibe/src/vibe/workspace.py`
   only enumerates files, and `SessionService.ensure_workspace`
   (`services/vibe/src/vibe/services/sessions.py:35-39`) only creates the directory.
+  **Scheduled 2026-10-16 as M8/C1** — it becomes the `ProjectSource` seam (template,
+  local folder, git repo) in the [parity plan](./docs/superpowers/plans/2026-10-16-competitor-parity.md).
 
 Resolved and removed from this list 2026-10-11:
 

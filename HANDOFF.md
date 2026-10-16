@@ -186,6 +186,7 @@
 | Hardening R5-T1 — Preflight doctor | `python -m vibe doctor` and `doctor.bat`: ten checks, six blocking, every failure naming its exact remedy | **done** 2026-10-11 — `artifacts/hardening-r5-doctor.txt` |
 | Hardening R5-T7 — Backup and repair | `vibe backup` / `vibe repair`: timestamped snapshots with a manifest, real restore, integrity check, quarantine of a corrupt store, pruned only by our own timestamp pattern | **done** 2026-10-11 — `artifacts/hardening-r5-backup.txt` |
 | M6 — Local production readiness | One-command local install and run, production serving mode, first-run guidance, retention and recovery, honest states | **in progress** — hardening program R0–R7; plan `docs/superpowers/plans/2026-10-11-local-production-hardening.md` |
+| M8 — Competitor parity & expansion | Import a project, Git, checkpoints, plan-before-build, generated-app persistence, quick wins (local models, MCP, code scan) — each as a seam | **proposed** 2026-10-16 — user-gated; plan `docs/superpowers/plans/2026-10-16-competitor-parity.md`, research `docs/research/2026-10-16-competitive-analysis.md` |
 | Hardening R5 — packaging, lifecycle, offline truth (T2, T3, T6, T8, T9) | `start.bat`/`stop.bat` around one port and one window; the built SPA served by FastAPI in prod mode; a graceful `POST /admin/shutdown` behind the loopback principal; an npm-registry probe whose message says nothing was downloaded; dev servers left by a previous run reaped at startup | **done** 2026-10-11 — T5/T4's agent: `artifacts/hardening-r5-lifecycle.txt`, `artifacts/hardening-r5-offline.txt` |
 | Hardening R5-T4/T5 — a first run that explains itself, and a log you can send | A first-run panel that opens Settings and can fill the composer; a rotating log under the workspace (2 MiB x 5) with settings redaction and a startup banner, activated at the real entry point | **done** 2026-10-11 — 13 new frontend tests (153 passed) and 23 log tests; `artifacts/hardening-r5-logs-firstrun.txt` |
 | Hardening R6 — scalability seams | All eight guardrails (L-1..L-8): `owner_id` on every persisted row with additive, idempotent migrations; SQL only in the store providers; registries keyed by (owner, session); `config.py` the only environment reader; migrations the only schema writer | **done** 2026-10-11 — 433 passed after R6, and the L-6 gate closed by the orchestrator with `_ENV_EXEMPTIONS` empty; `artifacts/hardening-r6-guardrails.txt`, `artifacts/hardening-r6-gate-closure.txt` |
@@ -517,6 +518,17 @@
   `pnpm run lint`. Errors must be zero before calling anything done.
 - Frontend docs: See `docs/frontend/` for ARCHITECTURE.md, COMPONENTS.md,
   DESIGN_SYSTEM.md, and AGENT_GUIDE.md.
+- 2026-10-16 competitive research + parity plan. A net search against the closest
+  competitors (Dyad is the direct peer — same local-first pitch, and currently
+  *ahead* of us; plus bolt.diy, Onlook, Lovable, Bolt, Replit, Cursor) is captured
+  in `docs/research/2026-10-16-competitive-analysis.md`, with our moat (the
+  append-only event log as source of truth, the install approval gate, fully-local
+  no-account) and the 14 gaps they ship that we do not. The follow-on plan
+  `docs/superpowers/plans/2026-10-16-competitor-parity.md` (milestone **M8**) turns
+  the top five into phases C1–C6, each as a **seam** (Definition/Provider/Consumer).
+  **User-gated and not started.** The user's governing constraint: never write code
+  for one-time use — this is a package that expands, so it stays clean/easy/structured.
+  Registered as `docs/research/` in the AGENTS.md document map.
 
 ## Review and hardening program (2026-10-11)
 

@@ -31,6 +31,7 @@ status; HANDOFF.md owns the narrative.
 | 19 | Codebase audit — structure, reusability, extensibility (first-hand, every claim carries file:line) | `done` | 2026-10-04: 5 high / 10 medium findings, 15 missing implementations, a hygiene list, a target structure and a 5-phase plan | docs/architecture/2026-10-04-codebase-audit.md |
 | 20 | 2026-10-11 full app review + local production hardening program | `done` | review **done** (48 findings; **BE-20**, **BE-21**, **BE-22** and **BE-23** were found by the program's own acceptance run, its re-runs and the first real browser run, **BE-24** by the CLI smoke and **FE-16** by the browser re-check, all fixed in the same phase); program **R0-R6 done**, R7 verified - release-check **8/8 green**, acceptance **RESULT: PASS**, the M1-M11 browser checks run for real and re-run on the fixed build (**7 PASS / 1 FAIL / 2 BLOCKED / 1 SKIPPED**, the FAIL being **FE-16**, now fixed); final orchestrator gate **464 backend / 160 frontend** tests green, ruff, tsc, eslint, prettier and build all clean | docs/reviews/2026-10-11-full-app-review/FINDINGS.md; docs/superpowers/plans/2026-10-11-local-production-hardening.md |
 | 21 | UI/UX overhaul — rebuild the interface on a real design system (M7) | `done` | 2026-10-11: Phases A–G complete — axe-core 0 violations at 1440 dark / 1440 light / 1024 / 390, contrast 0 violations, frontend 32 files / 290 tests green, backend `ruff` green; see the M7 section below; the review that scoped it is `docs/reviews/2026-10-11-ui-ux-review/README.md` (Nielsen 22/40, UX-01…UX-12) and the approved plan is `docs/superpowers/plans/2026-10-11-ui-ux-overhaul.md` | docs/superpowers/plans/2026-10-11-ui-ux-overhaul.md |
+| 22 | Competitor parity program (M8, C1–C6) | `pending` | **User-gated** — pick a phase to start; research and plan landed 2026-10-16 | docs/superpowers/plans/2026-10-16-competitor-parity.md; docs/research/2026-10-16-competitive-analysis.md |
 
 ## Structural work — audit 2026-10-04 (P0+P1+P2+P3+P3a+P4+P5+P6 done)
 
@@ -231,8 +232,41 @@ hardening left-overs. All are implemented in the working tree (uncommitted):
 Committed as `1deed29` — `feat: M7 UI/UX overhaul, local production hardening, and
 review remediation` (223 files) — which lands the whole accumulated worktree, not just
 RED-1..RED-5. **Not pushed:** the repo has no `origin` configured. The decisions above
-(RED-6, P5, R5-T8, D1–D5) are **implemented but not committed** — the tree holds ~103
-entries again (mostly the `ruff format` whitespace on 91 backend files), awaiting an
-explicit commit.
+(RED-6, P5, R5-T8, D1–D5) are **implemented and committed** in `eb6bfb7` —
+`feat: auth token beyond loopback, executor build-script allowlist, and M7 follow-on
+decisions` (103 files: the four decisions plus the `ruff format` whitespace on 91
+backend files). Corrected 2026-10-16 after that commit landed; the tree is clean.
+
+## Competitor parity — 2026-10-16 (M8)
+
+Research: [docs/research/2026-10-16-competitive-analysis.md](./docs/research/2026-10-16-competitive-analysis.md)
+(what Dyad / Lovable / Bolt / Replit / Cursor / Onlook / bolt.diy ship that we do not).
+Plan: [docs/superpowers/plans/2026-10-16-competitor-parity.md](./docs/superpowers/plans/2026-10-16-competitor-parity.md).
+
+**Governing rule (user, 2026-10-16):** never write code for one-time use — this is a
+package that expands as we move, so it must stay clean, easy and structured. Every
+capability lands as a **seam** (Definition ⊕ Provider ⊳ Consumer), never a one-off
+script or a branch in shared code.
+
+**User-gated:** no phase starts without an explicit go. Statuses are `pending` until
+then. Each task below is a phase in the plan.
+
+| # | Task (phase) | Seam | Status | Gate / next action | Evidence |
+|---|---|---|---|---|---|
+| 22.1 | **C1 — Import an existing project** + workspace scaffolding | `ProjectSource` (`ViteReactTsTemplate`, `LocalFolderSource`, `GitRepoSource`) | `pending` | User-gated; also closes the long-open PLAN.md §4 scaffolding item | docs/superpowers/plans/2026-10-16-competitor-parity.md §C1 |
+| 22.2 | **C2 — Git integration** | `Vcs` (`GitVcs`) | `pending` | User-gated; local-only, no implicit push | plan §C2 |
+| 22.3 | **C3 — Per-step checkpoints / restore-from-chat** | `CheckpointStore` (`LocalFsCheckpointStore`) | `pending` | User-gated; anchored to the event-log `seq` | plan §C3 |
+| 22.4 | **C4 — Plan-before-build** | `Planner` node in the runtime graph | `pending` | User-gated; reuses the install-approval pause | plan §C4 |
+| 22.5 | **C5 — App persistence + auth for generated apps** | `DataBackend` (`None` default, `LocalSqlite`, `Supabase`) | `pending` | User-gated; **needs a user decision on the default** (local vs Supabase) | plan §C5 |
+| 22.6 | **C6 — Quick wins** (local models, MCP, generated-code scan) | `LlmPreset`, `ToolSource`, `CodeScanner` | `pending` | User-gated; independent of the spine | plan §C6 |
+
+**Not in scope (deliberately):** deploy/hosting, real-time collaboration,
+multi-tenancy, cloud agents — hosted-product features, not gaps for a single-user
+local tool (analysis §5).
+
+**Open questions for the user** (from the plan): the C5 default backend; folder vs git
+first (and whether in-place import is required); Git as a panel or a thin action set;
+whether MCP is in scope now.
+
 
 

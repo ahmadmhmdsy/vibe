@@ -5,9 +5,9 @@
 ## Git
 
 - Branch: master
-- Latest commit: `1deed29` (M7 UI/UX overhaul + local production hardening + review remediation; 223 files, not pushed)
-- Commit history: `1deed29` → `0849b14` (P3b — prettier sweep) → `e6a5c75` (P3a — root pnpm workspace + unified scripts) → `b377020` (bridge fixes, P0–P6, loopback auth) → `47edd56` (CORS) → `635828d` (polish). Earlier: scaffold `215ca70` → M1 → M2 → M3 → M5.
-- Dirty files: **103 entries** (102 modified, 1 deleted) re-measured 2026-10-16 after the review-remediation commit `1deed29` and the four closed decisions (RED-6, P5, R5-T8, D1–D5). The bulk is `ruff format` whitespace on **91 backend files** (D1); the real deltas are `start.bat`, `.env.example`, `README.md`, `docs/guides/local-setup.md`, `apps/vibe/package.json`, `apps/vibe/src/styles/layout.css`, `apps/vibe/src/features/chat/ChatPanel.tsx`, the deleted `apps/vibe/src/lib/markdown.tsx` (D4), `pnpm-lock.yaml`, plus the four tracking docs. Nothing is staged; nothing was reverted. Earlier: 191 entries at review time, 189 at the M7 close (2026-10-11).
+- Latest commit: `eb6bfb7` (auth token beyond loopback, executor build-script allowlist, and M7 follow-on decisions; 103 files, not pushed)
+- Commit history: `eb6bfb7` → `1deed29` (M7 UI/UX overhaul + local production hardening + review remediation) → `0849b14` (P3b — prettier sweep) → `e6a5c75` (P3a — root pnpm workspace + unified scripts) → `b377020` (bridge fixes, P0–P6, loopback auth) → `47edd56` (CORS) → `635828d` (polish). Earlier: scaffold `215ca70` → M1 → M2 → M3 → M5.
+- Dirty files: **0 entries** (clean) re-measured 2026-10-16 after the decision commit `eb6bfb7` landed the four closed decisions (RED-6, P5, R5-T8, D1–D5) on top of the M7/hardening/remediation commit `1deed29`. Earlier snapshot: 103 entries (mostly `ruff format` whitespace on 91 backend files) before `eb6bfb7`; 191 at review time; 189 at the M7 close (2026-10-11).
 
 ## Active jobs
 
@@ -24,6 +24,18 @@
 
 ## Tasks
 
+- **2026-10-16 competitor research + parity program (M8) — proposed, user-gated.** A net search
+  against the closest competitors (Dyad is the direct peer and is currently *ahead* on the
+  local-first axis; also bolt.diy, Onlook, Lovable, Bolt, Replit, Cursor) is captured in
+  [docs/research/2026-10-16-competitive-analysis.md](./docs/research/2026-10-16-competitive-analysis.md):
+  our moat (append-only event log as source of truth, install approval gate, fully-local
+  no-account) plus the 14 gaps they ship that we do not. The follow-on plan
+  [docs/superpowers/plans/2026-10-16-competitor-parity.md](./docs/superpowers/plans/2026-10-16-competitor-parity.md)
+  turns the top five into phases **C1–C6** (import a project → Git → checkpoints →
+  plan-before-build → generated-app persistence → quick wins), each as a **seam**
+  (Definition ⊕ Provider ⊳ Consumer). **No phase has started.** 2026-10-16 added `docs/research/`
+  to the AGENTS.md document map. The user's governing constraint: never write code for one-time
+  use — this is a package that expands, so it stays clean/easy/structured.
 - **2026-10-16 review remediation — committed (`1deed29`, not pushed).** A read-only verification review of the
   working tree re-ran every gate and fixed six findings (see [TASKS.md](./TASKS.md) § Review
   remediation — 2026-10-16): the prettier drift on 16 files that would have failed the CI frontend
@@ -31,7 +43,7 @@
   no `vite` dep and no build-script approval (RED-2); two stale code comments (RED-3, RED-4); and
   this snapshot's stale port note (RED-5). One new question is open — RED-6, whether a session
   workspace's `pnpm install` hits `ERR_PNPM_IGNORED_BUILDS` on pnpm 12. **All four carried
-  decisions are now answered and implemented (uncommitted)** — see TASKS.md § Review
+  decisions are now answered, implemented and committed (`eb6bfb7`)** — see TASKS.md § Review
   remediation — 2026-10-16 § Open decisions closed: RED-6 (executor writes a safe
   `allowBuilds` allowlist into a session workspace that lacks one), P5 (shared-secret token
   auth + fail-closed non-loopback guard), R5-T8 (non-blocking `network` doctor check), and
@@ -55,10 +67,9 @@
   Five decisions are still open for the user — see the M7 section of TASKS.md.
 - See [TASKS.md](./TASKS.md) — M1 core loop **done** (E2E PASS 2026-09-29),
   M2 **done** (2026-09-29), M3 **done** (2026-09-29), M5 **done**
-  (2026-09-29). M4 — Scale is **deferred** (local-first; the seams are kept).
-  Next milestone: **R7** (release verification) of the local-production hardening
-  program — **R0 through R6 have landed and R5 is complete** (including T11: the README for a
-  local user plus `docs/guides/local-setup.md`); R7's release verification is finishing. Step 6a
+  (2026-09-29). M4 — Scale is **deferred** (local-first; the seams are kept). M8 — Competitor
+  parity is **proposed** (user-gated). Next milestone: **M6** close-out — its hardening program
+  **R0 through R7 all landed** (T11: the README + `docs/guides/local-setup.md`). Step 6a
   is green now (the workspace-held delete answers 204 + `.trash/<sid>-*` after the BE-20 fix) and
   step 6b proves the 409 `workspace_busy` path; the latest script run is `RESULT: PASS` on
   `summary: 0 FAIL/BLOCKED, 1 SKIPPED`. Step 4 stays SKIPPED with its harness cause proven and fixed

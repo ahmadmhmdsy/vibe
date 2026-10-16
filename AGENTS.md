@@ -44,6 +44,7 @@ rules. Never read everything "just in case".
 | package managers, venv, tooling choices | [rules/tooling.md](rules/tooling.md) |
 | stale or conflicting documentation | [rules/context.md](rules/context.md) |
 | touching workspaces, caches, generated projects | [rules/data.md](rules/data.md) |
+| roadmap, parity, competitor features | [docs/research/](./docs/research/README.md) |
 
 ## Stable repository safety
 
@@ -108,6 +109,7 @@ Validation labels: `PASS`, `FAIL`, `SKIPPED`, `BLOCKED`,
 | Conditional rules | [rules/](./rules/README.md) | when the task class matches | only via an approved authoring step |
 | Architecture audit | [docs/architecture/2026-10-04-codebase-audit.md](./docs/architecture/2026-10-04-codebase-audit.md) | before any structural or refactor work | when a finding is fixed or a newer audit supersedes it; the [2026-10-11 code review](./docs/reviews/2026-10-11-full-app-review/README.md) is the newer artifact for structure findings |
 | Code review | [docs/reviews/README.md](./docs/reviews/README.md) | before fixing a known defect | a finding is fixed or a newer review supersedes it |
+| Competitor research | [docs/research/](./docs/research/README.md) | before roadmap, parity, or competitor-feature work | a new analysis lands or a newer one supersedes it |
 | Implementation plans | [docs/superpowers/plans/](./docs/superpowers/plans/) | before executing a phase | a plan is written or a phase lands |
 
 A doc listed above that does not exist yet must be **created the moment its
