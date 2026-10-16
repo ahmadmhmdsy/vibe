@@ -13,6 +13,7 @@ from vibe.api.schemas import SendMessageIn
 from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.events import Event
 from vibe.models import AgentInput, Attachment, Message
+from vibe.projects import project_briefing
 from vibe.prompts import system_prompt_for
 from vibe.providers.registry import ProviderNotConfigured
 from vibe.runtime.base import AgentContext
@@ -75,8 +76,13 @@ async def send_message(sid: str, body: SendMessageIn, deps: App, owner: Owner = 
             messages=[*history, Message(role="user", content=body.content, attachments=attachments)],
             model=session.model_ref,
             # Resolved per turn, so a prompt saved in the GUI applies to
-            # the next message rather than the next restart (BE-19).
-            system=system_prompt_for(effective_override(deps.settings, deps.settings_store)),
+            # the next message rather than the next restart (BE-19). The project
+            # paragraph is read from the workspace for the same reason: an
+            # imported project must not be described to the model as the React +
+            # Vite app the built-in prompt assumes (M8/C1).
+            system=system_prompt_for(
+                effective_override(deps.settings, deps.settings_store), project=project_briefing(workspace)
+            ),
         )
 
         # Logged before the run so the transcript keeps its order. A failed run

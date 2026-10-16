@@ -36,10 +36,17 @@ Reply to the user in the language they used, and say briefly what you changed.
 """
 
 
-def system_prompt_for(override: str | None) -> str:
+def system_prompt_for(override: str | None, project: str | None = None) -> str:
     """The operator's prompt when they set one, otherwise the built-in default.
 
     Empty and whitespace-only overrides mean "unset": an empty VIBE_SYSTEM_PROMPT
     should not silently strip the agent of all framing.
+
+    `project` is what the workspace actually holds (`project_briefing`), appended
+    as its own paragraph: the operator's prompt says how to work, the project
+    paragraph says what is being worked on. The built-in default can therefore
+    keep describing the app to build without claiming every workspace is that
+    app -- an imported project is described by its own files instead.
     """
-    return (override or "").strip() or DEFAULT_SYSTEM_PROMPT
+    base = (override or "").strip() or DEFAULT_SYSTEM_PROMPT
+    return f"{base}\n\n{project}" if project else base

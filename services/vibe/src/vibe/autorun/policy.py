@@ -6,6 +6,7 @@ import logging
 from vibe.events import Event
 from vibe.executor.base import CAPTURE_FAILED, NO_DEV_SERVER, NO_DRIVER, UNREACHABLE, capture_console
 from vibe.models import AgentInput, Message
+from vibe.projects import project_briefing
 from vibe.prompts import system_prompt_for
 from vibe.runtime.base import AgentContext
 from vibe.services.turns import TurnRecorder
@@ -116,6 +117,10 @@ class AutoRunPolicy:
         a trace. The turn is now recorded exactly like a chat turn -- including
         the prompt, because the model sees it and "model-visible means logged"
         admits no exception for the loop the user cannot see.
+
+        The project paragraph is resolved the same way the chat route resolves
+        it, from the workspace the context already carries: the fix loop is the
+        same agent, so it must not be told a different story about where it is.
         """
         session = await ctx.store.get_session(ctx.session_id)
         model = session.model_ref if session else None
@@ -124,7 +129,7 @@ class AutoRunPolicy:
             session_id=ctx.session_id,
             messages=[Message(role="user", content=content)],
             model=model,
-            system=system_prompt_for(self._prompt_override()),
+            system=system_prompt_for(self._prompt_override(), project=project_briefing(ctx.workspace_path)),
         )
         log = ctx.event_log
         if log is None:

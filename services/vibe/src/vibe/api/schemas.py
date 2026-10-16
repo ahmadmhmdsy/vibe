@@ -9,6 +9,8 @@ app maps to 400 validation_failed.
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -17,8 +19,24 @@ class ModelRefIn(BaseModel):
     model_id: str = Field(min_length=1)
 
 
+class ProjectSourceIn(BaseModel):
+    """Where the new session's project comes from (M8/C1).
+
+    Optional and defaulted, so a client that only knows about `model` -- every
+    client before this one -- creates exactly the session it always did. `path`
+    is for a folder import and `url` for a git one; which of the two is required
+    is a rule about the kind, so it is enforced where the kind becomes a
+    provider rather than duplicated in a validator here.
+    """
+
+    kind: Literal["empty", "template", "folder", "git"] = "empty"
+    path: str | None = None
+    url: str | None = None
+
+
 class CreateSessionIn(BaseModel):
     model: ModelRefIn
+    source: ProjectSourceIn = Field(default_factory=ProjectSourceIn)
 
 
 class UpdateSessionIn(BaseModel):

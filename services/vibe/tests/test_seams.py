@@ -244,7 +244,7 @@ def test_the_environment_exemptions_are_still_live() -> None:
 # database that already has the change it would raise or drift.
 
 _MIGRATION_FUNCTIONS = {
-    "store.py": {"_migrate", "_add_owner_column"},
+    "store.py": {"_migrate", "_add_owner_column", "_add_workspace_path_column"},
     "events.py": {"_open", "_add_owner_column"},
 }
 

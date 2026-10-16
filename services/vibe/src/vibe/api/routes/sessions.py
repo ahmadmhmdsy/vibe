@@ -13,6 +13,7 @@ from vibe.api.sse import format_sse
 from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.lifecycle import WorkspaceBusyError
 from vibe.models import ModelRef
+from vibe.projects import ProjectError, build_source
 from vibe.workspace import relative_files
 
 
@@ -28,10 +29,20 @@ router = APIRouter()
 
 @router.post("/sessions", status_code=201)
 async def create_session(body: CreateSessionIn, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
-    sid = await deps.session_service.create(
-        ModelRef(provider_id=body.model.provider_id, model_id=body.model.model_id), owner
-    )
-    return {"id": sid}
+    # A refused source (a folder that is not there, a repository git cannot
+    # reach) is the caller's mistake, not a crash: ProjectError is a ValueError,
+    # and every rejection in this API is a 400 the UI can show.
+    try:
+        source = build_source(body.source.kind, path=body.source.path, url=body.source.url)
+        sid = await deps.session_service.create(
+            ModelRef(provider_id=body.model.provider_id, model_id=body.model.model_id), owner, source=source
+        )
+        info = source.describe()
+    except ProjectError as exc:
+        raise ApiError(ErrorCode.VALIDATION_FAILED, str(exc)) from exc
+    # The client is told what it got, so the composer can describe the project
+    # it is in rather than assuming React + Vite (M8/C1).
+    return {"id": sid, "project": asdict(info)}
 
 
 @router.get("/sessions")

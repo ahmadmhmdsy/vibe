@@ -33,7 +33,11 @@
   [docs/superpowers/plans/2026-10-16-competitor-parity.md](./docs/superpowers/plans/2026-10-16-competitor-parity.md)
   turns the top five into phases **C1–C6** (import a project → Git → checkpoints →
   plan-before-build → generated-app persistence → quick wins), each as a **seam**
-  (Definition ⊕ Provider ⊳ Consumer). **No phase has started.** 2026-10-16 added `docs/research/`
+  (Definition ⊕ Provider ⊳ Consumer). **C1 has started.** 2026-10-16: the `ProjectSource` seam
+  (`services/vibe/src/vibe/projects.py`), store schema v3 (`workspace_path`), the in-place-import
+  delete guard, `POST /sessions` with a `source`, and the app's `NewSessionDialog` all landed
+  (uncommitted; 509 backend + 293 frontend tests pass). C2–C6 are `pending` and user-gated.
+  2026-10-16 added `docs/research/`
   to the AGENTS.md document map. The user's governing constraint: never write code for one-time
   use — this is a package that expands, so it stays clean/easy/structured.
 - **2026-10-16 review remediation — committed (`1deed29`, not pushed).** A read-only verification review of the

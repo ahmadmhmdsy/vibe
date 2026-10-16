@@ -9,6 +9,28 @@ export interface Session {
   updated_at?: string;
 }
 
+/** Where a new session's project comes from (M8/C1).
+ *
+ * `empty` is what every client sent before this existed; the backend defaults
+ * to it too, so the two cannot drift. `path` is a folder on the *server's*
+ * machine — a browser cannot hand over a local directory — and `url` is a git
+ * repository. A folder is opened in place, never moved or copied.
+ */
+export type ProjectSource =
+  | { kind: "empty" }
+  | { kind: "template" }
+  | { kind: "folder"; path: string }
+  | { kind: "git"; url: string };
+
+/** What the created session's workspace turned out to be.
+ * `stack` is "unknown" for anything the executor cannot install and run. */
+export interface ProjectInfo {
+  stack: string;
+  framework: string;
+  start_command: string | null;
+  language: string | null;
+}
+
 export interface ProviderInfo {
   id: string;
   name: string;
@@ -113,8 +135,16 @@ function encodePath(path: string): string {
 }
 
 export const api = {
-  createSession: (model: { provider_id: string; model_id: string }) =>
-    req<{ id: string }>("/sessions", { method: "POST", body: JSON.stringify({ model }) }),
+  /** Create a session. `source` defaults to an empty workspace, which is what
+   * every caller that only passes a model gets. */
+  createSession: (
+    model: { provider_id: string; model_id: string },
+    source: ProjectSource = { kind: "empty" }
+  ) =>
+    req<{ id: string; project: ProjectInfo }>("/sessions", {
+      method: "POST",
+      body: JSON.stringify({ model, source }),
+    }),
   listSessions: () => req<Session[]>("/sessions"),
   getSession: (id: string) => req<Session>(`/sessions/${id}`),
   renameSession: (id: string, title: string) =>

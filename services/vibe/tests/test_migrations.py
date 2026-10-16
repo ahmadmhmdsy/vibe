@@ -111,6 +111,60 @@ async def test_an_existing_sessions_database_gains_owner_id_without_losing_rows(
         store.close()
 
 
+def _v2_sessions_db(path: Path, rows: list[tuple[str, str]]) -> None:
+    """Write a version-2 sessions database: owner_id present, workspace_path not.
+
+    This is the shape an installed app has before M8/C1, so it is the file the
+    workspace_path migration actually meets in the wild.
+    """
+    con = sqlite3.connect(path)
+    con.execute(_OLD_SESSIONS)
+    con.execute(f"ALTER TABLE sessions ADD COLUMN owner_id TEXT NOT NULL DEFAULT '{LOOPBACK_OWNER_ID}'")
+    for sid, title in rows:
+        con.execute(
+            "INSERT INTO sessions (id, title, model_ref, created_at, updated_at, owner_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (sid, title, _MODEL_JSON, "2026-01-01T00:00:00+00:00", "2026-01-01T00:00:00+00:00", LOOPBACK_OWNER_ID),
+        )
+    con.execute("PRAGMA user_version = 2")
+    con.commit()
+    con.close()
+
+
+async def test_an_existing_sessions_database_gains_workspace_path_without_losing_rows(
+    tmp_path: Path,
+) -> None:
+    db = tmp_path / "sessions.db"
+    _v2_sessions_db(db, [("old1", "Kept")])
+
+    store = SessionStore(db_path=db)
+    try:
+        assert "workspace_path" in _columns(db, "sessions")
+        assert _user_version(db) >= 3
+        old = await store.get_session("old1")
+        # NULL is the point: every pre-existing session has the default
+        # workspace, which is derived from its id, so nothing is backfilled.
+        assert old is not None and old.title == "Kept"
+        assert old.workspace_path is None
+    finally:
+        store.close()
+
+
+async def test_workspace_path_round_trips_for_one_owner_only(tmp_path: Path) -> None:
+    store = SessionStore(db_path=tmp_path / "sessions.db")
+    try:
+        alice = await store.create_session(ModelRef("openai", "gpt-4o"), owner_id="alice")
+        await store.set_workspace_path(alice, str(tmp_path / "elsewhere"), owner_id="alice")
+        row = await store.get_session(alice, owner_id="alice")
+        assert row is not None and row.workspace_path == str(tmp_path / "elsewhere")
+
+        # Another owner cannot point alice's session at a directory of their own.
+        await store.set_workspace_path(alice, str(tmp_path / "stolen"), owner_id="bob")
+        row = await store.get_session(alice, owner_id="alice")
+        assert row is not None and row.workspace_path == str(tmp_path / "elsewhere")
+    finally:
+        store.close()
+
+
 async def test_the_sessions_migration_is_idempotent(tmp_path: Path) -> None:
     db = tmp_path / "sessions.db"
     _old_sessions_db(db, [("old1", "Kept")])

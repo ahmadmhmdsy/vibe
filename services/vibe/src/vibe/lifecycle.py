@@ -160,13 +160,25 @@ class SessionLifecycle:
             removed.append(entry)
         return removed
 
+    async def _workspace_of(self, session_id: str, owner_id: str) -> Path:
+        """Where this session's files are.
+
+        Normally the directory named after the id, but an import in place
+        remembers a path elsewhere (M8/C1) -- and a session whose row is already
+        gone (an idempotent second delete) is the default again.
+        """
+        session = await self._store.get_session(session_id, owner_id)
+        if session is not None and session.workspace_path:
+            return Path(session.workspace_path)
+        return self._workspace_dir / session_id
+
     async def delete(self, session_id: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:
         """Delete one owner's session and everything it owned.
 
-        Everything below is keyed by (owner, session) except the workspace
-        directory, which is still addressed by session id alone. That is safe
-        while ids are globally unique uuids; giving the directory an owner
-        segment is the change needed before two owners may share an id.
+        Everything below is keyed by (owner, session). The workspace is the one
+        piece that lives on disk rather than in a registry, so it is resolved
+        through the store -- which is what lets an imported project be found,
+        and recognised as not ours to remove.
         """
         logger.info("deleting session %s for owner %s", session_id, owner_id)
         key = SessionKey(owner_id=owner_id, session_id=session_id)
@@ -190,11 +202,17 @@ class SessionLifecycle:
         #    so if it raises, the transcript and the row are both still here to
         #    retry. Clearing the log first meant a failed move left an empty
         #    conversation whose files were still on disk.
-        workspace = self._workspace_dir / session_id
-        if workspace.exists():
+        #
+        #    Only workspaces this app owns are moved. An imported project lives
+        #    where the user put it (M8/C1) and is theirs: deleting the session
+        #    must close the conversation and leave their folder alone.
+        workspace = await self._workspace_of(session_id, owner_id)
+        if workspace.exists() and workspace.resolve().is_relative_to(self._workspace_dir.resolve()):
             trash = self._workspace_dir / ".trash" / f"{session_id}-{datetime.now(UTC):%Y%m%d-%H%M%S}"
             trash.parent.mkdir(parents=True, exist_ok=True)
             await move_workspace_to_trash(workspace, trash)
+        elif workspace.exists():
+            logger.info("session %s was imported in place; leaving %s untouched", session_id, workspace)
 
         # 5. Now the destructive steps.
         self._event_log.clear(session_id)

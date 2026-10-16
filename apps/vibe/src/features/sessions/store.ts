@@ -2,13 +2,16 @@
 // Manages session list, active session, and CRUD operations.
 
 import { create } from "zustand";
-import { api, type Session } from "../../lib/api";
+import { api, type ProjectSource, type Session } from "../../lib/api";
 
 interface SessionsState {
   sessions: Session[];
   activeId: string | null;
   load: () => Promise<void>;
-  create: (model?: { provider_id: string; model_id: string }) => Promise<string>;
+  create: (
+    model?: { provider_id: string; model_id: string },
+    source?: ProjectSource
+  ) => Promise<string>;
   remove: (id: string) => Promise<void>;
   select: (id: string) => void;
 }
@@ -23,8 +26,8 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     const sessions = await api.listSessions();
     set({ sessions, activeId: get().activeId ?? sessions[0]?.id ?? null });
   },
-  create: async (model = DEFAULT_MODEL) => {
-    const { id } = await api.createSession(model);
+  create: async (model = DEFAULT_MODEL, source) => {
+    const { id } = await api.createSession(model, source);
     await get().load();
     set({ activeId: id });
     return id;

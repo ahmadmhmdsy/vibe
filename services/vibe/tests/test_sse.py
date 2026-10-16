@@ -13,6 +13,8 @@ from vibe.api.routes.sessions import events
 from vibe.api.sse import format_sse
 from vibe.auth import LOOPBACK_OWNER_ID
 from vibe.events import Event, EventBus, EventLog
+from vibe.models import ModelRef
+from vibe.store import Session
 
 
 class _QueryParams:
@@ -30,7 +32,21 @@ class _Store:
         self._known = set(known)
 
     async def get_session(self, sid, owner_id=LOOPBACK_OWNER_ID):
-        return {"id": sid} if sid in self._known else None
+        if sid not in self._known:
+            return None
+        # The real row type: require_session reads its fields, not just its id.
+        return Session(
+            id=sid,
+            title="t",
+            model_ref=ModelRef("openai", "gpt-4o"),
+            created_at="now",
+            updated_at="now",
+        )
+
+
+class _SessionService:
+    def remember(self, sid, workspace):  # pragma: no cover - empty cache in this test
+        ...
 
 
 class _State:
@@ -38,6 +54,7 @@ class _State:
         self.event_log = EventLog()
         self.event_bus = EventBus()
         self.store = _Store(known)
+        self.session_service = _SessionService()
 
 
 class _App:

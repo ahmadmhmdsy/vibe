@@ -230,4 +230,71 @@
     flex: none;
     gap: var(--space-1);
   }
+
+  /* --- New session dialog --- */
+  .new-session-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .new-session-choices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .new-session-choices > .field-label {
+    padding: 0 0 var(--space-1);
+  }
+
+  /* The whole row is the target, so the radio's own box is not the only
+     thing a click can land on. */
+  .new-session-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+
+  .new-session-choice:hover {
+    background: var(--bg-hover);
+  }
+
+  .new-session-choice:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+  }
+
+  .new-session-choice:has(input:focus-visible) {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 1px;
+  }
+
+  .new-session-choice input {
+    margin-top: 2px;
+  }
+
+  .new-session-choice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .new-session-choice-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .new-session-choice-hint {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
 }

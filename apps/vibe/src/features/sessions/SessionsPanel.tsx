@@ -3,7 +3,8 @@
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useSessionsStore } from "./store";
-import { api, type ProviderInfo, type Session } from "../../lib/api";
+import { NewSessionDialog } from "./NewSessionDialog";
+import { api, type ProjectSource, type ProviderInfo, type Session } from "../../lib/api";
 import { formatRelativeTime } from "../../lib/format";
 import {
   Button,
@@ -87,6 +88,10 @@ export function SessionsPanel() {
   const [editTitle, setEditTitle] = useState("");
   const [originalTitle, setOriginalTitle] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<Session | null>(null);
+  // The chooser is where a new workspace's origin is picked (M8/C1); the
+  // keyboard shortcut and the empty-conversation CTA still create an empty one
+  // directly, because that is the common case and a shortcut should not ask.
+  const [newSession, setNewSession] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   // Buckets and relative timestamps are functions of "now". Keeping the clock
   // in state instead of calling Date.now() during render means an unrelated
@@ -232,13 +237,11 @@ export function SessionsPanel() {
     }
   };
 
-  const onCreate = async () => {
-    try {
-      await create();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create a session.");
-    }
-  };
+  // Errors from a failed import belong to the dialog, not to the list: the
+  // dialog stays open on failure and shows the backend's message there.
+  const onCreate = (source: ProjectSource) => create(undefined, source);
+
+  const openNewSession = () => setNewSession(true);
 
   const doDelete = async () => {
     if (!confirmDelete) return;
@@ -383,7 +386,7 @@ export function SessionsPanel() {
         <span className="sessions-count tnum">{sessions.length}</span>
         <div className="panel-header-spacer" />
         <div className="panel-actions">
-          <Button variant="primary" size="sm" onClick={onCreate}>
+          <Button variant="primary" size="sm" onClick={openNewSession}>
             New session
           </Button>
         </div>
@@ -450,7 +453,7 @@ export function SessionsPanel() {
                 title="No sessions yet"
                 body="Start a new session and describe the app you want to build."
                 action={
-                  <Button variant="primary" size="sm" onClick={onCreate}>
+                  <Button variant="primary" size="sm" onClick={openNewSession}>
                     New session
                   </Button>
                 }
@@ -474,6 +477,12 @@ export function SessionsPanel() {
           )}
         </nav>
       </div>
+
+      <NewSessionDialog
+        open={newSession}
+        onClose={() => setNewSession(false)}
+        onCreate={onCreate}
+      />
 
       <ConfirmDialog
         open={!!confirmDelete}

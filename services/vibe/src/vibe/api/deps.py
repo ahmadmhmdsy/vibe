@@ -75,4 +75,10 @@ async def require_session(deps: Container, sid: str, owner_id: str = LOOPBACK_OW
     session = await deps.store.get_session(sid, owner_id)
     if session is None:
         raise ApiError(ErrorCode.SESSION_NOT_FOUND, "session not found")
+    # The row is the only place an imported session's workspace path is written
+    # down, so it is handed to the service here -- the one point every
+    # session-scoped route passes through. The path itself is read synchronously
+    # later, on the file-read hot path, where a store round trip per call would
+    # be pure overhead for a value already in hand.
+    deps.session_service.remember(sid, session.workspace_path)
     return session

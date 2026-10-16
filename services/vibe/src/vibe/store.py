@@ -19,7 +19,14 @@ from vibe.models import ModelRef
 # exactly one owner, so the column is filled with that owner's id and every read
 # filters on it -- which means a second owner can be added later without moving
 # anyone's data or rewriting a query.
-_SCHEMA_VERSION = 2
+#
+# v3 added workspace_path: where the session's files actually are. It is NULL for
+# every session that has the default workspace (<workspace_dir>/<id>), which is
+# all of them until a project is imported from somewhere else -- an import in
+# place means the workspace is not derivable from the id any more, and the path
+# has to survive a restart or the session would come back pointing at an empty
+# directory.
+_SCHEMA_VERSION = 3
 
 # A session created before its first message has nothing to show in the
 # sidebar, so it gets a placeholder. The first user message replaces it (see
@@ -31,7 +38,7 @@ _UNTITLED_PREFIX = "Untitled "
 _TITLE_MAX = 60
 
 # The columns every read selects, so a new column is added in one place.
-_COLUMNS = "id, title, model_ref, created_at, updated_at, owner_id"
+_COLUMNS = "id, title, model_ref, created_at, updated_at, owner_id, workspace_path"
 
 
 def title_from_text(text: str) -> str:
@@ -64,6 +71,9 @@ class Session:
     # Defaulted so the single local user never has to name it, and so a row
     # built by older test code still describes the same session.
     owner_id: str = LOOPBACK_OWNER_ID
+    # None means the default workspace, <workspace_dir>/<id>. Only an import that
+    # landed outside the workspace root sets this (M8/C1).
+    workspace_path: str | None = None
 
 
 class SessionStore:
@@ -112,6 +122,8 @@ class SessionStore:
         )
         if version < 2:
             self._add_owner_column()
+        if version < 3:
+            self._add_workspace_path_column()
         self._db.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
         self._db.commit()
 
@@ -130,6 +142,19 @@ class SessionStore:
         self._db.execute(
             "CREATE INDEX IF NOT EXISTS idx_sessions_owner_updated ON sessions (owner_id, updated_at DESC)"
         )
+
+    def _add_workspace_path_column(self) -> None:
+        """Step v3: record where a session's files are, when it is not the default.
+
+        Nullable and left unset: every session that exists before this step has
+        the default workspace, which the reader derives from the id, so there is
+        nothing to backfill. The same PRAGMA check as v2's step, for the same
+        reason -- a crash between the ALTER and the version bump must not make
+        the next start raise.
+        """
+        columns = {row["name"] for row in self._db.execute("PRAGMA table_info(sessions)")}
+        if "workspace_path" not in columns:
+            self._db.execute("ALTER TABLE sessions ADD COLUMN workspace_path TEXT")
 
     async def create_session(self, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID) -> str:
         return await asyncio.to_thread(self._create_session, model_ref, owner_id)
@@ -190,6 +215,7 @@ class SessionStore:
             created_at=row["created_at"],
             updated_at=row["updated_at"],
             owner_id=row["owner_id"],
+            workspace_path=row["workspace_path"],
         )
 
     async def rename_session(self, session_id: str, title: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:
@@ -224,6 +250,22 @@ class SessionStore:
 
     async def set_model(self, session_id: str, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID) -> None:
         await asyncio.to_thread(self._touch, session_id, owner_id, model_ref=model_ref)
+
+    async def set_workspace_path(self, session_id: str, path: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:
+        """Remember that this session's files are not under the workspace root.
+
+        `updated_at` is deliberately left alone: it orders the sidebar by
+        activity, and an import is not activity in a conversation.
+        """
+        await asyncio.to_thread(self._set_workspace_path, session_id, path, owner_id)
+
+    def _set_workspace_path(self, session_id: str, path: str, owner_id: str) -> None:
+        with self._lock:
+            self._db.execute(
+                "UPDATE sessions SET workspace_path = ? WHERE id = ? AND owner_id = ?",
+                (path, session_id, owner_id),
+            )
+            self._db.commit()
 
     def _touch(
         self, session_id: str, owner_id: str, title: str | None = None, model_ref: ModelRef | None = None
