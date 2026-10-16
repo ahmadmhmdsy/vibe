@@ -1,4 +1,3 @@
-
 def test_health(client):
     resp = client.get("/health")
     assert resp.status_code == 200
@@ -11,6 +10,7 @@ def test_health(client):
     assert body["sessions_db"].startswith(body["workspace_dir"])
     assert body["events_db"].startswith(body["workspace_dir"])
 
+
 def test_create_and_list_sessions(client):
     resp = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}})
     assert resp.status_code == 201
@@ -20,11 +20,13 @@ def test_create_and_list_sessions(client):
     assert resp2.status_code == 200
     assert len(resp2.json()) == 1
 
+
 def test_send_message_runs_agent(client):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
     resp = client.post(f"/sessions/{sid}/messages", json={"content": "build a todo app"})
     assert resp.status_code == 200
     assert "hello from agent" in resp.json()["content"]
+
 
 def test_rename_and_delete_session(client):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
@@ -32,6 +34,7 @@ def test_rename_and_delete_session(client):
     assert resp.status_code == 200
     resp = client.delete(f"/sessions/{sid}")
     assert resp.status_code == 204
+
 
 def test_delete_says_the_workspace_is_busy_instead_of_failing_generically(client, monkeypatch):
     """A locked workspace used to be an unhandled PermissionError: HTTP 500.
@@ -65,7 +68,9 @@ def test_delete_says_the_workspace_is_busy_instead_of_failing_generically(client
 def test_file_sync_write_read_list(client):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
     # write a file (hand-edit sync)
-    resp = client.put(f"/sessions/{sid}/files/src/App.tsx", json={"content": "export default function App() { return <div>hi</div> }"})
+    resp = client.put(
+        f"/sessions/{sid}/files/src/App.tsx", json={"content": "export default function App() { return <div>hi</div> }"}
+    )
     assert resp.status_code == 200
     # read it back
     resp = client.get(f"/sessions/{sid}/files/src/App.tsx")

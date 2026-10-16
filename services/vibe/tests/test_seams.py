@@ -91,9 +91,7 @@ def identity_literals(root: Path, *, skip_auth: bool = True) -> list[str]:
 
 
 def test_only_the_container_imports_a_concrete_executor(tmp_path: Path) -> None:
-    (tmp_path / "leaky.py").write_text(
-        "from vibe.executor.local import LocalSubprocessExecutor\n", encoding="utf-8"
-    )
+    (tmp_path / "leaky.py").write_text("from vibe.executor.local import LocalSubprocessExecutor\n", encoding="utf-8")
     assert concrete_executor_importers(tmp_path) == ["leaky.py:1 imports vibe.executor.local"]
     assert concrete_executor_importers(SRC) == []
 
@@ -102,9 +100,7 @@ def test_routes_never_name_a_concrete_executor() -> None:
     control = ast.parse("ex = LocalSubprocessExecutor(workspace=w)\n")
     assert named_concrete_executors(control) == ["1:LocalSubprocessExecutor"]
     offenders = [
-        f"{_rel(path, _ROUTES)}:{hit}"
-        for path in _modules(_ROUTES)
-        for hit in named_concrete_executors(_parse(path))
+        f"{_rel(path, _ROUTES)}:{hit}" for path in _modules(_ROUTES) for hit in named_concrete_executors(_parse(path))
     ]
     assert offenders == []
 
@@ -143,6 +139,7 @@ def test_identity_comes_from_the_principal_not_a_literal(tmp_path: Path) -> None
 
 _STORE_PROVIDERS = {"store.py", "events.py"}
 
+
 def _normalize(text: str) -> str:
     """Collapse whitespace so one statement has one shape.
 
@@ -179,8 +176,7 @@ def sql_sites(root: Path) -> list[str]:
         if path.parent == root and path.name in _STORE_PROVIDERS:
             continue
         for node in ast.walk(_parse(path)):
-            if (isinstance(node, ast.Constant) and isinstance(node.value, str)
-                    and _SQL.search(_normalize(node.value))):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) and _SQL.search(_normalize(node.value)):
                 offenders.append(f"{_rel(path, root)}:{node.lineno}")
     return offenders
 
@@ -280,11 +276,7 @@ def ddl_sites(root: Path, allowed: dict[str, set[str]]) -> list[str]:
             continue
         visitor = _DdlVisitor()
         visitor.visit(_parse(path))
-        offenders += [
-            f"{name}:{line}:{function}"
-            for function, line in visitor.hits
-            if function not in functions
-        ]
+        offenders += [f"{name}:{line}:{function}" for function, line in visitor.hits if function not in functions]
     return offenders
 
 

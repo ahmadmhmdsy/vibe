@@ -12,6 +12,7 @@ Nothing here downloads, authenticates, or parses; a completed TCP connect is the
 whole test. A host that refuses connections is unreachable for our purposes
 whether or not it would answer TLS.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -33,8 +34,7 @@ NPM_REGISTRY_PORT = 443
 #: on its own sends people to reinstall pnpm or hunt for a version conflict that
 #: is not there.
 OFFLINE_MESSAGE = (
-    "no network access to the npm registry - connect once to install dependencies, "
-    "then retry (nothing was downloaded)"
+    "no network access to the npm registry - connect once to install dependencies, then retry (nothing was downloaded)"
 )
 
 #: Short enough that an offline machine is told in seconds, long enough for a

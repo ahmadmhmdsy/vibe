@@ -18,6 +18,7 @@ async def test_event_log_append_and_get():
     assert events[0].type == "user/message"
     assert events[0].payload == {"content": "hi"}
 
+
 @pytest.mark.asyncio
 async def test_event_log_get_after_seq():
     log = EventLog()
@@ -27,16 +28,20 @@ async def test_event_log_get_after_seq():
     assert len(events) == 1
     assert events[0].type == "assistant/message"
 
+
 @pytest.mark.asyncio
 async def test_event_bus_publish_subscribe():
     bus = EventBus()
     received = []
+
     async def consume():
         async for e in bus.subscribe("s1"):
             received.append(e)
             if len(received) >= 1:
                 break
+
     import asyncio
+
     task = asyncio.create_task(consume())
     await asyncio.sleep(0.01)
     await bus.publish("s1", Event(session_id="s1", seq=1, type="user/message", payload={}))
@@ -91,8 +96,8 @@ async def test_ephemeral_seq_advances_without_being_stored():
     """Streamed chunks need a monotonic seq but must not bloat the log."""
     log = EventLog()
     assert await log.append("s1", "user/message", {"content": "hi"}) == 1
-    assert log.next_seq("s1") == 2          # a text_chunk, not stored
-    assert log.next_seq("s1") == 3          # turn_complete, not stored
+    assert log.next_seq("s1") == 2  # a text_chunk, not stored
+    assert log.next_seq("s1") == 3  # turn_complete, not stored
     assert await log.append("s1", "assistant/message", {"content": "yo"}) == 4
     stored = await log.get("s1")
     assert [e.seq for e in stored] == [1, 4]
@@ -139,9 +144,18 @@ async def test_a_fake_event_store_can_stand_in_for_the_real_one():
     fake = FakeStore()
     assert isinstance(fake, EventStore)
     tracker = UsageTracker(log=fake, bus=EventBus())
-    usage = UsageRecord(provider="openai", model="gpt-4o", input_tokens=1, output_tokens=2,
-                        cached_tokens=0, cache_write_tokens=0, cache_hit=False,
-                        cache_hit_rate=0.0, total_tokens=3, cost_usd=0.0)
+    usage = UsageRecord(
+        provider="openai",
+        model="gpt-4o",
+        input_tokens=1,
+        output_tokens=2,
+        cached_tokens=0,
+        cache_write_tokens=0,
+        cache_hit=False,
+        cache_hit_rate=0.0,
+        total_tokens=3,
+        cost_usd=0.0,
+    )
     await tracker.record("s1", usage)
     assert fake.appended and fake.appended[0][1] == "usage"
 
@@ -189,8 +203,7 @@ class _AlwaysConflictingDb:
 
     def execute(self, sql, params=()):
         if sql.lstrip().upper().startswith("INSERT INTO EVENTS"):
-            raise sqlite3.IntegrityError(
-                "UNIQUE constraint failed: events.session_id, events.seq")
+            raise sqlite3.IntegrityError("UNIQUE constraint failed: events.session_id, events.seq")
         return self._real.execute(sql, params)
 
     def commit(self):
@@ -215,7 +228,8 @@ async def test_a_duplicate_seq_that_never_clears_raises_the_named_error(tmp_path
         log._db = real
         log.close()
     assert not isinstance(caught.value, sqlite3.IntegrityError), (
-        "a UNIQUE collision must not reach the caller as sqlite3.IntegrityError")
+        "a UNIQUE collision must not reach the caller as sqlite3.IntegrityError"
+    )
     from vibe.events import EventSeqConflict
 
     assert isinstance(caught.value, EventSeqConflict)

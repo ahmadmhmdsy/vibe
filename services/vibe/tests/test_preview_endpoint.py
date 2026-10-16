@@ -15,6 +15,7 @@ class _StubExecutor:
 
     async def start_dev_server(self):
         from vibe.executor.base import DevServerHandle
+
         self._dev_server = DevServerHandle(port=5173, url="http://127.0.0.1:5173/", process=None)
         return self._dev_server
 
@@ -29,9 +30,7 @@ def test_preview_run_status_stop(client, app):
     sid = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
     # The executor registry is keyed by (owner, session); keyed by the bare id
     # the route would find nothing and build a real subprocess executor.
-    app.state.container.executors[
-        SessionKey(owner_id=LOOPBACK_OWNER_ID, session_id=sid)
-    ] = _StubExecutor()
+    app.state.container.executors[SessionKey(owner_id=LOOPBACK_OWNER_ID, session_id=sid)] = _StubExecutor()
 
     # Initially: no dev server.
     resp = client.get(f"/sessions/{sid}/preview")

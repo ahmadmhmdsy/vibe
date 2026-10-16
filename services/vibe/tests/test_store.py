@@ -14,6 +14,7 @@ async def test_create_and_get_session(tmp_path):
     assert s.model_ref.provider_id == "openai"
     assert s.title  # auto-generated
 
+
 @pytest.mark.asyncio
 async def test_list_sessions(tmp_path):
     store = SessionStore(db_path=tmp_path / "test.db")
@@ -21,6 +22,7 @@ async def test_list_sessions(tmp_path):
     await store.create_session(ModelRef(provider_id="anthropic", model_id="claude-sonnet-4-6"))
     sessions = await store.list_sessions()
     assert len(sessions) == 2
+
 
 @pytest.mark.asyncio
 async def test_rename_and_delete_session(tmp_path):

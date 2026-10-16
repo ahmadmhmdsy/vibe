@@ -10,8 +10,7 @@ router = APIRouter()
 
 
 @router.get("/sessions/{sid}/approvals")
-async def list_approvals(sid: str, request: Request, deps: App,
-                         owner: Owner = LOOPBACK_OWNER_ID):
+async def list_approvals(sid: str, request: Request, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     await require_session(deps, sid, owner)
     store = deps.approval_store
     return [a.to_dict() for a in store.list(sid)]

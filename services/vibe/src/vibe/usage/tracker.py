@@ -43,6 +43,7 @@ class UsageTracker:
         # was an O(events) scan on every single model call.
         seq = await self._log.append(session_id, "usage", usage.__dict__)
         from vibe.events import Event
+
         await self._bus.publish(session_id, Event(session_id=session_id, seq=seq, type="usage", payload=usage.__dict__))
 
     async def _records(self, session_id: str) -> list[UsageRecord]:

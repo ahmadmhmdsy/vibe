@@ -6,6 +6,7 @@ check could only be exercised by standing up a whole FastAPI app. It is a pure
 function of the store, the lifecycle and the workspace root, so a test can now
 call it directly.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -62,17 +63,14 @@ class SessionService:
     async def list(self, owner_id: str = LOOPBACK_OWNER_ID) -> list:
         return await self._store.list_sessions(owner_id)
 
-    async def rename(self, sid: str, title: str,
-                     owner_id: str = LOOPBACK_OWNER_ID) -> None:
+    async def rename(self, sid: str, title: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:
         await self._store.rename_session(sid, title, owner_id)
 
-    async def retitle_from_message(self, sid: str, text: str,
-                                   owner_id: str = LOOPBACK_OWNER_ID) -> bool:
+    async def retitle_from_message(self, sid: str, text: str, owner_id: str = LOOPBACK_OWNER_ID) -> bool:
         """Title the session from a message, unless it was renamed by hand."""
         return await self._store.retitle_from_message(sid, text, owner_id)
 
-    async def set_model(self, sid: str, model_ref: ModelRef,
-                        owner_id: str = LOOPBACK_OWNER_ID) -> None:
+    async def set_model(self, sid: str, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID) -> None:
         await self._store.set_model(sid, model_ref, owner_id)
 
     async def delete(self, sid: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:

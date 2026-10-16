@@ -18,8 +18,13 @@ class Approval:
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "session_id": self.session_id, "packages": self.packages,
-                "status": self.status, "created_at": self.created_at}
+        return {
+            "id": self.id,
+            "session_id": self.session_id,
+            "packages": self.packages,
+            "status": self.status,
+            "created_at": self.created_at,
+        }
 
 
 class ApprovalStore:

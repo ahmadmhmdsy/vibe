@@ -49,10 +49,12 @@ def _adapt_handler(handler: Handler, ctx: AgentContext) -> Callable[..., Awaitab
     cannot do this — it treats a single-parameter function as single-input
     and rejects any call whose argument count is not exactly one.
     """
+
     async def run(**kwargs: Any) -> tuple[Any, dict[str, Any]]:
         return _payload(await handler(kwargs, ctx))
 
     return run
+
 
 class ToolRegistry:
     def __init__(self):
@@ -72,14 +74,18 @@ class ToolRegistry:
 
     def to_langchain_tools(self, ctx: AgentContext) -> list:
         from langchain_core.tools import StructuredTool
+
         tools = []
         for name, (schema, handler) in self._tools.items():
-            tools.append(StructuredTool.from_function(
-                name=name, description=schema.description,
-                func=_adapt_handler(handler, ctx),
-                coroutine=_adapt_handler(handler, ctx),
-                args_schema=schema.parameters,
-                # See _payload: without this the model receives a repr.
-                response_format="content_and_artifact",
-            ))
+            tools.append(
+                StructuredTool.from_function(
+                    name=name,
+                    description=schema.description,
+                    func=_adapt_handler(handler, ctx),
+                    coroutine=_adapt_handler(handler, ctx),
+                    args_schema=schema.parameters,
+                    # See _payload: without this the model receives a repr.
+                    response_format="content_and_artifact",
+                )
+            )
         return tools

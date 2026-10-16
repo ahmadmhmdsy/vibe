@@ -6,15 +6,18 @@ from typing import Any, Literal
 
 Role = Literal["user", "assistant", "system", "tool"]
 
+
 @dataclass
 class ToolCall:
     id: str
     name: str
     arguments: dict[str, Any]
 
+
 @dataclass
 class Attachment:
     """An image attached to a message (reference design, screenshot feedback)."""
+
     name: str
     content_type: str  # e.g. "image/png"
     data_base64: str
@@ -29,6 +32,7 @@ class Message:
     name: str | None = None
     attachments: list[Attachment] = field(default_factory=list)
 
+
 @dataclass
 class ToolResult:
     tool_call_id: str
@@ -41,10 +45,12 @@ class ToolResult:
     #: every stream frame would dwarf the rest of the transcript).
     attachments: list[Attachment] = field(default_factory=list)
 
+
 @dataclass
 class ModelRef:
     provider_id: str
     model_id: str
+
 
 @dataclass
 class AgentInput:
@@ -55,16 +61,19 @@ class AgentInput:
     #: deliberately sent a bare transcript.
     system: str | None = None
 
+
 @dataclass
 class AgentEvent:
     kind: Literal["text_chunk", "tool_call", "tool_result", "error", "turn_complete"]
     data: dict[str, Any]
+
 
 @dataclass
 class ToolSchema:
     name: str
     description: str
     parameters: dict[str, Any]
+
 
 @dataclass
 class ChatRequest:
@@ -73,10 +82,12 @@ class ChatRequest:
     model: ModelRef
     temperature: float = 0.0
 
+
 @dataclass
 class ChatEvent:
     kind: Literal["text_chunk", "tool_call", "usage", "done"]
     data: dict[str, Any]
+
 
 @dataclass
 class UsageRecord:

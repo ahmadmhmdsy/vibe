@@ -26,6 +26,11 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         </div>
       </div>
       <div className="panel-body" data-direction="column">
+        {/* First tab stop of the panel: a long agent run is dozens of
+            interactive tool rows, so a keyboard user gets a way past them. */}
+        <a className="skip-link" href="#composer-input">
+          Skip to message input
+        </a>
         <MessageList sessionId={sessionId} />
         <Composer sessionId={sessionId} />
       </div>

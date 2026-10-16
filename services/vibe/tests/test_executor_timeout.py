@@ -6,6 +6,7 @@ it: wait_for(proc.communicate()) is cancelled, proc is dropped, and nothing ever
 signals it. The grandchild below is the honest test -- it outlives a kill of its
 parent, so only a tree kill passes.
 """
+
 import sys
 import time
 

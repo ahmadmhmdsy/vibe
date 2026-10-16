@@ -50,8 +50,11 @@ def test_per_session_autorun_is_stable(tmp_path):
 
 def test_llm_factory_builds_real_models(tmp_path):
     settings = Settings(
-        workspace_dir=tmp_path / "ws", port=8000,
-        openai_api_key="sk-test", anthropic_api_key="sk-test", opencode_api_key="sk-test",
+        workspace_dir=tmp_path / "ws",
+        port=8000,
+        openai_api_key="sk-test",
+        anthropic_api_key="sk-test",
+        opencode_api_key="sk-test",
     )
     factory = build_llm_factory(settings, custom_store=None)
     for provider in ("openai", "anthropic", "opencode-go"):

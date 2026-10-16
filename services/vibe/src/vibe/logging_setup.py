@@ -25,6 +25,7 @@ the audit tests pin that contract, and a host that mounts the app should not
 have files appear behind its back. VIBE_LOG_FILE/VIBE_LOG_LEVEL are read by
 config.py, so the environment reaches this module through Settings (L-6).
 """
+
 from __future__ import annotations
 
 import importlib.metadata
@@ -129,9 +130,7 @@ def _tool_version(executable: str) -> str:
     found = shutil.which(executable)
     if found:
         try:
-            completed = subprocess.run(
-                [found, "--version"], capture_output=True, text=True, timeout=5, check=False
-            )
+            completed = subprocess.run([found, "--version"], capture_output=True, text=True, timeout=5, check=False)
             lines = (completed.stdout or completed.stderr).strip().splitlines()
             version = lines[0].strip() if lines else "unknown"
         except (OSError, subprocess.SubprocessError):
@@ -150,9 +149,7 @@ def log_startup_banner(settings: Any, *, probe: bool = True) -> str:
     only thing in this module that serialises a whole settings object.
     """
     logger = logging.getLogger("vibe.startup")
-    message = (
-        "vibe startup: version=%s python=%s node=%s pnpm=%s mode=%s port=%s workspace=%s log_file=%s"
-    )
+    message = "vibe startup: version=%s python=%s node=%s pnpm=%s mode=%s port=%s workspace=%s log_file=%s"
     args = (
         _app_version(),
         platform.python_version(),
@@ -167,9 +164,7 @@ def log_startup_banner(settings: Any, *, probe: bool = True) -> str:
     return message % args
 
 
-def _file_handler(
-    log_file: Path, max_bytes: int, backup_count: int
-) -> tuple[logging.Handler | None, str | None]:
+def _file_handler(log_file: Path, max_bytes: int, backup_count: int) -> tuple[logging.Handler | None, str | None]:
     """A rotating handler, or (None, reason) if the path cannot be opened."""
     try:
         log_file.parent.mkdir(parents=True, exist_ok=True)

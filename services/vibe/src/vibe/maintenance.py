@@ -315,16 +315,14 @@ def _repair_providers(path: Path, report: RepairReport) -> None:
     if quarantined:
         report.add(PROVIDERS_NAME, False, f"unreadable; moved aside as {quarantined[-1]}")
 
-
-        report.actions.append(
-            f"{PROVIDERS_NAME}: quarantined to {quarantined[-1]} (the original bytes are preserved)"
-        )
+        report.actions.append(f"{PROVIDERS_NAME}: quarantined to {quarantined[-1]} (the original bytes are preserved)")
     elif path.exists() and not _readable_json(path):
         report.add(PROVIDERS_NAME, False, f"unreadable and could not be moved aside; still at {path}")
         report.errors.append(f"{PROVIDERS_NAME}: unreadable and could not be quarantined (see the log)")
     else:
         report.add(PROVIDERS_NAME, True, f"readable ({len(providers)} provider(s))")
         report.actions.append(f"{PROVIDERS_NAME}: left unchanged")
+
 
 # --- orphan dev servers (R5-T9) ----------------------------------------------
 
@@ -464,7 +462,10 @@ def _process_alive(pid: int) -> bool:
         # process -- so ask tasklist, which is read-only.
         proc = subprocess.run(
             ["tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV"],
-            capture_output=True, text=True, timeout=30, check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
         )
         return f'"{pid}"' in proc.stdout
     try:
@@ -487,7 +488,10 @@ def _command_line(pid: int) -> str | None:
         script = f"(Get-CimInstance Win32_Process -Filter 'ProcessId = {pid}').CommandLine"
         proc = subprocess.run(
             ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
-            capture_output=True, text=True, timeout=60, check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
         )
         line = proc.stdout.strip()
         return line or None
@@ -505,13 +509,14 @@ def _port_owner(port: int) -> int | None:
     if os.name == "nt":
         proc = subprocess.run(
             ["netstat", "-ano", "-p", "TCP"],
-            capture_output=True, text=True, timeout=60, check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
         )
         for line in proc.stdout.splitlines():
             parts = line.split()
-            listening = (
-                len(parts) >= 5 and parts[0].upper() == "TCP" and parts[3].upper() == "LISTENING"
-            )
+            listening = len(parts) >= 5 and parts[0].upper() == "TCP" and parts[3].upper() == "LISTENING"
             if listening and parts[1].endswith(f":{port}"):
                 try:
                     return int(parts[4])
@@ -523,7 +528,10 @@ def _port_owner(port: int) -> int | None:
         return None
     proc = subprocess.run(
         [lsof, "-ti", f"tcp:{port}", "-sTCP:LISTEN"],
-        capture_output=True, text=True, timeout=30, check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
     )
     found = proc.stdout.split()
     try:
@@ -539,7 +547,9 @@ def _kill_process(pid: int) -> None:
     if os.name == "nt":
         subprocess.run(
             ["taskkill", "/F", "/T", "/PID", str(pid)],
-            capture_output=True, timeout=60, check=False,
+            capture_output=True,
+            timeout=60,
+            check=False,
         )
         return
     try:
@@ -595,28 +605,30 @@ def reap_dev_servers(
         if target != entry.pid:
             logger.info(
                 "dev server for %s: recorded pid %s is gone, port %s is held by pid %s",
-                workspace, entry.pid, entry.port, target,
+                workspace,
+                entry.pid,
+                entry.port,
+                target,
             )
         line = command_line(target)
         if not line:
             survivors[workspace] = entry
             report.kept.append(entry)
-            report.skipped.append(
-                (entry, f"the command line of pid {target} could not be read; not killing it")
-            )
+            report.skipped.append((entry, f"the command line of pid {target} could not be read; not killing it"))
             continue
         if workspace not in line:
             survivors[workspace] = entry
             report.kept.append(entry)
-            report.skipped.append(
-                (entry, f"pid {target} does not mention {workspace}; not killing a foreign process")
-            )
+            report.skipped.append((entry, f"pid {target} does not mention {workspace}; not killing a foreign process"))
             continue
         kill(target)
         report.reaped.append(entry)
         logger.info(
             "reaped orphan dev server for %s (pid %s, port %s, started %s)",
-            workspace, target, entry.port, entry.started_at or "unknown",
+            workspace,
+            target,
+            entry.port,
+            entry.started_at or "unknown",
         )
     if report.changed:
         write_dev_servers(root, survivors)

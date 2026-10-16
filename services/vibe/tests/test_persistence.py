@@ -5,6 +5,7 @@ Covers the three ways data used to be lost or misplaced: an event log that lived
 only in a dict, a workspace root that was never expanded, and a session index
 that could be opened by two threads at once.
 """
+
 import asyncio
 from pathlib import Path
 
@@ -45,7 +46,9 @@ def test_workspace_dir_defaults_to_the_home_directory():
 
 def test_host_defaults_to_loopback():
     assert Settings().host == "127.0.0.1"
-    assert Settings(host="0.0.0.0").host == "0.0.0.0"
+    # A non-loopback bind is allowed only with a shared secret (P5), and the
+    # value is not rewritten.
+    assert Settings(host="0.0.0.0", auth_token="sekret").host == "0.0.0.0"
 
 
 # --- EventLog: durable across a restart ---------------------------------------
@@ -156,10 +159,7 @@ async def test_an_existing_database_is_not_recreated(tmp_path):
 async def test_concurrent_writes_do_not_corrupt_the_database(tmp_path):
     """Two coroutines inserting at once used to race on one connection."""
     store = SessionStore(tmp_path / "sessions.db")
-    await asyncio.gather(
-        *(store.create_session(ModelRef(provider_id="openai", model_id="gpt-4o"))
-          for _ in range(20))
-    )
+    await asyncio.gather(*(store.create_session(ModelRef(provider_id="openai", model_id="gpt-4o")) for _ in range(20)))
     assert await store.count_sessions() == 20
     store.close()
 

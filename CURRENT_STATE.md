@@ -5,9 +5,9 @@
 ## Git
 
 - Branch: master
-- Latest commit: `0849b14` (P3b — prettier sweep)
-- Commit history: `0849b14` → `e6a5c75` (P3a — root pnpm workspace + unified scripts) → `b377020` (bridge fixes, P0–P6, loopback auth) → `47edd56` (CORS) → `635828d` (polish). Earlier: scaffold `215ca70` → M1 → M2 → M3 → M5.
-- Dirty files: **191 entries** (104 modified, 86 untracked) re-measured 2026-10-16 after the review remediation; at the M7 close (2026-10-11) it was **189 entries** (103 modified, 85 untracked), measured with `git status --porcelain`; was 188 entries (104 modified, 84 untracked) at 00:20 earlier the same session. It grows with every hardening task — that is expected, nothing has been committed. Earlier snapshot: 89 entries (60 modified, 29 untracked) at 19:31, measured with `git status --porcelain` (49 entries / 35 modified / 14 untracked at 19:00, before this session's own document writes). The number is moving, so it carries two epochs: the [full app review](./docs/reviews/2026-10-11-full-app-review/README.md) found **9** (5 modified / 4 untracked — `TASKS.md`, `CommandPalette.tsx`, `useKeyboardShortcut.ts`, `useMediaQuery.ts`, `usePolling.ts` plus three new test files and `archive/`); the rest arrived with the hardening program's first phases (R0 documents, R1 backend, R4 frontend), which are being executed concurrently. Added this session: `docs/reviews/` and `docs/superpowers/plans/2026-10-11-local-production-hardening.md`. Nothing was staged or reverted.
+- Latest commit: `1deed29` (M7 UI/UX overhaul + local production hardening + review remediation; 223 files, not pushed)
+- Commit history: `1deed29` → `0849b14` (P3b — prettier sweep) → `e6a5c75` (P3a — root pnpm workspace + unified scripts) → `b377020` (bridge fixes, P0–P6, loopback auth) → `47edd56` (CORS) → `635828d` (polish). Earlier: scaffold `215ca70` → M1 → M2 → M3 → M5.
+- Dirty files: **103 entries** (102 modified, 1 deleted) re-measured 2026-10-16 after the review-remediation commit `1deed29` and the four closed decisions (RED-6, P5, R5-T8, D1–D5). The bulk is `ruff format` whitespace on **91 backend files** (D1); the real deltas are `start.bat`, `.env.example`, `README.md`, `docs/guides/local-setup.md`, `apps/vibe/package.json`, `apps/vibe/src/styles/layout.css`, `apps/vibe/src/features/chat/ChatPanel.tsx`, the deleted `apps/vibe/src/lib/markdown.tsx` (D4), `pnpm-lock.yaml`, plus the four tracking docs. Nothing is staged; nothing was reverted. Earlier: 191 entries at review time, 189 at the M7 close (2026-10-11).
 
 ## Active jobs
 
@@ -24,14 +24,21 @@
 
 ## Tasks
 
-- **2026-10-16 review remediation — done (uncommitted).** A read-only verification review of the
+- **2026-10-16 review remediation — committed (`1deed29`, not pushed).** A read-only verification review of the
   working tree re-ran every gate and fixed six findings (see [TASKS.md](./TASKS.md) § Review
   remediation — 2026-10-16): the prettier drift on 16 files that would have failed the CI frontend
   job (RED-1); `test_install_build_dev_server`, whose scaffold declared a `vite build` script with
   no `vite` dep and no build-script approval (RED-2); two stale code comments (RED-3, RED-4); and
   this snapshot's stale port note (RED-5). One new question is open — RED-6, whether a session
-  workspace's `pnpm install` hits `ERR_PNPM_IGNORED_BUILDS` on pnpm 12. Verified after the fixes:
-  backend **464 passed** + ruff clean; frontend `tsc` exit 0, eslint 0 errors / 5 warnings,
+  workspace's `pnpm install` hits `ERR_PNPM_IGNORED_BUILDS` on pnpm 12. **All four carried
+  decisions are now answered and implemented (uncommitted)** — see TASKS.md § Review
+  remediation — 2026-10-16 § Open decisions closed: RED-6 (executor writes a safe
+  `allowBuilds` allowlist into a session workspace that lacks one), P5 (shared-secret token
+  auth + fail-closed non-loopback guard), R5-T8 (non-blocking `network` doctor check), and
+  D1–D5 (repo-wide `ruff format`, opt-in `start.bat backup`, backup retention 7 already set,
+  deleted dead `lib/markdown.tsx` + `react-markdown`, added the transcript skip link).
+  Verified after the fixes: backend **477 passed** + `ruff format --check`/`ruff check` clean;
+  frontend `tsc` exit 0, eslint 0 errors / 5 warnings, `vitest` 290 passed (32 files),
   `prettier --check` exit 0.
 - **M7 — UI/UX overhaul: done (2026-10-11).** Phases A–G landed: a self-hosted IBM Plex type
   system and token layer, a rebuilt app shell (4-track grid, conversation primary, side column at
@@ -417,7 +424,8 @@
   text. WCAG 2.2 AA is the recorded accessibility target (`apps/vibe/PRODUCT.md`,
   `apps/vibe/DESIGN.md`). Open decisions carried forward: repo-wide `ruff format`, `vibe backup` from
   the launchers, backup retention of 7, deleting the confirmed-dead `lib/markdown.tsx` and its
-  `react-markdown` dependency, and whether to add a skip link for the transcript.
+  `react-markdown` dependency, and whether to add a skip link for the transcript. **All five
+  resolved 2026-10-16 (D1–D5; see TASKS.md § Review remediation) — implemented, uncommitted.**
 
 ## Environment
 

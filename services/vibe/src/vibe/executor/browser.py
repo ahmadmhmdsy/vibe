@@ -12,6 +12,7 @@ a machine without a browser still runs -- it just cannot see the app. A server
 that never came up and a capture that failed name themselves too, because they
 are fixed differently (BE-09).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -107,7 +108,6 @@ class BrowserDriver:
             except OSError:
                 await asyncio.sleep(delay)
         return False
-
 
     async def read_console(self, url: str, tail: int = 200, level: str = "error") -> Capture:
         """Console output from the page at `url`, or the reason there is none.

@@ -15,6 +15,7 @@ The trash is not kept forever: `sweep_trash` drops entries older than
 `trash_retention_days`, so a mistake stays recoverable for a bounded window
 instead of every deleted `node_modules` staying on disk for good.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -91,8 +92,17 @@ class SessionLifecycle:
     intact instead of silently orphaning the files.
     """
 
-    def __init__(self, store, event_log, executors: dict, autorun_policies: dict,
-                 approvals, runs, workspace_dir: Path, trash_retention_days: int = 14):
+    def __init__(
+        self,
+        store,
+        event_log,
+        executors: dict,
+        autorun_policies: dict,
+        approvals,
+        runs,
+        workspace_dir: Path,
+        trash_retention_days: int = 14,
+    ):
         self._store = store
         self._event_log = event_log
         self._executors = executors
@@ -113,8 +123,7 @@ class SessionLifecycle:
         data. A non-positive retention disables the sweep.
         """
         if self._trash_retention_days <= 0:
-            logger.info("trash sweep disabled (retention=%s days); nothing removed",
-                        self._trash_retention_days)
+            logger.info("trash sweep disabled (retention=%s days); nothing removed", self._trash_retention_days)
             return []
         # The filesystem walk and rmtree are blocking; keep them off the loop.
         return await asyncio.to_thread(self._sweep_trash)
@@ -135,8 +144,7 @@ class SessionLifecycle:
             try:
                 modified = datetime.fromtimestamp(entry.stat().st_mtime, UTC)
             except OSError:
-                logger.warning("trash sweep: could not read %s; leaving it", entry.name,
-                               exc_info=True)
+                logger.warning("trash sweep: could not read %s; leaving it", entry.name, exc_info=True)
                 continue
             if modified >= cutoff:
                 continue
@@ -146,8 +154,7 @@ class SessionLifecycle:
             except OSError:
                 # A locked file is common on Windows (a preview or editor still
                 # holds it). Report it and keep the rest of the sweep going.
-                logger.warning("trash sweep: could not remove %s (%.1f days old)",
-                               entry.name, age_days, exc_info=True)
+                logger.warning("trash sweep: could not remove %s (%.1f days old)", entry.name, age_days, exc_info=True)
                 continue
             logger.info("trash sweep: removed %s (%.1f days old)", entry.name, age_days)
             removed.append(entry)
@@ -185,8 +192,7 @@ class SessionLifecycle:
         #    conversation whose files were still on disk.
         workspace = self._workspace_dir / session_id
         if workspace.exists():
-            trash = (self._workspace_dir / ".trash"
-                     / f"{session_id}-{datetime.now(UTC):%Y%m%d-%H%M%S}")
+            trash = self._workspace_dir / ".trash" / f"{session_id}-{datetime.now(UTC):%Y%m%d-%H%M%S}"
             trash.parent.mkdir(parents=True, exist_ok=True)
             await move_workspace_to_trash(workspace, trash)
 

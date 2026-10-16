@@ -12,29 +12,43 @@ from vibe.tools.registry import ToolRegistry
 
 class StubLlm:
     """Yields one text_chunk then turn_complete (no tools)."""
+
     def __init__(self, responses):
         self._responses = list(responses)
+
     def bind_tools(self, tools):
         return self
+
     def invoke(self, messages):
         from langchain_core.messages import AIMessage
+
         return AIMessage(content=self._responses.pop(0))
 
     async def ainvoke(self, messages):
         return self.invoke(messages)
 
+
 class StubToolRegistry:
     def to_langchain_tools(self, ctx):
         return []
+
 
 @pytest.mark.asyncio
 async def test_langgraph_runtime_yields_text_and_turn_complete(tmp_path):
     llm = StubLlm(["hello world"])
     runtime = LangGraphRuntime(llm_factory=lambda m, session_id=None: llm, tool_registry=StubToolRegistry())
-    ctx = AgentContext(session_id="s1", workspace_path=tmp_path, executor=None,
-                       event_bus=EventBus(), store=SessionStore(db_path=tmp_path / "t.db"))
-    inp = AgentInput(session_id="s1", messages=[Message(role="user", content="hi")],
-                     model=ModelRef(provider_id="openai", model_id="gpt-4o"))
+    ctx = AgentContext(
+        session_id="s1",
+        workspace_path=tmp_path,
+        executor=None,
+        event_bus=EventBus(),
+        store=SessionStore(db_path=tmp_path / "t.db"),
+    )
+    inp = AgentInput(
+        session_id="s1",
+        messages=[Message(role="user", content="hi")],
+        model=ModelRef(provider_id="openai", model_id="gpt-4o"),
+    )
     events = [e async for e in runtime.run(inp, ctx)]
     kinds = [e.kind for e in events]
     assert "text_chunk" in kinds
@@ -45,8 +59,12 @@ async def test_langgraph_runtime_yields_text_and_turn_complete(tmp_path):
 
 def test_to_lc_message_multimodal_with_attachment():
     from vibe.runtime.langgraph import _to_lc_message
-    m = Message(role="user", content="build this",
-                attachments=[Attachment(name="ref.png", content_type="image/png", data_base64="aGVsbG8=")])
+
+    m = Message(
+        role="user",
+        content="build this",
+        attachments=[Attachment(name="ref.png", content_type="image/png", data_base64="aGVsbG8=")],
+    )
     lc = _to_lc_message(m)
     assert lc.type == "human"
     assert isinstance(lc.content, list)
@@ -67,20 +85,29 @@ class _ToolCallingLlm:
 
     async def ainvoke(self, messages):
         from langchain_core.messages import AIMessage
+
         self._n += 1
         if self._n == 1:
-            return AIMessage(content="", tool_calls=[
-                {"name": self._tool_name, "args": {}, "id": "c1", "type": "tool_call"}])
+            return AIMessage(
+                content="", tool_calls=[{"name": self._tool_name, "args": {}, "id": "c1", "type": "tool_call"}]
+            )
         return AIMessage(content="done")
 
 
 async def _run_one_tool(tmp_path, reg, tool_name):
-    runtime = LangGraphRuntime(llm_factory=lambda m, session_id=None: _ToolCallingLlm(tool_name),
-                               tool_registry=reg)
-    ctx = AgentContext(session_id="s1", workspace_path=tmp_path, executor=None,
-                       event_bus=EventBus(), store=SessionStore(db_path=tmp_path / "t.db"))
-    inp = AgentInput(session_id="s1", messages=[Message(role="user", content="hi")],
-                     model=ModelRef(provider_id="openai", model_id="gpt-4o"))
+    runtime = LangGraphRuntime(llm_factory=lambda m, session_id=None: _ToolCallingLlm(tool_name), tool_registry=reg)
+    ctx = AgentContext(
+        session_id="s1",
+        workspace_path=tmp_path,
+        executor=None,
+        event_bus=EventBus(),
+        store=SessionStore(db_path=tmp_path / "t.db"),
+    )
+    inp = AgentInput(
+        session_id="s1",
+        messages=[Message(role="user", content="hi")],
+        model=ModelRef(provider_id="openai", model_id="gpt-4o"),
+    )
     events = [e async for e in runtime.run(inp, ctx)]
     return [e for e in events if e.kind == "tool_result"]
 
@@ -106,8 +133,7 @@ async def test_image_tool_result_keeps_the_event_text_only(tmp_path):
     reg = ToolRegistry()
 
     async def snap(args, ctx):
-        return ToolResult("", "snap", "captured 800x600",
-                          attachments=[Attachment("s.png", "image/png", "QUJD")])
+        return ToolResult("", "snap", "captured 800x600", attachments=[Attachment("s.png", "image/png", "QUJD")])
 
     reg.register("snap", ToolSchema("snap", "snap", {"type": "object", "properties": {}}), snap)
     results = await _run_one_tool(tmp_path, reg, "snap")
@@ -119,8 +145,11 @@ def test_text_of_drops_image_blocks():
     """The SSE event is a transcript; a base64 PNG in every frame would dwarf
     it. The image still reaches the model through the message itself."""
     from vibe.runtime.langgraph import _text_of
-    blocks = [{"type": "text", "text": "captured"},
-              {"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}]
+
+    blocks = [
+        {"type": "text", "text": "captured"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}},
+    ]
     assert _text_of(blocks) == "captured"
     assert _text_of("plain") == "plain"
 
@@ -130,6 +159,7 @@ def test_is_error_reads_the_artifact():
     from langchain_core.messages import ToolMessage
 
     from vibe.runtime.langgraph import _is_error
+
     assert _is_error(ToolMessage(content="x", tool_call_id="c1", artifact={"is_error": True})) is True
     assert _is_error(ToolMessage(content="x", tool_call_id="c1", artifact={"is_error": False})) is False
     assert _is_error(ToolMessage(content="x", tool_call_id="c1")) is False
@@ -137,6 +167,7 @@ def test_is_error_reads_the_artifact():
 
 def test_to_lc_message_text_only():
     from vibe.runtime.langgraph import _to_lc_message
+
     m = Message(role="user", content="hi")
     lc = _to_lc_message(m)
     assert lc.type == "human"

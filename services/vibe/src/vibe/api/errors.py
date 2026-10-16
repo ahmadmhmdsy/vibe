@@ -11,6 +11,7 @@ has one shape regardless of which layer raised it:
 The status code still matters — it is what a proxy and the browser see — but
 the code is the part that is safe to switch on.
 """
+
 from __future__ import annotations
 
 from enum import StrEnum

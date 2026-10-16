@@ -7,6 +7,7 @@ for it would be speculative work; the cheap honest step is the index the deferre
 session+type queries would need, applied through the existing user_version
 migration without touching the protocol.
 """
+
 import sqlite3
 
 import pytest
@@ -29,7 +30,8 @@ def _seed_v1(db_path, rows=(("s1", 1, "user/message", '{"content": "hi"}'),)) ->
     con = sqlite3.connect(db_path)
     con.execute(
         "CREATE TABLE events (session_id TEXT NOT NULL, seq INTEGER NOT NULL,"
-        " type TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY (session_id, seq))")
+        " type TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY (session_id, seq))"
+    )
     con.executemany("INSERT INTO events VALUES (?, ?, ?, ?)", rows)
     con.execute("PRAGMA user_version = 1")
     con.commit()
@@ -54,8 +56,7 @@ def test_the_deferred_session_and_type_query_uses_the_index(tmp_path):
     EventLog(tmp_path / "events.db").close()
     plan = _query_plan(
         tmp_path / "events.db",
-        "SELECT seq, type, payload FROM events"
-        " WHERE session_id = ? AND type = ? ORDER BY seq",
+        "SELECT seq, type, payload FROM events WHERE session_id = ? AND type = ? ORDER BY seq",
         ("s1", "usage"),
     )
     assert INDEX in plan, plan
@@ -82,9 +83,14 @@ def test_an_existing_v1_database_is_migrated_in_place(tmp_path):
 @pytest.mark.asyncio
 async def test_a_migrated_log_still_reads_its_events(tmp_path):
     db = tmp_path / "events.db"
-    _seed_v1(db, (("s1", 1, "user/message", '{"content": "hi"}'),
-                  ("s1", 3, "usage", '{"provider": "openai"}'),
-                  ("s2", 1, "user/message", '{"content": "other"}')))
+    _seed_v1(
+        db,
+        (
+            ("s1", 1, "user/message", '{"content": "hi"}'),
+            ("s1", 3, "usage", '{"provider": "openai"}'),
+            ("s2", 1, "user/message", '{"content": "other"}'),
+        ),
+    )
 
     log = EventLog(db)
     try:
@@ -97,11 +103,12 @@ async def test_a_migrated_log_still_reads_its_events(tmp_path):
 def test_the_migration_is_idempotent(tmp_path):
     db = tmp_path / "events.db"
     EventLog(db).close()
-    EventLog(db).close()   # opening a current database must not fail or duplicate
+    EventLog(db).close()  # opening a current database must not fail or duplicate
     con = sqlite3.connect(db)
     try:
         assert con.execute("PRAGMA user_version").fetchone()[0] == _SCHEMA_VERSION
-        assert con.execute("SELECT COUNT(*) FROM sqlite_master"
-                           " WHERE type='index' AND name=?", (INDEX,)).fetchone()[0] == 1
+        assert (
+            con.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?", (INDEX,)).fetchone()[0] == 1
+        )
     finally:
         con.close()

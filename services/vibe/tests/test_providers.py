@@ -5,6 +5,7 @@ This file used to test a local stub against ChatRequest/ChatEvent -- types that
 only the (dead, and broken) provider classes ever used, so it proved nothing
 about production code. It now tests the registry that is actually executed.
 """
+
 from pathlib import Path
 
 import pytest
@@ -63,8 +64,15 @@ def test_opencode_go_routes_by_session(tmp_path):
 
 def test_custom_provider_is_built_from_its_row(tmp_path):
     store = CustomProviderStore(tmp_path / "providers.json")
-    store.create(CustomProvider(id="mine", name="Mine", base_url="http://localhost:1234/v1",
-                                api_key="sk-custom", models=[{"id": "m1", "name": "M1"}]))
+    store.create(
+        CustomProvider(
+            id="mine",
+            name="Mine",
+            base_url="http://localhost:1234/v1",
+            api_key="sk-custom",
+            models=[{"id": "m1", "name": "M1"}],
+        )
+    )
     model = build_llm_factory(_settings(tmp_path), store)(ModelRef("mine", "m1"))
     assert type(model).__name__ == "ChatOpenAI"
     assert _base_url(model) == "http://localhost:1234/v1"
@@ -72,9 +80,15 @@ def test_custom_provider_is_built_from_its_row(tmp_path):
 
 def test_custom_provider_honours_the_per_model_protocol(tmp_path):
     store = CustomProviderStore(tmp_path / "providers.json")
-    store.create(CustomProvider(id="mine", name="Mine", base_url="http://localhost:1234/v1",
-                                api_key="sk-custom",
-                                models=[{"id": "m1", "name": "M1", "protocol": "anthropic-messages"}]))
+    store.create(
+        CustomProvider(
+            id="mine",
+            name="Mine",
+            base_url="http://localhost:1234/v1",
+            api_key="sk-custom",
+            models=[{"id": "m1", "name": "M1", "protocol": "anthropic-messages"}],
+        )
+    )
     model = build_llm_factory(_settings(tmp_path), store)(ModelRef("mine", "m1"))
     assert type(model).__name__ == "ChatAnthropic"
 

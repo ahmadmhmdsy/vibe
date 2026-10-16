@@ -5,6 +5,7 @@ The log is the source of truth ("model-visible means logged"); the ordered
 user/assistant transcript is derived from it rather than stored separately, so a
 replayed history and a live one cannot disagree.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

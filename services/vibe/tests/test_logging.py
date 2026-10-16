@@ -7,6 +7,7 @@ is now the single place that decides where records go, so these tests pin
 its contract - level resolution, idempotency, and the propagation flag that
 stops a host application from printing every line twice.
 """
+
 from __future__ import annotations
 
 import logging

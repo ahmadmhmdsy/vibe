@@ -12,6 +12,7 @@ route and no such file exists -- refreshing a page would look like the app had
 lost its data. Every path that is not a real file therefore returns the shell
 and lets the client router decide.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -62,9 +63,7 @@ def mount_spa(app: FastAPI, dist_dir: Path) -> None:
     @app.api_route("/{client_path:path}", methods=["GET", "HEAD"], include_in_schema=False, response_model=None)
     async def spa(client_path: str):
         if client_path == _API_PREFIX or client_path.startswith(_API_PREFIX + "/"):
-            return JSONResponse(
-                status_code=404, content=body(ErrorCode.NOT_FOUND, f"no API route at /{client_path}")
-            )
+            return JSONResponse(status_code=404, content=body(ErrorCode.NOT_FOUND, f"no API route at /{client_path}"))
         # The path is user input. A leading "../" must not be able to read a file
         # outside the build, so the resolved candidate has to still sit inside it.
         candidate = (dist_dir / client_path).resolve() if client_path else None
@@ -74,9 +73,7 @@ def mount_spa(app: FastAPI, dist_dir: Path) -> None:
                 return FileResponse(candidate, headers={"Cache-Control": _IMMUTABLE})
             # A build that lost an asset must say so. Returning the shell would
             # make a half-built app look like a working one.
-            return JSONResponse(
-                status_code=404, content=body(ErrorCode.NOT_FOUND, f"no asset at /{client_path}")
-            )
+            return JSONResponse(status_code=404, content=body(ErrorCode.NOT_FOUND, f"no asset at /{client_path}"))
         if inside and candidate.is_file():
             return FileResponse(candidate, headers={"Cache-Control": _NO_CACHE})
         return FileResponse(index, headers={"Cache-Control": _NO_CACHE})

@@ -39,10 +39,7 @@ class EventSeqConflict(RuntimeError):
     """
 
     def __init__(self, session_id: str, attempts: int) -> None:
-        super().__init__(
-            f"could not allocate an event seq for session {session_id}"
-            f" after {attempts} attempt(s)"
-        )
+        super().__init__(f"could not allocate an event seq for session {session_id} after {attempts} attempt(s)")
         self.session_id = session_id
         self.attempts = attempts
 
@@ -141,10 +138,7 @@ class EventLog:
             # store protocol so those calls push the filter into SQL is real
             # work with a real compatibility cost, so it stays deferred -- this
             # is the index that work would need, and nothing else (BE-12).
-            con.execute(
-                "CREATE INDEX IF NOT EXISTS idx_events_session_type_seq"
-                " ON events (session_id, type, seq)"
-            )
+            con.execute("CREATE INDEX IF NOT EXISTS idx_events_session_type_seq ON events (session_id, type, seq)")
         if version < 3:
             EventLog._add_owner_column(con)
         if version < _SCHEMA_VERSION:
@@ -170,14 +164,8 @@ class EventLog:
         """
         columns = {row["name"] for row in con.execute("PRAGMA table_info(events)")}
         if "owner_id" not in columns:
-            con.execute(
-                "ALTER TABLE events ADD COLUMN owner_id TEXT NOT NULL"
-                f" DEFAULT '{LOOPBACK_OWNER_ID}'"
-            )
-        con.execute(
-            "CREATE INDEX IF NOT EXISTS idx_events_owner_session_seq"
-            " ON events (owner_id, session_id, seq)"
-        )
+            con.execute(f"ALTER TABLE events ADD COLUMN owner_id TEXT NOT NULL DEFAULT '{LOOPBACK_OWNER_ID}'")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_events_owner_session_seq ON events (owner_id, session_id, seq)")
 
     def _max_seq(self, session_id: str) -> int:
         """Highest seq already recorded for a session (0 if none).
@@ -234,10 +222,14 @@ class EventLog:
             for attempt in range(1, _INSERT_ATTEMPTS + 1):
                 try:
                     self._db.execute(
-                        "INSERT INTO events (session_id, seq, type, payload, owner_id)"
-                        " VALUES (?, ?, ?, ?, ?)",
-                        (event.session_id, event.seq, event.type,
-                         json.dumps(event.payload, default=str), LOOPBACK_OWNER_ID),
+                        "INSERT INTO events (session_id, seq, type, payload, owner_id) VALUES (?, ?, ?, ?, ?)",
+                        (
+                            event.session_id,
+                            event.seq,
+                            event.type,
+                            json.dumps(event.payload, default=str),
+                            LOOPBACK_OWNER_ID,
+                        ),
                     )
                     self._db.commit()
                     return
@@ -264,14 +256,10 @@ class EventLog:
     def _select(self, session_id: str, after_seq: int) -> list[Event]:
         with self._lock:
             rows = self._db.execute(
-                "SELECT seq, type, payload FROM events"
-                " WHERE session_id = ? AND seq > ? ORDER BY seq",
+                "SELECT seq, type, payload FROM events WHERE session_id = ? AND seq > ? ORDER BY seq",
                 (session_id, after_seq),
             ).fetchall()
-        return [
-            Event(session_id=session_id, seq=int(r[0]), type=r[1], payload=json.loads(r[2]))
-            for r in rows
-        ]
+        return [Event(session_id=session_id, seq=int(r[0]), type=r[1], payload=json.loads(r[2])) for r in rows]
 
     def last_seq(self, session_id: str) -> int:
         with self._lock:

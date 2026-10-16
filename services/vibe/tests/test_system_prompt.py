@@ -6,6 +6,7 @@ runtime's converter had a "system" branch no caller used. So the model's whole
 instruction set was the tool schemas — nothing said the target is React + Vite +
 TypeScript, that the session owns one workspace, or that the app has to build.
 """
+
 import pytest
 from conftest import swap
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -46,8 +47,12 @@ def test_an_override_replaces_the_default():
 
 
 def test_the_system_message_comes_first():
-    inp = AgentInput(session_id="s", messages=[Message(role="user", content="build a counter")],
-                     model=ModelRef("openai", "gpt-4o"), system="STANDING INSTRUCTIONS")
+    inp = AgentInput(
+        session_id="s",
+        messages=[Message(role="user", content="build a counter")],
+        model=ModelRef("openai", "gpt-4o"),
+        system="STANDING INSTRUCTIONS",
+    )
     messages = build_messages(inp)
     assert isinstance(messages[0], SystemMessage)
     assert messages[0].content == "STANDING INSTRUCTIONS"
@@ -57,8 +62,7 @@ def test_the_system_message_comes_first():
 
 def test_no_system_message_without_a_prompt():
     """A caller that deliberately sends a bare transcript gets no invented prompt."""
-    inp = AgentInput(session_id="s", messages=[Message(role="user", content="hi")],
-                     model=ModelRef("openai", "gpt-4o"))
+    inp = AgentInput(session_id="s", messages=[Message(role="user", content="hi")], model=ModelRef("openai", "gpt-4o"))
     messages = build_messages(inp)
     assert len(messages) == 1
     assert isinstance(messages[0], HumanMessage)

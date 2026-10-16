@@ -12,6 +12,7 @@ uvicorn, no LangGraph, not even vibe.logging_setup -- so it still works when the
 app cannot start at all. The only project import is Settings, which is
 dataclasses and pathlib.
 """
+
 from __future__ import annotations
 
 import json
@@ -154,12 +155,21 @@ def _check_python() -> Check:
 def _check_node() -> Check:
     exe = _which("node")
     if not exe:
-        return Check("node", False, "not found on PATH", "install Node 20+ from https://nodejs.org and reopen the terminal")
+        return Check(
+            "node", False, "not found on PATH", "install Node 20+ from https://nodejs.org and reopen the terminal"
+        )
     version = _command_version([exe, "--version"])
     if version is None:
-        return Check("node", False, f"{exe} did not report a version", f"reinstall Node 20+ from https://nodejs.org (asked: {exe} --version)")
+        return Check(
+            "node",
+            False,
+            f"{exe} did not report a version",
+            f"reinstall Node 20+ from https://nodejs.org (asked: {exe} --version)",
+        )
     ok = version >= MIN_NODE
-    return Check("node", ok, ".".join(str(part) for part in version), "" if ok else "upgrade to Node 20+ from https://nodejs.org")
+    return Check(
+        "node", ok, ".".join(str(part) for part in version), "" if ok else "upgrade to Node 20+ from https://nodejs.org"
+    )
 
 
 def _offline_note() -> str:
@@ -177,12 +187,15 @@ def _offline_note() -> str:
 def _check_pnpm() -> Check:
     exe = _which("pnpm")
     if not exe:
-        return Check("pnpm", False, "not found on PATH",
-                     "install pnpm: npm install -g pnpm" + _offline_note())
+        return Check("pnpm", False, "not found on PATH", "install pnpm: npm install -g pnpm" + _offline_note())
     version = _command_version([exe, "--version"])
     if version is None:
-        return Check("pnpm", False, f"{exe} did not report a version",
-                     f"reinstall pnpm: npm install -g pnpm (asked: {exe} --version)" + _offline_note())
+        return Check(
+            "pnpm",
+            False,
+            f"{exe} did not report a version",
+            f"reinstall pnpm: npm install -g pnpm (asked: {exe} --version)" + _offline_note(),
+        )
     return Check("pnpm", True, ".".join(str(part) for part in version))
 
 
@@ -202,8 +215,32 @@ def _check_uv() -> Check:
 def _check_chromium() -> Check:
     dirs = chromium_dirs()
     if not dirs:
-        return Check("chromium", False, "no Playwright browser download found", f"{_python_exe()} -m playwright install chromium")
+        return Check(
+            "chromium", False, "no Playwright browser download found", f"{_python_exe()} -m playwright install chromium"
+        )
     return Check("chromium", True, f"{len(dirs)} browser build(s), newest {dirs[-1].name}")
+
+
+def _network_reachable() -> bool:
+    """The single seam for the npm-registry probe, so doctor tests stay offline."""
+    return registry.reachable_sync()
+
+
+def _check_network() -> Check:
+    """Informational: can this machine reach the npm registry?
+
+    Not blocking. The first run needs the network to install dependencies, but a
+    later run against an already-installed project does not -- so an offline
+    machine is told the cause without being refused a start.
+    """
+    if _network_reachable():
+        return Check("network", True, f"npm registry reachable ({registry.NPM_REGISTRY_HOST})")
+    return Check(
+        "network",
+        False,
+        "npm registry unreachable",
+        "connect to the internet before `pnpm install`; the app itself runs offline",
+    )
 
 
 def _check_workspace(settings: Settings) -> Check:
@@ -214,7 +251,12 @@ def _check_workspace(settings: Settings) -> Check:
         probe.write_text("ok", encoding="utf-8")
         probe.unlink()
     except OSError as exc:
-        return Check("workspace", False, f"{workspace} is not usable ({exc})", "pick a writable directory: set VIBE_WORKSPACE_DIR=<path>")
+        return Check(
+            "workspace",
+            False,
+            f"{workspace} is not usable ({exc})",
+            "pick a writable directory: set VIBE_WORKSPACE_DIR=<path>",
+        )
     return Check("workspace", True, str(workspace))
 
 
@@ -273,6 +315,7 @@ def run_checks(settings: Settings) -> list[Check]:
         _check_node(),
         _check_pnpm(),
         _check_uv(),
+        _check_network(),
         _check_chromium(),
         _check_workspace(settings),
         _check_providers_file(settings),

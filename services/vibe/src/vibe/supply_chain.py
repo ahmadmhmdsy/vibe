@@ -6,17 +6,33 @@ from vibe.runtime.base import AgentContext
 
 # Starter allowlist: packages the agent may install without approval.
 # Anything outside this set requires explicit user approval (a chat event).
-ALLOWLIST: frozenset[str] = frozenset({
-    # React core
-    "react", "react-dom", "react-scripts", "@types/react", "@types/react-dom",
-    # Vite / build tooling
-    "vite", "@vitejs/plugin-react", "typescript", "tsx", "@types/node",
-    # Tailwind
-    "tailwindcss", "postcss", "autoprefixer",
-    # Common UI / utility libs
-    "lucide-react", "clsx", "class-variance-authority", "tailwind-merge",
-    "framer-motion", "zustand",
-})
+ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # React core
+        "react",
+        "react-dom",
+        "react-scripts",
+        "@types/react",
+        "@types/react-dom",
+        # Vite / build tooling
+        "vite",
+        "@vitejs/plugin-react",
+        "typescript",
+        "tsx",
+        "@types/node",
+        # Tailwind
+        "tailwindcss",
+        "postcss",
+        "autoprefixer",
+        # Common UI / utility libs
+        "lucide-react",
+        "clsx",
+        "class-variance-authority",
+        "tailwind-merge",
+        "framer-motion",
+        "zustand",
+    }
+)
 
 
 # A specifier can point somewhere else entirely: "react@npm:evil" installs
@@ -77,10 +93,14 @@ async def request_approval(ctx: AgentContext, packages: list[str]) -> str:
     a = store.create(ctx.session_id, packages)
     payload = {"approval_id": a.id, "packages": packages, "status": "pending"}
     seq = await ctx.event_log.append(ctx.session_id, "approval", payload)
-    await ctx.event_bus.publish(ctx.session_id, Event(session_id=ctx.session_id, seq=seq, type="approval", payload=payload))
+    await ctx.event_bus.publish(
+        ctx.session_id, Event(session_id=ctx.session_id, seq=seq, type="approval", payload=payload)
+    )
     status = await store.wait(a.id)
     # Record the resolution as a follow-up event.
     payload["status"] = status
     seq = await ctx.event_log.append(ctx.session_id, "approval", payload)
-    await ctx.event_bus.publish(ctx.session_id, Event(session_id=ctx.session_id, seq=seq, type="approval", payload=payload))
+    await ctx.event_bus.publish(
+        ctx.session_id, Event(session_id=ctx.session_id, seq=seq, type="approval", payload=payload)
+    )
     return status

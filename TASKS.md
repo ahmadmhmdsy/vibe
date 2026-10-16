@@ -208,14 +208,31 @@ more (RED-6) found while fixing RED-2:
 | RED-3 | `features/chat/timeline.ts` comment claimed `next_seq` "peeks ... not a reservation"; it reserves (increments) | Low | `done` | comment corrected: the seq is reserved/advanced from the same counter, only stored events move `lastSeq` |
 | RED-4 | `lib/api.ts` comment said `GET /sessions/{id}` lacks timestamps (BE-19 / R3-T6); R3-T6 landed | Low | `done` | comment corrected to state both `GET /sessions` and `GET /sessions/{id}` return timestamps |
 | RED-5 | `CURRENT_STATE.md` listed a port-7321 listener (PID 29948) that no longer exists | Low | `done` | snapshot refreshed (Git + Active jobs + this section) |
-| RED-6 | (found while fixing RED-2) a **session workspace** declaring a build-script dependency (vite→esbuild) makes `install()` return `is_error=True` on pnpm 12 unless the project approves it; the app writes no such config into session workspaces | Medium | `open` — `NEEDS_USER_DECISION` | **not** fixed here: auto-approving build scripts is arbitrary code execution and needs an explicit call. Options: the executor passes an approval for a known-safe allowlist, or the scaffold is authored with one |
+| RED-6 | (found while fixing RED-2) a **session workspace** declaring a build-script dependency (vite→esbuild) makes `install()` return `is_error=True` on pnpm 12 unless the project approves it; the app wrote no such config into session workspaces | Medium | `done` | executor `install()` now writes a `pnpm-workspace.yaml` (`allowBuilds: esbuild`) into the session workspace, but **only when the project has none of its own**, and appends an allowlist hint to an `ERR_PNPM_IGNORED_BUILDS` failure; `local.py` `SAFE_BUILD_SCRIPTS`. `pytest tests/test_executor.py -q` → **11 passed**, including the integration test with no hand-written approval file (the executor must supply it) |
 | — | 5 eslint warnings (3 `exhaustive-deps`, 2 `react-refresh`) | Info | `accepted` | documented triage decision in `apps/vibe/eslint.config.js`; no change |
 
-**Verification (2026-10-16):** backend `pytest -q` → **464 passed** (`0` failed) and `ruff check .` → All checks passed; frontend `tsc --noEmit` exit 0, `eslint` 0 errors / 5 warnings, `prettier --check` exit 0.
+### Open decisions closed — 2026-10-16
 
-Nothing is committed (per policy); the intended commit for RED-1..RED-5 is a single
-`fix: review remediation (prettier drift, executor test scaffold, stale comments)`,
-awaiting the user's go. RED-6 stays open and out of that commit — it needs a
-`NEEDS_USER_DECISION` call on build-script approval before any code changes.
+After the commit, the user answered the four decisions carried from the M7 review and the
+hardening left-overs. All are implemented in the working tree (uncommitted):
+
+| # | Decision (user chose the recommended option) | Status | What landed |
+|---|---|---|---|
+| P5 | Auth beyond loopback: shared-secret token | `done` | `Settings.auth_token` (`VIBE_AUTH_TOKEN`) + a fail-closed `__post_init__` guard (a non-loopback `VIBE_HOST` without a token is a startup error); `TokenAuthenticator` in `auth.py` (loopback trusted, remote peers must send `Authorization: Bearer <token>`, constant-time compare); `Container._build_authenticator` selects `"token"` mode |
+| R5-T8 | Non-blocking informational `network` doctor check | `done` | `doctor._check_network()` via a `_network_reachable()` seam (so tests stay offline); not in `HARD_CHECKS`; `EXPECTED_CHECKS` updated; new offline test |
+| D1 | Repo-wide `ruff format` | `done` | `ruff format .` → 91 files reformatted; `ruff format --check` clean, `ruff check` clean |
+| D2 | `vibe backup` from the launchers | `done` | opt-in `start.bat backup` runs `python -m vibe backup --keep 7` after the preflight and aborts the start if the backup fails |
+| D3 | Backup retention of 7 | `done` (no-op) | `maintenance.KEEP_DEFAULT = 7` was already the value; nothing to change |
+| D4 | Delete dead `lib/markdown.tsx` + `react-markdown` | `done` | file deleted, dependency removed from `apps/vibe/package.json`, lockfile updated (`pnpm install`) |
+| D5 | Skip link for the transcript | `done` | skip link added in `ChatPanel.tsx` (targets `#composer-input`), `.skip-link` CSS in `layout.css` |
+
+**Verification (2026-10-16, after the decisions):** backend `pytest -q` → **477 passed** (`0` failed) and `ruff format --check` + `ruff check .` clean; frontend `tsc --noEmit` exit 0, `eslint` 0 errors / 5 warnings, `vitest` **290 passed** (32 files), `prettier --check` exit 0 (frontend verified with D1/D4/D5; the auth/doctor/executor work is backend-only).
+
+Committed as `1deed29` — `feat: M7 UI/UX overhaul, local production hardening, and
+review remediation` (223 files) — which lands the whole accumulated worktree, not just
+RED-1..RED-5. **Not pushed:** the repo has no `origin` configured. The decisions above
+(RED-6, P5, R5-T8, D1–D5) are **implemented but not committed** — the tree holds ~103
+entries again (mostly the `ruff format` whitespace on 91 backend files), awaiting an
+explicit commit.
 
 

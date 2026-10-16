@@ -5,6 +5,7 @@ Also the two questions the plan's bullet list left open: the Settings panel's
 "Clear stored key" call (does an empty apiKey really clear the key?) and the
 GUI system-prompt field's read and write contract.
 """
+
 import json
 import logging
 from dataclasses import MISSING, fields
@@ -133,8 +134,12 @@ def test_provider_not_configured_keeps_its_explicit_message(client, app):
     """The one failure the UI can tell the user how to resolve keeps its text."""
     from vibe.providers.registry import ProviderNotConfigured
 
-    swap(app, runtime=RaisingRuntime(ProviderNotConfigured(
-        "OPENAI_API_KEY is not configured. Set it in .env or use a different provider.")))
+    swap(
+        app,
+        runtime=RaisingRuntime(
+            ProviderNotConfigured("OPENAI_API_KEY is not configured. Set it in .env or use a different provider.")
+        ),
+    )
     sid = _new_sid(client)
     resp = client.post(f"/sessions/{sid}/messages", json={"content": "hi"})
     assert resp.status_code == 400, resp.text
@@ -153,10 +158,15 @@ def test_clear_stored_key_with_an_empty_api_key(client, store_path):
     read it back, and confirm the key is gone from the file on disk too -- not
     just from the response.
     """
-    created = client.post("/providers", json={
-        "name": "Local", "baseUrl": "http://x/v1", "apiKey": "sk-live",
-        "models": [{"id": "m1", "name": "M1"}],
-    }).json()
+    created = client.post(
+        "/providers",
+        json={
+            "name": "Local",
+            "baseUrl": "http://x/v1",
+            "apiKey": "sk-live",
+            "models": [{"id": "m1", "name": "M1"}],
+        },
+    ).json()
     assert created["key_configured"] is True
 
     resp = client.patch(f"/providers/{created['id']}", json={"apiKey": ""})
@@ -205,9 +215,7 @@ def test_patch_settings_saves_a_prompt_and_clears_it(client):
     cleared = client.patch("/settings", json={"system_prompt": ""})
     cleared_body = cleared.json()["system_prompt"]
     assert cleared_body["source"] == ("env" if cleared_body["configured"].strip() else "default")
-    assert cleared_body["effective"] == (
-        cleared_body["configured"].strip() or cleared_body["default"]
-    )
+    assert cleared_body["effective"] == (cleared_body["configured"].strip() or cleared_body["default"])
 
 
 def test_patch_settings_rejects_a_bad_body_with_a_400(client):

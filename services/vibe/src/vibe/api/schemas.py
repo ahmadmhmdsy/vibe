@@ -6,6 +6,7 @@ missing or mistyped field surfaced as a KeyError/TypeError -> 500 (BE-01).
 Declaring the shape here moves that failure to FastAPI's validation, which the
 app maps to 400 validation_failed.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field

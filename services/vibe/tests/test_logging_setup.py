@@ -10,6 +10,7 @@ whichever handler formats the record, so the operator gets a "--- Logging error
 ---" traceback instead of the warning. R3-T3 fixed the call to one placeholder
 and one argument; this capture handler formats the record and expects no failure.
 """
+
 import logging
 from dataclasses import dataclass
 
@@ -42,7 +43,8 @@ class CaptureHandler(logging.Handler):
 
 
 def test_remote_bind_warning_is_formattable(tmp_path):
-    app = create_app(Settings(host="0.0.0.0", workspace_dir=tmp_path / "ws"))
+    # P5: a non-loopback bind needs a shared secret, so the app is built with one.
+    app = create_app(Settings(host="0.0.0.0", auth_token="sekret", workspace_dir=tmp_path / "ws"))
     logger = logging.getLogger("vibe.api.app")
     capture = CaptureHandler()
     logger.addHandler(capture)
@@ -245,4 +247,3 @@ def test_the_probe_never_raises_on_a_machine_missing_the_tool(tmp_path, monkeypa
     line = log_startup_banner(settings, probe=True)
     assert "node=not found" in line
     assert "pnpm=not found" in line
-

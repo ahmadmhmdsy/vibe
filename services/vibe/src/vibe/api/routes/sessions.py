@@ -27,8 +27,7 @@ router = APIRouter()
 
 
 @router.post("/sessions", status_code=201)
-async def create_session(body: CreateSessionIn, deps: App,
-                         owner: Owner = LOOPBACK_OWNER_ID):
+async def create_session(body: CreateSessionIn, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     sid = await deps.session_service.create(
         ModelRef(provider_id=body.model.provider_id, model_id=body.model.model_id), owner
     )
@@ -38,25 +37,35 @@ async def create_session(body: CreateSessionIn, deps: App,
 @router.get("/sessions")
 async def list_sessions(deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     sessions = await deps.session_service.list(owner)
-    return [{"id": s.id, "title": s.title, "model": {"provider_id": s.model_ref.provider_id, "model_id": s.model_ref.model_id},
-             "created_at": s.created_at, "updated_at": s.updated_at} for s in sessions]
+    return [
+        {
+            "id": s.id,
+            "title": s.title,
+            "model": {"provider_id": s.model_ref.provider_id, "model_id": s.model_ref.model_id},
+            "created_at": s.created_at,
+            "updated_at": s.updated_at,
+        }
+        for s in sessions
+    ]
 
 
 @router.get("/sessions/{sid}")
-async def get_session(sid: str, request: Request, deps: App,
-                      owner: Owner = LOOPBACK_OWNER_ID):
+async def get_session(sid: str, request: Request, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     s = await require_session(deps, sid, owner)
     # Same shape as a list row, including the timestamps the frontend's Session
     # type already declares (BE-10/FE-15): a client should not need a second
     # type for one session.
-    return {"id": s.id, "title": s.title,
-            "model": {"provider_id": s.model_ref.provider_id, "model_id": s.model_ref.model_id},
-            "created_at": s.created_at, "updated_at": s.updated_at}
+    return {
+        "id": s.id,
+        "title": s.title,
+        "model": {"provider_id": s.model_ref.provider_id, "model_id": s.model_ref.model_id},
+        "created_at": s.created_at,
+        "updated_at": s.updated_at,
+    }
 
 
 @router.get("/sessions/{sid}/usage")
-async def session_usage(sid: str, request: Request, deps: App,
-                        owner: Owner = LOOPBACK_OWNER_ID):
+async def session_usage(sid: str, request: Request, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     await require_session(deps, sid, owner)
     # Container.usage has no default and build always constructs a UsageTracker,
     # so the old `if usage is None` branch could never run, its NOT_FOUND was a
@@ -78,8 +87,9 @@ async def session_usage(sid: str, request: Request, deps: App,
 
 
 @router.patch("/sessions/{sid}")
-async def update_session(sid: str, request: Request, body: UpdateSessionIn, deps: App,
-                         owner: Owner = LOOPBACK_OWNER_ID):
+async def update_session(
+    sid: str, request: Request, body: UpdateSessionIn, deps: App, owner: Owner = LOOPBACK_OWNER_ID
+):
     await require_session(deps, sid, owner)
     if body.title is not None:
         await deps.session_service.rename(sid, body.title, owner)
@@ -108,8 +118,7 @@ async def delete_session(sid: str, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
 
 
 @router.get("/sessions/{sid}/files")
-async def list_files(sid: str, request: Request, deps: App,
-                     owner: Owner = LOOPBACK_OWNER_ID):
+async def list_files(sid: str, request: Request, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     await require_session(deps, sid, owner)
     ws = deps.session_service.workspace_path(sid)
     if not ws.exists():
@@ -118,8 +127,7 @@ async def list_files(sid: str, request: Request, deps: App,
 
 
 @router.get("/sessions/{sid}/files/{path:path}")
-async def read_file(sid: str, request: Request, path: str, deps: App,
-                    owner: Owner = LOOPBACK_OWNER_ID):
+async def read_file(sid: str, request: Request, path: str, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     await require_session(deps, sid, owner)
     try:
         content = deps.session_service.read_text(sid, path)
@@ -129,8 +137,9 @@ async def read_file(sid: str, request: Request, path: str, deps: App,
 
 
 @router.put("/sessions/{sid}/files/{path:path}")
-async def write_file(sid: str, request: Request, path: str, body: WriteFileIn, deps: App,
-                     owner: Owner = LOOPBACK_OWNER_ID):
+async def write_file(
+    sid: str, request: Request, path: str, body: WriteFileIn, deps: App, owner: Owner = LOOPBACK_OWNER_ID
+):
     await require_session(deps, sid, owner)
     try:
         deps.session_service.write_text(sid, path, body.content)
@@ -140,8 +149,7 @@ async def write_file(sid: str, request: Request, path: str, body: WriteFileIn, d
 
 
 @router.get("/sessions/{sid}/events")
-async def events(sid: str, request: Request, deps: App,
-                 owner: Owner = LOOPBACK_OWNER_ID):
+async def events(sid: str, request: Request, deps: App, owner: Owner = LOOPBACK_OWNER_ID):
     await require_session(deps, sid, owner)
     after_seq = _parse_after_seq(request.query_params.get("after_seq", 0))
     log = deps.event_log

@@ -7,6 +7,7 @@ made GET /catalog answer 500 for every client; a truncated providers.json did th
 same; and the store's read-modify-write was unlocked, so two concurrent creates
 could lose one provider.
 """
+
 import asyncio
 import json
 
@@ -18,6 +19,7 @@ def _provider(pid: str) -> CustomProvider:
 
 
 # --- R2-T3: model validation and a defensive catalog ----------------------
+
 
 def test_create_provider_rejects_a_model_without_an_id(client):
     r = client.post("/providers", json={"name": "X", "baseUrl": "http://x", "models": [{"name": "n"}]})
@@ -32,10 +34,14 @@ def test_create_provider_rejects_a_blank_model_id(client):
 
 
 def test_create_provider_rejects_a_duplicate_model_id(client):
-    r = client.post("/providers", json={
-        "name": "X", "baseUrl": "http://x",
-        "models": [{"id": "m", "name": "a"}, {"id": "m", "name": "b"}],
-    })
+    r = client.post(
+        "/providers",
+        json={
+            "name": "X",
+            "baseUrl": "http://x",
+            "models": [{"id": "m", "name": "a"}, {"id": "m", "name": "b"}],
+        },
+    )
     assert r.status_code == 400, r.text
     assert r.json()["error"]["code"] == "validation_failed"
 
@@ -55,9 +61,20 @@ def test_patch_provider_validates_new_models(client):
 
 def test_catalog_survives_a_hand_edited_store(client, store_path):
     # A store written by an older version, or edited by hand.
-    store_path.write_text(json.dumps({"p1": {
-        "id": "p1", "name": "X", "base_url": "http://x", "api_key": "k",
-        "models": [{"name": "no-id"}, {"id": "ok", "name": "Fine"}]}}), encoding="utf-8")
+    store_path.write_text(
+        json.dumps(
+            {
+                "p1": {
+                    "id": "p1",
+                    "name": "X",
+                    "base_url": "http://x",
+                    "api_key": "k",
+                    "models": [{"name": "no-id"}, {"id": "ok", "name": "Fine"}],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     r = client.get("/catalog")
     assert r.status_code == 200, r.text
     # /catalog merges the builtins with the custom store, so look only at p1.
@@ -67,6 +84,7 @@ def test_catalog_survives_a_hand_edited_store(client, store_path):
 
 
 # --- R2-T4: a durable, locked store ---------------------------------------
+
 
 def test_corrupt_store_degrades_to_empty(client, store_path):
     store_path.write_text("{not json", encoding="utf-8")
@@ -102,6 +120,13 @@ def test_save_is_atomic_and_leaves_no_tmp_file(store, store_path):
 
 def test_store_round_trips_an_extra_model_key(store, store_path):
     # The catalog and the UI pass through keys they do not own (e.g. protocol).
-    store.create(CustomProvider(id="p1", name="P", base_url="http://x", api_key="",
-                                models=[{"id": "m", "name": "M", "protocol": "openai-chat"}]))
+    store.create(
+        CustomProvider(
+            id="p1",
+            name="P",
+            base_url="http://x",
+            api_key="",
+            models=[{"id": "m", "name": "M", "protocol": "openai-chat"}],
+        )
+    )
     assert store.get("p1").models == [{"id": "m", "name": "M", "protocol": "openai-chat"}]

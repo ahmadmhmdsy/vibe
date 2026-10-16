@@ -11,6 +11,7 @@ Running the migration twice is also asserted. SQLite has no ADD COLUMN IF NOT
 EXISTS, so the column check is what makes a second open a no-op rather than an
 error.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -51,8 +52,7 @@ def _old_sessions_db(path: Path, rows: list[tuple[str, str]]) -> None:
     con.execute(_OLD_SESSIONS)
     for sid, title in rows:
         con.execute(
-            "INSERT INTO sessions (id, title, model_ref, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO sessions (id, title, model_ref, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
             (sid, title, _MODEL_JSON, "2026-01-01T00:00:00+00:00", "2026-01-01T00:00:00+00:00"),
         )
     con.execute("PRAGMA user_version = 1")
@@ -178,8 +178,7 @@ async def test_a_second_owner_cannot_rename_or_delete_the_first_owners_session(
 
 
 def test_a_session_row_defaults_to_the_loopback_owner() -> None:
-    session = Session(id="s1", title="t", model_ref=ModelRef("openai", "gpt-4o"),
-                      created_at="now", updated_at="now")
+    session = Session(id="s1", title="t", model_ref=ModelRef("openai", "gpt-4o"), created_at="now", updated_at="now")
     assert session.owner_id == LOOPBACK_OWNER_ID
 
 
@@ -207,9 +206,7 @@ async def test_a_route_cannot_see_another_owners_session(client, container) -> N
     client already handles -- and must survive a rename, a delete and an abort
     aimed at it by the local owner.
     """
-    alice = await container.store.create_session(
-        ModelRef("openai", "gpt-4o"), owner_id="alice"
-    )
+    alice = await container.store.create_session(ModelRef("openai", "gpt-4o"), owner_id="alice")
 
     assert client.get(f"/sessions/{alice}").status_code == 404
     assert client.patch(f"/sessions/{alice}", json={"title": "stolen"}).status_code == 404

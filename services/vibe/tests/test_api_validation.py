@@ -9,16 +9,17 @@ a typed model (vibe/api/schemas.py) and maps FastAPI's RequestValidationError to
 400 validation_failed. The strict xfail markers were removed with the fix;
 these are its regression tests.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 
 BAD_SESSION_BODIES = [
-    {},                                              # missing 'model'
-    {"model": {}},                                   # missing provider_id/model_id
-    {"model": {"provider_id": "openai"}},            # missing model_id
-    {"model": ["openai", "gpt-4o"]},                 # not a mapping
+    {},  # missing 'model'
+    {"model": {}},  # missing provider_id/model_id
+    {"model": {"provider_id": "openai"}},  # missing model_id
+    {"model": ["openai", "gpt-4o"]},  # not a mapping
     {"model": {"provider_id": 1, "model_id": "x"}},  # int where a string belongs
-    ["openai", "gpt-4o"],                            # not an object at all
+    ["openai", "gpt-4o"],  # not an object at all
 ]
 
 

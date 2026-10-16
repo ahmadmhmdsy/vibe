@@ -27,5 +27,6 @@ class AgentContext:
     #: a turn the user already cancelled.
     is_aborted: Callable[[], bool] | None = None
 
+
 class AgentRuntime(Protocol):
     async def run(self, input: AgentInput, ctx: AgentContext) -> AsyncIterator[AgentEvent]: ...

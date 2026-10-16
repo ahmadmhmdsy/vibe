@@ -29,6 +29,20 @@ logger = logging.getLogger(__name__)
 # and to aid debugging; it is not the browser console (see read_console_logs).
 _CONSOLE_BUFFER_LINES = 500
 
+#: Packages whose install-time build script is safe enough to approve without
+#: asking. pnpm 12 blocks every dependency's build script by default
+#: (ERR_PNPM_IGNORED_BUILDS); a scaffolded project approves none, so an install
+#: that pulls one in -- esbuild, through vite -- exits 1 until it is approved.
+#: ponytail: one entry, the case actually hit. Add a name here only after
+#: reviewing its script; anything else stays blocked and the failure names it.
+SAFE_BUILD_SCRIPTS = ("esbuild",)
+
+_IGNORED_BUILDS_HINT = (
+    "\n\npnpm blocked a dependency's install script that is not on the safe "
+    "list (ERR_PNPM_IGNORED_BUILDS). If you trust it, add it under "
+    "`allowBuilds:` in pnpm-workspace.yaml, then install again."
+)
+
 
 def _pnpm() -> str:
     # Windows: pnpm is a .cmd shim on PATH; CreateProcess cannot launch a bare
@@ -45,9 +59,15 @@ def _free_port() -> int:
 
 
 class LocalSubprocessExecutor:
-    def __init__(self, workspace: Path, timeout: int = 120, *, browser: BrowserDriver | None = None,
-                 probe: registry_probe.RegistryProbe | None = None,
-                 state_file: Path | None = None):
+    def __init__(
+        self,
+        workspace: Path,
+        timeout: int = 120,
+        *,
+        browser: BrowserDriver | None = None,
+        probe: registry_probe.RegistryProbe | None = None,
+        state_file: Path | None = None,
+    ):
         self._workspace = workspace
         self._timeout = timeout
         self._dev_server: DevServerHandle | None = None
@@ -66,20 +86,20 @@ class LocalSubprocessExecutor:
         # session workspace is a directory under the workspace root
         # (services/sessions.py), so its parent is the root. Overridable for a
         # caller that lays them out differently.
-        self._state_root = (
-            Path(state_file).parent if state_file is not None else Path(workspace).parent
-        )
-        self._state_file = (
-            Path(state_file) if state_file is not None else self._state_root / DEV_SERVERS_NAME
-        )
+        self._state_root = Path(state_file).parent if state_file is not None else Path(workspace).parent
+        self._state_file = Path(state_file) if state_file is not None else self._state_root / DEV_SERVERS_NAME
 
     async def _run(self, cmd: list[str]) -> ToolResult:
         try:
             # Its own process group, so a POSIX tree kill can target the whole
             # subtree without signalling us. Ignored on Windows.
             proc = await asyncio.create_subprocess_exec(
-                *cmd, cwd=self._workspace, start_new_session=True,
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+                *cmd,
+                cwd=self._workspace,
+                start_new_session=True,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
             out, _ = await asyncio.wait_for(proc.communicate(), timeout=self._timeout)
             text = out.decode(errors="replace")[:20000]
             return ToolResult("", cmd[0], text, proc.returncode != 0)
@@ -105,8 +125,13 @@ class LocalSubprocessExecutor:
             return
         if os.name == "nt":
             killer = await asyncio.create_subprocess_exec(
-                "taskkill", "/F", "/T", "/PID", str(proc.pid),
-                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+                "taskkill",
+                "/F",
+                "/T",
+                "/PID",
+                str(proc.pid),
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
             )
             await killer.wait()
         else:
@@ -131,7 +156,39 @@ class LocalSubprocessExecutor:
         # no cause the user can act on -- install, network, or version conflict.
         if not await self._probe.probe():
             return ToolResult("", "install", registry_probe.OFFLINE_MESSAGE, True)
-        return await self._run([self._pnpm, "install", *packages])
+        self._approve_safe_build_scripts()
+        result = await self._run([self._pnpm, "install", *packages])
+        if result.is_error and "ERR_PNPM_IGNORED_BUILDS" in result.content:
+            result = ToolResult("", "install", result.content + _IGNORED_BUILDS_HINT, True)
+        return result
+
+    def _approve_safe_build_scripts(self) -> None:
+        """Approve known-safe install scripts so pnpm 12 does not block them.
+
+        pnpm 12 refuses to run any dependency's build script until it is
+        approved; a scaffolded project approves none, so an install that pulls
+        in esbuild (through vite) exits 1 with ERR_PNPM_IGNORED_BUILDS. This
+        writes the approval the repo root already carries into the session
+        workspace -- but only when the project has no pnpm-workspace.yaml of its
+        own, because that file is the project's and overwriting it would drop
+        the user's settings.
+        """
+        config = self._workspace / "pnpm-workspace.yaml"
+        if config.exists():
+            return
+        body = "".join(
+            [
+                "# written by vibe so pnpm may run known-safe install scripts\n",
+                "allowBuilds:\n",
+                *(f"  {name}: true\n" for name in SAFE_BUILD_SCRIPTS),
+            ]
+        )
+        try:
+            config.write_text(body, encoding="utf-8")
+        except OSError as e:
+            # The install can still succeed if nothing needs a build script; a
+            # config we could not write is a warning, not a failed install.
+            logger.warning("could not write %s: %s", config, e)
 
     async def build(self) -> ToolResult:
         return await self._run([self._pnpm, "run", "build"])
@@ -165,8 +222,14 @@ class LocalSubprocessExecutor:
         # every session collided on the default port and `dev_server_url` named
         # a port nothing was listening on.
         proc = await asyncio.create_subprocess_exec(
-            self._pnpm, "run", "dev", "--port", str(port), "--strictPort",
-            "--host", "127.0.0.1",
+            self._pnpm,
+            "run",
+            "dev",
+            "--port",
+            str(port),
+            "--strictPort",
+            "--host",
+            "127.0.0.1",
             cwd=self._workspace,
             env=env,
             start_new_session=True,

@@ -5,6 +5,7 @@ Handlers used to take a `Request` and pull collaborators off `app.state` by
 name. They now declare the container as a dependency, so what a route needs is
 visible in its signature and FastAPI builds it per request.
 """
+
 from __future__ import annotations
 
 from typing import Annotated
@@ -59,8 +60,7 @@ async def current_owner(principal: PrincipalDep) -> str:
 Owner = Annotated[str, Depends(current_owner)]
 
 
-async def require_session(deps: Container, sid: str,
-                          owner_id: str = LOOPBACK_OWNER_ID) -> Session:
+async def require_session(deps: Container, sid: str, owner_id: str = LOOPBACK_OWNER_ID) -> Session:
     """Load one of this owner's sessions, or 404.
 
     Every session-scoped route calls this first. It used to be inlined in each

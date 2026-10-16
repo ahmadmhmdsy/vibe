@@ -1,4 +1,3 @@
-
 # services/vibe/src/vibe/settings_store.py
 """Workspace-scoped settings the GUI may write (BE-19).
 
@@ -18,6 +17,7 @@ rather than raising, mirroring the custom-provider store (BE-15/BE-16). A missin
 file, a corrupt file and a blank value all mean "no override", so the built-in
 default is what the model receives - never an empty instruction set.
 """
+
 from __future__ import annotations
 
 import json

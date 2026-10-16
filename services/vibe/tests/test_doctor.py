@@ -6,6 +6,7 @@ that treats a warning as fatal, a port check that rubber-stamps a bound port.
 Every environment probe is faked here; the real machine is exercised once by
 running `python -m vibe doctor` for real (artifacts/hardening-r5-doctor.txt).
 """
+
 from __future__ import annotations
 
 import json
@@ -26,6 +27,7 @@ EXPECTED_CHECKS = {
     "node",
     "pnpm",
     "uv",
+    "network",
     "chromium",
     "workspace",
     "providers-file",
@@ -51,6 +53,8 @@ def healthy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, **overrides: object
     monkeypatch.setattr(doctor, "_command_version", lambda cmd: (24, 18, 0))
     monkeypatch.setattr(doctor, "chromium_dirs", lambda: [Path("C:/fake/ms-playwright/chromium-1243")])
     monkeypatch.setattr(doctor, "frontend_port", lambda repo_root=None: 5173)
+    # The registry probe is faked so the doctor tests never touch the network.
+    monkeypatch.setattr(doctor, "_network_reachable", lambda: True)
     return settings_for(tmp_path, **{"openai_api_key": "sk-test", **overrides})
 
 
@@ -125,11 +129,25 @@ def test_missing_uv_is_a_warning_not_a_blocker(monkeypatch: pytest.MonkeyPatch, 
     assert exit_code(checks) == 0
 
 
+def test_offline_network_is_a_warning_not_a_blocker(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """An offline machine is told the cause but still allowed to start."""
+    settings = healthy(monkeypatch, tmp_path)
+    monkeypatch.setattr(doctor, "_network_reachable", lambda: False)
+    checks = run_checks(settings)
+    check = by_name(checks, "network")
+    assert check.ok is False
+    assert check.name not in doctor.HARD_CHECKS
+    assert "pnpm install" in check.remedy
+    assert exit_code(checks) == 0
+
+
 def test_every_failing_check_offers_a_remedy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     settings = settings_for(tmp_path)  # no env key either, so that check fails too
     monkeypatch.setattr(doctor, "_which", lambda name: None)
     monkeypatch.setattr(doctor, "_command_version", lambda cmd: None)
     monkeypatch.setattr(doctor, "chromium_dirs", lambda: [])
+    # Network is up in this scenario; its own offline case is covered separately.
+    monkeypatch.setattr(doctor, "_network_reachable", lambda: True)
     settings.workspace_dir.mkdir(parents=True, exist_ok=True)
     (settings.workspace_dir / "providers.json").write_text("{not json", encoding="utf-8")
 
@@ -309,7 +327,9 @@ def test_render_never_claims_success_beside_a_blocking_problem() -> None:
 
 
 def test_render_says_a_warning_does_not_block() -> None:
-    text = render([Check("python", True, "3.13.7"), Check("chromium", False, "none found", "playwright install chromium")])
+    text = render(
+        [Check("python", True, "3.13.7"), Check("chromium", False, "none found", "playwright install chromium")]
+    )
     assert "1 warning(s): chromium" in text
     assert "no blocking problems" in text
     assert "all checks passed" not in text

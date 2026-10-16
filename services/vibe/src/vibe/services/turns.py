@@ -11,6 +11,7 @@ Not used by the chat route yet: that one also handles abort and error turn
 shapes, and adopting this helper is a separate cleanup. Its text_chunk handling
 is deliberately identical to the route's -- streamed live, never stored.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -38,8 +39,7 @@ class TurnRecorder:
         return "".join(self._text)
 
     async def _publish(self, type_: str, payload: dict, seq: int) -> None:
-        await self._bus.publish(self._sid, Event(session_id=self._sid, seq=seq,
-                                                 type=type_, payload=payload))
+        await self._bus.publish(self._sid, Event(session_id=self._sid, seq=seq, type=type_, payload=payload))
 
     async def consume(self, events: AsyncIterator[AgentEvent]) -> str:
         """Record every event in a run, and return the prose it produced."""

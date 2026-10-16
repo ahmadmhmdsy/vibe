@@ -12,6 +12,7 @@ Nothing here kills a process the test did not start. The dangerous path is the
 one that proves it: a real process whose command line does *not* mention the
 recorded workspace must survive the sweep.
 """
+
 import asyncio
 import contextlib
 import json
@@ -41,15 +42,13 @@ WINDOWS = pytest.mark.skipif(os.name != "nt", reason="these probes are the Windo
 
 
 def _entry(root: Path, name: str = "session-1", *, pid: int = 4242, port: int = 5199) -> DevServerEntry:
-    return DevServerEntry(workspace=str(root / name), pid=pid, port=port,
-                          started_at="2026-10-11T19:00:00+00:00")
+    return DevServerEntry(workspace=str(root / name), pid=pid, port=port, started_at="2026-10-11T19:00:00+00:00")
 
 
 class Probes:
     """The four questions the reaper asks, answered by the test."""
 
-    def __init__(self, *, alive: bool = True, line: str | None = "own", owner: int | None = None,
-                 bound: bool = True):
+    def __init__(self, *, alive: bool = True, line: str | None = "own", owner: int | None = None, bound: bool = True):
         self._alive = alive
         self._line = line
         self._owner = owner
@@ -120,7 +119,9 @@ def test_the_pidfile_is_the_documented_shape(tmp_path):
     raw = json.loads(dev_servers_path(tmp_path).read_text(encoding="utf-8"))
     assert list(raw) == ["dev_servers"]
     assert raw["dev_servers"][entry.workspace] == {
-        "workspace": entry.workspace, "pid": 11, "port": 22,
+        "workspace": entry.workspace,
+        "pid": 11,
+        "port": 22,
         "started_at": "2026-10-11T19:00:00+00:00",
     }
 
@@ -154,8 +155,13 @@ def test_a_hand_edited_entry_without_a_pid_is_dropped(tmp_path):
 def _no_real_probes(**overrides):
     """Probes that answer nothing real, for tests about the file alone."""
     probes = _probes(Path("."), **overrides)
-    return {"alive": probes.alive, "command_line": probes.command_line,
-            "port_owner": probes.port_owner, "port_bound": probes.port_bound, "kill": probes.kill}
+    return {
+        "alive": probes.alive,
+        "command_line": probes.command_line,
+        "port_owner": probes.port_owner,
+        "port_bound": probes.port_bound,
+        "kill": probes.kill,
+    }
 
 
 # --- the sweep's decisions ---------------------------------------------------
@@ -165,9 +171,14 @@ def test_a_verified_orphan_is_killed_and_forgotten(tmp_path):
     entry = _entry(tmp_path)
     record_dev_server(tmp_path, entry)
     probes = _probes(tmp_path)
-    report = reap_dev_servers(tmp_path, alive=probes.alive, command_line=probes.command_line,
-                              port_owner=probes.port_owner, port_bound=probes.port_bound,
-                              kill=probes.kill)
+    report = reap_dev_servers(
+        tmp_path,
+        alive=probes.alive,
+        command_line=probes.command_line,
+        port_owner=probes.port_owner,
+        port_bound=probes.port_bound,
+        kill=probes.kill,
+    )
     assert probes.killed == [entry.pid]
     assert [e.pid for e in report.reaped] == [entry.pid]
     assert read_dev_servers(tmp_path) == {}
@@ -177,9 +188,14 @@ def test_an_unreadable_command_line_is_left_alone(tmp_path):
     entry = _entry(tmp_path)
     record_dev_server(tmp_path, entry)
     probes = _probes(tmp_path, line=None)
-    report = reap_dev_servers(tmp_path, alive=probes.alive, command_line=probes.command_line,
-                              port_owner=probes.port_owner, port_bound=probes.port_bound,
-                              kill=probes.kill)
+    report = reap_dev_servers(
+        tmp_path,
+        alive=probes.alive,
+        command_line=probes.command_line,
+        port_owner=probes.port_owner,
+        port_bound=probes.port_bound,
+        kill=probes.kill,
+    )
     assert probes.killed == [], "a process that cannot be identified is not killed"
     assert read_dev_servers(tmp_path) == {entry.workspace: entry}
     assert "could not be read" in report.skipped[0][1]
@@ -189,9 +205,14 @@ def test_a_foreign_process_on_the_recorded_port_survives(tmp_path):
     entry = _entry(tmp_path)
     record_dev_server(tmp_path, entry)
     probes = _probes(tmp_path, line="C:/other/project/node.exe dev")
-    report = reap_dev_servers(tmp_path, alive=probes.alive, command_line=probes.command_line,
-                              port_owner=probes.port_owner, port_bound=probes.port_bound,
-                              kill=probes.kill)
+    report = reap_dev_servers(
+        tmp_path,
+        alive=probes.alive,
+        command_line=probes.command_line,
+        port_owner=probes.port_owner,
+        port_bound=probes.port_bound,
+        kill=probes.kill,
+    )
     assert probes.killed == [], "the command line does not name this workspace"
     assert read_dev_servers(tmp_path) == {entry.workspace: entry}
     assert "foreign process" in report.skipped[0][1]
@@ -202,9 +223,14 @@ def test_a_dead_pid_with_the_port_still_held_kills_the_owner(tmp_path):
     entry = _entry(tmp_path, pid=999999)
     record_dev_server(tmp_path, entry)
     probes = _probes(tmp_path, alive=False, owner=777)
-    report = reap_dev_servers(tmp_path, alive=probes.alive, command_line=probes.command_line,
-                              port_owner=probes.port_owner, port_bound=probes.port_bound,
-                              kill=probes.kill)
+    report = reap_dev_servers(
+        tmp_path,
+        alive=probes.alive,
+        command_line=probes.command_line,
+        port_owner=probes.port_owner,
+        port_bound=probes.port_bound,
+        kill=probes.kill,
+    )
     assert probes.killed == [777]
     assert [e.pid for e in report.reaped] == [999999]
     assert read_dev_servers(tmp_path) == {}
@@ -214,9 +240,14 @@ def test_a_dead_pid_and_a_free_port_is_just_forgotten(tmp_path):
     entry = _entry(tmp_path, pid=999999)
     record_dev_server(tmp_path, entry)
     probes = _probes(tmp_path, alive=False, owner=None)
-    report = reap_dev_servers(tmp_path, alive=probes.alive, command_line=probes.command_line,
-                              port_owner=probes.port_owner, port_bound=probes.port_bound,
-                              kill=probes.kill)
+    report = reap_dev_servers(
+        tmp_path,
+        alive=probes.alive,
+        command_line=probes.command_line,
+        port_owner=probes.port_owner,
+        port_bound=probes.port_bound,
+        kill=probes.kill,
+    )
     assert probes.killed == []
     assert [e.pid for e in report.dropped] == [999999]
     assert read_dev_servers(tmp_path) == {}
@@ -226,9 +257,14 @@ def test_an_alive_pid_that_is_not_listening_is_left_alone(tmp_path):
     entry = _entry(tmp_path)
     record_dev_server(tmp_path, entry)
     probes = _probes(tmp_path, bound=False)
-    report = reap_dev_servers(tmp_path, alive=probes.alive, command_line=probes.command_line,
-                              port_owner=probes.port_owner, port_bound=probes.port_bound,
-                              kill=probes.kill)
+    report = reap_dev_servers(
+        tmp_path,
+        alive=probes.alive,
+        command_line=probes.command_line,
+        port_owner=probes.port_owner,
+        port_bound=probes.port_bound,
+        kill=probes.kill,
+    )
     assert probes.killed == []
     assert read_dev_servers(tmp_path) == {entry.workspace: entry}
     assert "not held" in report.skipped[0][1]
@@ -241,9 +277,14 @@ def test_one_orphan_is_reaped_while_another_is_kept(tmp_path):
     record_dev_server(tmp_path, keep)
     probes = _probes(tmp_path)
     probes.command_line = lambda pid: str(tmp_path / "session-1") if pid == 101 else "C:/other/node"
-    report = reap_dev_servers(tmp_path, alive=probes.alive, command_line=probes.command_line,
-                              port_owner=probes.port_owner, port_bound=probes.port_bound,
-                              kill=probes.kill)
+    report = reap_dev_servers(
+        tmp_path,
+        alive=probes.alive,
+        command_line=probes.command_line,
+        port_owner=probes.port_owner,
+        port_bound=probes.port_bound,
+        kill=probes.kill,
+    )
     assert probes.killed == [101]
     assert [e.pid for e in report.reaped] == [101]
     assert read_dev_servers(tmp_path) == {keep.workspace: keep}
@@ -253,9 +294,16 @@ def test_the_report_renders_every_outcome(tmp_path):
     entry = _entry(tmp_path)
     record_dev_server(tmp_path, entry)
     probes = _probes(tmp_path)
-    text = render_reap(reap_dev_servers(
-        tmp_path, alive=probes.alive, command_line=probes.command_line,
-        port_owner=probes.port_owner, port_bound=probes.port_bound, kill=probes.kill))
+    text = render_reap(
+        reap_dev_servers(
+            tmp_path,
+            alive=probes.alive,
+            command_line=probes.command_line,
+            port_owner=probes.port_owner,
+            port_bound=probes.port_bound,
+            kill=probes.kill,
+        )
+    )
     assert "reaped orphan dev server" in text
     assert str(entry.pid) in text
 
@@ -297,7 +345,9 @@ async def test_a_started_dev_server_is_recorded_and_a_stopped_one_is_forgotten(t
     handle = await ex.start_dev_server()
     entries = read_dev_servers(tmp_path / "ws")
     assert entries[str(workspace)] == DevServerEntry(
-        workspace=str(workspace), pid=4242, port=handle.port,
+        workspace=str(workspace),
+        pid=4242,
+        port=handle.port,
         started_at=entries[str(workspace)].started_at,
     )
     assert entries[str(workspace)].started_at, "the start time is recorded for the reap log"
@@ -321,13 +371,7 @@ def test_the_pidfile_defaults_to_the_workspace_root(tmp_path):
 
 #: What the wrapped process does: hold a file inside the workspace, exactly as a
 #: vite dev server holds the session directory it serves.
-_HOLD_THE_WORKSPACE = (
-    "import sys, time\n"
-    "f = open(sys.argv[1], 'ab')\n"
-    "f.write(b'x')\n"
-    "f.flush()\n"
-    "time.sleep(120)\n"
-)
+_HOLD_THE_WORKSPACE = "import sys, time\nf = open(sys.argv[1], 'ab')\nf.write(b'x')\nf.flush()\ntime.sleep(120)\n"
 
 #: The shape pnpm has: the direct child is a wrapper that spawns the real work
 #: and waits for it. It reports the wrapped pid, so the test can watch it die.
@@ -389,9 +433,16 @@ async def test_stopping_a_dev_server_reaps_the_process_the_shim_wraps(tmp_path):
     pid_file = tmp_path / "wrapped.pid"
 
     wrapper = await asyncio.create_subprocess_exec(
-        sys.executable, "-c", _WRAP_AND_WAIT, _HOLD_THE_WORKSPACE, str(held), str(pid_file),
-        cwd=workspace, start_new_session=True,
-        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        sys.executable,
+        "-c",
+        _WRAP_AND_WAIT,
+        _HOLD_THE_WORKSPACE,
+        str(held),
+        str(pid_file),
+        cwd=workspace,
+        start_new_session=True,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.DEVNULL,
     )
     wrapped = int(await _wait_for_text(pid_file))
     try:
@@ -460,10 +511,10 @@ def test_a_real_orphan_is_reaped_and_a_real_foreign_process_is_not(tmp_path):
     not luck, is what protects a foreign process.
     """
     root = tmp_path / "ws"
-    own_ws = root / "session-a"          # holder A names this one: reaped
-    other_ws = root / "session-b"        # holder B names this one...
-    claimed = root / "session-claimed"   # ...but it is recorded under this one: kept
-    stale_ws = root / "session-c"        # holder C names this one, recorded with a dead pid: reaped
+    own_ws = root / "session-a"  # holder A names this one: reaped
+    other_ws = root / "session-b"  # holder B names this one...
+    claimed = root / "session-claimed"  # ...but it is recorded under this one: kept
+    stale_ws = root / "session-c"  # holder C names this one, recorded with a dead pid: reaped
     for path in (own_ws, other_ws, claimed, stale_ws):
         path.mkdir(parents=True)
 
@@ -490,9 +541,9 @@ def test_a_real_orphan_is_reaped_and_a_real_foreign_process_is_not(tmp_path):
         assert own.poll() is not None, "the verified orphan must be gone"
         assert other.poll() is None, "a process that does not name the recorded workspace must survive"
         assert stale.poll() is not None, "the port owner is killed when the recorded pid is gone"
-        assert read_dev_servers(root) == {
-            str(claimed): DevServerEntry(str(claimed), other.pid, port_other, stamp)
-        }, "only the unverifiable entry survives"
+        assert read_dev_servers(root) == {str(claimed): DevServerEntry(str(claimed), other.pid, port_other, stamp)}, (
+            "only the unverifiable entry survives"
+        )
         assert not _listening(port_own, timeout=5)
     finally:
         for proc in (own, other, stale):

@@ -55,6 +55,7 @@ def app(tmp_path):
 @pytest.fixture
 def client(app):
     from fastapi.testclient import TestClient
+
     return TestClient(app)
 
 
@@ -130,4 +131,3 @@ def session_id(client):
     resp = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}})
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
-

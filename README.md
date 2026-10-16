@@ -176,10 +176,11 @@ deletes user data.
 
 ## Known gaps
 
-- **No authentication beyond loopback.** Every route except `health` is mounted behind a
-  loopback authenticator, and state-changing requests must also carry a trusted `Origin`.
-  There are no users, passwords or tokens (`Principal.id` is always `local`). Do not
-  bind it to a non-loopback address or expose it on a network.
+- **Authentication is loopback, or a shared secret.** Every route except `health` sits behind
+  an authenticator, and state-changing requests must also carry a trusted `Origin`. A loopback
+  bind trusts this machine only; binding beyond loopback now requires `VIBE_AUTH_TOKEN`, after
+  which remote peers must send `Authorization: Bearer <token>`. There are still no per-user
+  accounts (`Principal.id` is always `local`).
 - **Local-only by design.** No account, no cloud service, no telemetry. The only remote
   calls are the LLM endpoint you configure and the package registries a generated app
   installs from.

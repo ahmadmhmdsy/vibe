@@ -4,6 +4,7 @@
 Prices change, so they live here as data, not scattered through the code.
 Models not listed are treated as free (cost 0).
 """
+
 from __future__ import annotations
 
 # (provider, model) -> (input_price, output_price) per 1M tokens, USD.
@@ -28,4 +29,8 @@ def cost_usd(provider: str, model: str, input_tokens: int, output_tokens: int, c
         return 0.0
     in_price, out_price = prices
     billable_input = max(input_tokens - cached_tokens, 0)
-    return (billable_input / 1_000_000) * in_price + (cached_tokens / 1_000_000) * in_price * CACHE_DISCOUNT + (output_tokens / 1_000_000) * out_price
+    return (
+        (billable_input / 1_000_000) * in_price
+        + (cached_tokens / 1_000_000) * in_price * CACHE_DISCOUNT
+        + (output_tokens / 1_000_000) * out_price
+    )

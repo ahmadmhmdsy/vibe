@@ -24,7 +24,9 @@ def main(argv: list[str] | None = None) -> int:
     backup_parser.add_argument(
         "--keep", type=int, default=None, metavar="N", help="how many backups to keep afterwards (default 7)"
     )
-    subcommands.add_parser("repair", help="check the local store, re-run migrations, and quarantine an unreadable providers file")
+    subcommands.add_parser(
+        "repair", help="check the local store, re-run migrations, and quarantine an unreadable providers file"
+    )
     args = parser.parse_args(argv)
 
     if args.command == "doctor":
@@ -67,7 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     level = configure_logging(settings=settings)
     logging.getLogger(__name__).info(
         "vibe serving on http://%s:%s (%s mode, log level %s, workspace %s)",
-        settings.host, settings.port, settings.mode, logging.getLevelName(level),
+        settings.host,
+        settings.port,
+        settings.mode,
+        logging.getLevelName(level),
         settings.workspace_dir,
     )
     app = create_app(settings)

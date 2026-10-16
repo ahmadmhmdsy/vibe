@@ -18,14 +18,17 @@ from vibe.events import Event, EventBus, EventLog
 class _QueryParams:
     def __init__(self, d=None):
         self._d = d or {}
+
     def get(self, key, default=None):
         return self._d.get(key, default)
 
 
 class _Store:
     """Only the sessions that exist resolve; anything else is a 404."""
+
     def __init__(self, known=("s1",)):
         self._known = set(known)
+
     async def get_session(self, sid, owner_id=LOOPBACK_OWNER_ID):
         return {"id": sid} if sid in self._known else None
 

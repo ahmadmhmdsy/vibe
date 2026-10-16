@@ -1,4 +1,3 @@
-
 # tests/test_settings_store.py
 """The workspace settings store, and the prompt precedence it feeds (BE-19).
 
@@ -9,6 +8,7 @@ prove the two consumers - the chat turn and the auto-fix loop - read the prompt
 when they run instead of snapshotting it at startup, which is what makes a save
 in the GUI take effect without a restart.
 """
+
 import json
 import logging
 
@@ -43,9 +43,7 @@ def test_a_saved_prompt_round_trips(tmp_path):
     store = SettingsStore(tmp_path / "settings.json")
     assert store.write_system_prompt("  You are terse.  ") == "You are terse."
     assert store.read_system_prompt() == "You are terse."
-    assert json.loads((tmp_path / "settings.json").read_text(encoding="utf-8")) == {
-        "system_prompt": "You are terse."
-    }
+    assert json.loads((tmp_path / "settings.json").read_text(encoding="utf-8")) == {"system_prompt": "You are terse."}
 
 
 def test_a_blank_prompt_clears_the_key_and_returns_the_default(tmp_path):

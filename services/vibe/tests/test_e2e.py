@@ -20,7 +20,8 @@ class E2ERuntime:
         # write a minimal app file
         (ctx.workspace_path / "src").mkdir(parents=True, exist_ok=True)
         (ctx.workspace_path / "src" / "App.tsx").write_text(
-            "export default function App(){ return <div>Hello Vibe</div> }")
+            "export default function App(){ return <div>Hello Vibe</div> }"
+        )
         yield AgentEvent(kind="text_chunk", data={"text": "created App.tsx"})
         yield AgentEvent(kind="turn_complete", data={})
 

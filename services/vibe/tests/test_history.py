@@ -6,6 +6,7 @@ just sent. The model therefore re-read the log's own transcript -- nothing -- an
 could not answer "what did I just say?". The recording runtime captures exactly
 what it was handed, so the evidence is the second turn's message list.
 """
+
 from conftest import swap
 
 

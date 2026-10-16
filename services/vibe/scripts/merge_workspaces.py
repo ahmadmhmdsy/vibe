@@ -111,13 +111,14 @@ def main() -> int:
         dirs = _session_dirs(src)
         total_dirs += len(dirs)
         print(f"source    : {src}")
-        print(f"            {len(dirs)} session dirs, "
-              f"{_count_rows(src / 'sessions.db')} session rows, "
-              f"providers.json={'yes' if (src / 'providers.json').is_file() else 'no'}")
+        print(
+            f"            {len(dirs)} session dirs, "
+            f"{_count_rows(src / 'sessions.db')} session rows, "
+            f"providers.json={'yes' if (src / 'providers.json').is_file() else 'no'}"
+        )
 
     existing = _session_dirs(TARGET)
-    print(f"\ntarget already has {len(existing)} session dirs, "
-          f"{_count_rows(TARGET / 'sessions.db')} session rows")
+    print(f"\ntarget already has {len(existing)} session dirs, {_count_rows(TARGET / 'sessions.db')} session rows")
 
     if not args.apply:
         print("\nNothing written. Re-run with --apply.")
@@ -163,8 +164,7 @@ def main() -> int:
     print(f"\ncopied {copied_files} missing files")
     print(f"merged {added} new session rows")
     print(f"providers.json: {provider_note}")
-    print(f"\nRESULT: {len(_session_dirs(TARGET))} session dirs, "
-          f"{_count_rows(target_db)} session rows in {TARGET}")
+    print(f"\nRESULT: {len(_session_dirs(TARGET))} session dirs, {_count_rows(target_db)} session rows in {TARGET}")
     print("Originals left untouched — verify, then delete them yourself.")
     return 0
 

@@ -16,6 +16,7 @@ Behaviour for the single local user is unchanged, and that is asserted too: the
 owner argument defaults to the loopback owner, so every existing call site keeps
 working and every existing test still describes the path that runs in production.
 """
+
 from __future__ import annotations
 
 import asyncio

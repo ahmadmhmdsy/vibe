@@ -23,6 +23,7 @@ class DevServerHandle:
     url: str
     process: object
 
+
 #: Why a capture produced nothing. `read_console_logs` and `screenshot` answer
 #: None for every cause at once, and the tools used to print one sentence for all
 #: of them -- "no browser driver installed" -- so a user whose dev server had died
@@ -55,8 +56,7 @@ class Capture:
         return self.status == OK
 
 
-async def capture_console(executor, url: str | None, *,
-                          tail: int = 200, level: str = "error") -> Capture:
+async def capture_console(executor, url: str | None, *, tail: int = 200, level: str = "error") -> Capture:
     """Read the browser console through whichever API `executor` provides.
 
     An executor that answers with a `Capture` keeps the reason. One that only

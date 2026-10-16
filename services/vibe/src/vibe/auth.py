@@ -5,18 +5,24 @@ The app is local-first: one user, one machine. That is a trust decision, not an
 oversight, and it is written down in README's Known gaps. This module is the
 mechanism that decision hangs on.
 
-`Authenticator` is the seam. `LoopbackAuthenticator` is the only
-implementation today: a request that arrives from this machine is the local
-user, and anything else is refused. It authenticates the *machine*, not a
-person -- on a single-user machine those are the same thing, and the difference
-only matters if the machine is ever shared.
+`Authenticator` is the seam. `LoopbackAuthenticator` is the default: a request
+that arrives from this machine is the local user, and anything else is refused.
+It authenticates the *machine*, not a person -- on a single-user machine those
+are the same thing, and the difference only matters if the machine is ever
+shared.
 
-A future `TokenAuthenticator` implements the same protocol. Swapping it is a
-one-line change in `Container.build`; nothing else in the app knows which one
-is installed, because routes ask for a `Principal` and never for a mechanism.
+`TokenAuthenticator` is the second implementation, selected when
+`Settings.auth_token` is set (VIBE_AUTH_TOKEN). It keeps the loopback shortcut
+-- the local user and the local health probe carry no header -- and requires a
+shared-secret bearer token from every remote peer, so binding beyond the
+loopback interface no longer exposes the API. Swapping it is a one-line change
+in `Container.build`; nothing else in the app knows which one is installed,
+because routes ask for a `Principal` and never for a mechanism.
 """
+
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -82,5 +88,31 @@ class LoopbackAuthenticator:
 
     async def authenticate(self, request: Request) -> Principal | None:
         if not _is_local(request):
+            return None
+        return Principal(id=LOOPBACK_OWNER_ID, name=LOOPBACK_OWNER_ID)
+
+
+class TokenAuthenticator:
+    """Trusts loopback, and demands a shared-secret token from everyone else.
+
+    Built when `Settings.auth_token` is set. A request from this machine is the
+    local user -- the app's own SPA and its health probe carry no header, so
+    requiring one there would break the local app for no gain. A remote peer must
+    send `Authorization: Bearer <token>`; the token is compared in constant time
+    so an attacker cannot learn it a byte at a time from response timing.
+
+    The token authenticates *the owner*, so a remote caller that presents it gets
+    the same Principal as the local user: this is still a single-user app, and
+    the token is the proof, not a second identity.
+    """
+
+    def __init__(self, token: str) -> None:
+        self._token = token
+
+    async def authenticate(self, request: Request) -> Principal | None:
+        if _is_local(request):
+            return Principal(id=LOOPBACK_OWNER_ID, name=LOOPBACK_OWNER_ID)
+        scheme, _, presented = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() != "bearer" or not secrets.compare_digest(presented.strip(), self._token):
             return None
         return Principal(id=LOOPBACK_OWNER_ID, name=LOOPBACK_OWNER_ID)

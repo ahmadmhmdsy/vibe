@@ -6,6 +6,7 @@ Nothing ever removed those, so every mistake stayed on disk (with its
 node_modules) for good. The sweep is destructive-adjacent, so it is pinned
 hard: only our own naming, only inside .trash, and retention 0 disables it.
 """
+
 import logging
 import os
 import time
@@ -93,11 +94,11 @@ async def test_a_missing_trash_directory_is_a_noop(tmp_path):
 async def test_only_our_own_timestamped_names_are_removed(tmp_path):
     lc = _lifecycle(tmp_path)
     strangers = [
-        "not-a-session",                       # no stamp at all
-        "a1b2c3d4e5f6",                        # session id, no stamp
-        "A1B2C3D4E5F6-20260101-120000",        # ids are lowercase hex
-        "a1b2c3d4e5f6-2026-01-01-120000",      # a stamp we never write
-        "a1b2c3d4e5f6-20260101-120000-backup", # our name plus a suffix
+        "not-a-session",  # no stamp at all
+        "a1b2c3d4e5f6",  # session id, no stamp
+        "A1B2C3D4E5F6-20260101-120000",  # ids are lowercase hex
+        "a1b2c3d4e5f6-2026-01-01-120000",  # a stamp we never write
+        "a1b2c3d4e5f6-20260101-120000-backup",  # our name plus a suffix
     ]
     for name in strangers:
         _trash_entry(tmp_path, name, age_days=90)
@@ -115,7 +116,7 @@ async def test_only_our_own_timestamped_names_are_removed(tmp_path):
 @pytest.mark.asyncio
 async def test_a_workspace_outside_trash_is_never_touched(tmp_path):
     lc = _lifecycle(tmp_path)
-    outside = tmp_path / OURS            # a live session workspace
+    outside = tmp_path / OURS  # a live session workspace
     outside.mkdir()
     stamp = time.time() - 90 * 86400
     os.utime(outside, (stamp, stamp))

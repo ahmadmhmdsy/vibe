@@ -10,6 +10,7 @@ The network is never used here. The probe takes its connect function, its clock,
 and its cache window as arguments, which is what makes "offline" a case a test
 can drive instead of a machine state it has to hope for.
 """
+
 import asyncio
 import socket
 import time
@@ -133,9 +134,14 @@ async def test_a_failed_probe_is_retried_once_and_then_remembered():
 async def test_the_probe_recovers_when_the_network_comes_back():
     clock = Clock()
     network = FakeNetwork(False, False, True)
-    probe = RegistryProbe(connect=network.connect, clock=clock, retry_delay=0,
-                          timeout=0.01, fail_ttl=30, ok_ttl=300,
-                          )
+    probe = RegistryProbe(
+        connect=network.connect,
+        clock=clock,
+        retry_delay=0,
+        timeout=0.01,
+        fail_ttl=30,
+        ok_ttl=300,
+    )
 
     assert await probe.probe("registry.invalid", 443) is False
     clock.now = 29.0

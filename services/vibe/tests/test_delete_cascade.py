@@ -7,6 +7,7 @@ already gone while the session row and the user's files stayed on disk (probe 7
 measured 2 events becoming 0). This pins the ordering property, not delete()
 itself: the only step that fails here is pinpointed by monkeypatching rename.
 """
+
 from pathlib import Path
 
 import pytest
@@ -47,9 +48,7 @@ async def test_failed_move_keeps_events_and_row(container, event_log, lifecycle,
     assert (workspace / "notes.txt").read_text(encoding="utf-8") == "user work"
 
 
-async def test_a_move_that_fails_once_is_retried(
-    container, lifecycle, session_id, monkeypatch
-):
+async def test_a_move_that_fails_once_is_retried(container, lifecycle, session_id, monkeypatch):
     """The dev server delete() just stopped may still be releasing handles.
 
     Reproduced on Windows as WinError 5 from a live preview holding a file in
@@ -79,9 +78,7 @@ async def test_a_move_that_fails_once_is_retried(
     assert (trash[0] / "notes.txt").read_text(encoding="utf-8") == "user work"
 
 
-async def test_a_release_inside_the_widened_window_is_waited_out(
-    container, lifecycle, session_id, monkeypatch
-):
+async def test_a_release_inside_the_widened_window_is_waited_out(container, lifecycle, session_id, monkeypatch):
     """The window exists for a stopped dev server that is still letting go.
 
     Measured on this machine: a real vite tree releases its workspace ~0.6 s

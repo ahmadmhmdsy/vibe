@@ -340,12 +340,13 @@ first, and never overwrites a variable that is already set.
 | Variable | Default | What it does |
 |---|---|---|
 | `VIBE_WORKSPACE_DIR` | `~/vibe-workspaces` | workspace root; resolved to an absolute path |
-| `VIBE_HOST` | `127.0.0.1` | bind address; keep it on loopback |
+| `VIBE_HOST` | `127.0.0.1` | bind address; a non-loopback value also requires `VIBE_AUTH_TOKEN` |
 | `VIBE_PORT` | `7321` | backend port |
 | `VIBE_MODE` | `dev` | `dev` = API only, Vite owns the UI; `prod` = serve the built SPA from the API. start.bat sets `prod`, or `dev` with `start.bat dev` |
 | `VIBE_STATIC_DIR` | `apps/vibe/dist` | built SPA directory used in prod mode |
 | `VIBE_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | origins allowed to send state-changing requests |
-| `VIBE_AUTH_MODE` | `loopback` | authenticator; `loopback` is the only mode implemented |
+| `VIBE_AUTH_MODE` | `loopback` | authenticator; `loopback`, or `token` (selected automatically when `VIBE_AUTH_TOKEN` is set) |
+| `VIBE_AUTH_TOKEN` | unset | shared secret; set it to bind beyond loopback — remote peers must send `Authorization: Bearer <token>` |
 | `VIBE_MAX_FIX_ITERATIONS` | `3` | auto-run fix attempts per turn |
 | `VIBE_HISTORY_MESSAGES` | `24` | prior messages replayed to the model |
 | `VIBE_SYSTEM_PROMPT` | empty | replaces the built-in system prompt (wins over settings.json) |

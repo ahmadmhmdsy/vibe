@@ -16,6 +16,7 @@ untested is worse than a single implementation.
 Adding a provider is now two lines: write a `_build_<id>` function and add it to
 `BUILTINS`.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -107,14 +108,10 @@ def _build_custom(custom_store: CustomProviderStore | None, model_ref: ModelRef)
     if protocol == "anthropic-messages":
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(
-            api_key=custom.api_key, base_url=custom.base_url, model=model_ref.model_id, streaming=True
-        )
+        return ChatAnthropic(api_key=custom.api_key, base_url=custom.base_url, model=model_ref.model_id, streaming=True)
     from langchain_openai import ChatOpenAI
 
-    return ChatOpenAI(
-        api_key=custom.api_key, base_url=custom.base_url, model=model_ref.model_id, streaming=True
-    )
+    return ChatOpenAI(api_key=custom.api_key, base_url=custom.base_url, model=model_ref.model_id, streaming=True)
 
 
 def build_llm_factory(settings: Settings, custom_store: CustomProviderStore | None = None) -> LlmFactory:

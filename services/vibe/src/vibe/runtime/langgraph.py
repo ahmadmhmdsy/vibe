@@ -14,12 +14,14 @@ from vibe.usage.pricing import cost_usd
 
 def _to_lc_message(m: Message):
     from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+
     if m.role == "user":
         if m.attachments:
             content: list = [{"type": "text", "text": m.content}]
             for a in m.attachments:
-                content.append({"type": "image_url",
-                               "image_url": {"url": f"data:{a.content_type};base64,{a.data_base64}"}})
+                content.append(
+                    {"type": "image_url", "image_url": {"url": f"data:{a.content_type};base64,{a.data_base64}"}}
+                )
             return HumanMessage(content=content)
         return HumanMessage(content=m.content)
     if m.role == "assistant":
@@ -27,6 +29,7 @@ def _to_lc_message(m: Message):
     if m.role == "system":
         return SystemMessage(content=m.content)
     return ToolMessage(content=m.content, tool_call_id=m.tool_call_id, name=m.name)
+
 
 def build_messages(input: AgentInput) -> list:
     """The message list the model sees: standing instructions, then the transcript.
@@ -47,10 +50,7 @@ def _text_of(content) -> str:
     here -- it still reaches the model through the message itself.
     """
     if isinstance(content, list):
-        return "\n".join(
-            b.get("text", "") for b in content
-            if isinstance(b, dict) and b.get("type") == "text"
-        )
+        return "\n".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text")
     return content if isinstance(content, str) else str(content)
 
 
@@ -127,8 +127,13 @@ class LangGraphRuntime:
                         yield AgentEvent(kind="tool_call", data={"tool_call": tc})
                 elif node_name == "execute_tools":
                     for tm in node_output["messages"]:
-                        yield AgentEvent(kind="tool_result", data={
-                            "tool_call_id": tm.tool_call_id, "name": tm.name,
-                            "content": _text_of(tm.content),
-                            "is_error": _is_error(tm)})
+                        yield AgentEvent(
+                            kind="tool_result",
+                            data={
+                                "tool_call_id": tm.tool_call_id,
+                                "name": tm.name,
+                                "content": _text_of(tm.content),
+                                "is_error": _is_error(tm),
+                            },
+                        )
         yield AgentEvent(kind="turn_complete", data={})

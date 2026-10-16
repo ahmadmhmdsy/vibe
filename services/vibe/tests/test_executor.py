@@ -10,6 +10,8 @@ import pytest
 
 from vibe.events import EventBus
 from vibe.executor.local import LocalSubprocessExecutor
+from vibe.models import ToolResult
+from vibe.registry import OFFLINE_MESSAGE
 from vibe.runtime.base import AgentContext
 from vibe.store import SessionStore
 from vibe.tools.executor_tools import register_executor_tools
@@ -57,13 +59,11 @@ async def test_install_build_dev_server(tmp_path):
         pytest.skip("no network: pnpm install unavailable")
     # scaffold a minimal vite project
     (tmp_path / "package.json").write_text(
-        '{"name":"t","scripts":{"build":"vite build","dev":"vite"},'
-        '"devDependencies":{"vite":"^6.0.0"}}'
+        '{"name":"t","scripts":{"build":"vite build","dev":"vite"},"devDependencies":{"vite":"^6.0.0"}}'
     )
     # pnpm 12.3.4 exits 1 with ERR_PNPM_IGNORED_BUILDS unless a dependency's
-    # build script is approved; the repo approves esbuild in its own
-    # pnpm-workspace.yaml, and the temp dir inherits nothing from the root.
-    (tmp_path / "pnpm-workspace.yaml").write_text("allowBuilds:\n  esbuild: true\n")
+    # build script is approved. The temp dir inherits nothing from the repo
+    # root, so install() must write the approval itself (RED-6).
     (tmp_path / "index.html").write_text("<html><body><div id='root'></div></body></html>")
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "main.tsx").write_text("export default function App(){return null}")
@@ -86,6 +86,54 @@ async def test_install_with_timeout(tmp_path):
     r = await ex.install(["left-pad"])
     # may pass or fail depending on network; just assert it returns a ToolResult
     assert hasattr(r, "is_error")
+
+
+class _Probe:
+    def __init__(self, reachable: bool) -> None:
+        self._reachable = reachable
+
+    async def probe(self) -> bool:
+        return self._reachable
+
+
+def test_install_approves_safe_build_scripts(tmp_path):
+    """RED-6: pnpm 12 blocks build scripts unless approved, and a scaffold
+    approves none -- so an install pulling in esbuild (via vite) fails."""
+    ex = LocalSubprocessExecutor(workspace=tmp_path)
+    ex._approve_safe_build_scripts()
+    text = (tmp_path / "pnpm-workspace.yaml").read_text(encoding="utf-8")
+    assert "allowBuilds:" in text
+    assert "esbuild: true" in text
+
+
+def test_install_leaves_a_project_config_alone(tmp_path):
+    """A project's own pnpm-workspace.yaml is the user's; clobbering it drops their settings."""
+    original = "packages:\n  - apps/*\n"
+    (tmp_path / "pnpm-workspace.yaml").write_text(original, encoding="utf-8")
+    LocalSubprocessExecutor(workspace=tmp_path)._approve_safe_build_scripts()
+    assert (tmp_path / "pnpm-workspace.yaml").read_text(encoding="utf-8") == original
+
+
+@pytest.mark.asyncio
+async def test_offline_install_returns_before_writing_the_allowlist(tmp_path):
+    ex = LocalSubprocessExecutor(workspace=tmp_path, probe=_Probe(False))
+    r = await ex.install([])
+    assert r.is_error is True
+    assert OFFLINE_MESSAGE in r.content
+    assert not (tmp_path / "pnpm-workspace.yaml").exists()
+
+
+@pytest.mark.asyncio
+async def test_ignored_builds_error_gets_an_allowlist_hint(tmp_path, monkeypatch):
+    ex = LocalSubprocessExecutor(workspace=tmp_path, probe=_Probe(True))
+
+    async def fake_run(cmd):
+        return ToolResult("", "pnpm", "ERR_PNPM_IGNORED_BUILDS: build script blocked", True)
+
+    monkeypatch.setattr(ex, "_run", fake_run)
+    r = await ex.install([])
+    assert r.is_error is True
+    assert "allowBuilds" in r.content
 
 
 @pytest.mark.asyncio
@@ -132,8 +180,13 @@ class _PreviewExecutor:
 
 
 def _ctx(tmp_path, ex):
-    return AgentContext(session_id="s1", workspace_path=tmp_path, executor=ex,
-                       event_bus=EventBus(), store=SessionStore(db_path=tmp_path / "t.db"))
+    return AgentContext(
+        session_id="s1",
+        workspace_path=tmp_path,
+        executor=ex,
+        event_bus=EventBus(),
+        store=SessionStore(db_path=tmp_path / "t.db"),
+    )
 
 
 @pytest.mark.asyncio

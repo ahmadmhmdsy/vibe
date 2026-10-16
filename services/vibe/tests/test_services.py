@@ -24,6 +24,7 @@ def _service(tmp_path):
 
 # --- path confinement ------------------------------------------------------
 
+
 def test_resolve_file_accepts_a_path_inside_the_workspace(tmp_path):
     svc = _service(tmp_path)
     p = svc.resolve_file("s1", "src/main.py")
@@ -54,6 +55,7 @@ def test_resolve_file_rejects_a_symlink_escaping_the_workspace(tmp_path):
 
 
 # --- read / write ----------------------------------------------------------
+
 
 def test_write_then_read_round_trips(tmp_path):
     svc = _service(tmp_path)
@@ -101,11 +103,13 @@ def test_delete_goes_through_the_lifecycle_not_the_store(tmp_path):
     svc = SessionService(store=None, lifecycle=lifecycle, workspace_dir=tmp_path)
 
     import asyncio
+
     asyncio.run(svc.delete("s1"))
     assert lifecycle.deleted == ["s1"]
 
 
 # --- history projection ----------------------------------------------------
+
 
 async def test_history_projects_user_and_assistant_turns():
     log = EventLog()
@@ -149,6 +153,7 @@ async def test_history_is_empty_for_an_unknown_session():
 
 # --- pagination -------------------------------------------------------------
 
+
 async def test_history_returns_the_most_recent_messages_by_default():
     log = EventLog()
     for i in range(5):
@@ -188,6 +193,7 @@ async def test_page_reports_the_total_and_whether_older_messages_remain():
 
 
 # --- session titles ---------------------------------------------------------
+
 
 def test_title_from_text_collapses_whitespace_and_truncates():
     assert title_from_text("  build   a\n  todo app  ") == "build a todo app"

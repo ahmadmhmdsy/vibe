@@ -9,29 +9,31 @@ this machine". These tests pin the three properties that matter:
   * the Origin check is a *second* control, because loopback auth cannot catch
     a CSRF request that arrives from 127.0.0.1.
 """
+
 from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
 from starlette.requests import Request
 
-from vibe.auth import LoopbackAuthenticator, Principal
+from vibe.auth import LoopbackAuthenticator, Principal, TokenAuthenticator
 from vibe.container import Container
 
 
-def _request(client_host, method: str = "GET") -> Request:
+def _request(client_host, method: str = "GET", headers: list | None = None) -> Request:
     """A Request with an explicit peer address.
 
     client_host=None reproduces an in-process ASGI call, where Starlette leaves
-    request.client unset.
+    request.client unset. headers is a list of (name, value) byte pairs.
     """
-    scope = {"type": "http", "method": method, "path": "/", "headers": []}
+    scope = {"type": "http", "method": method, "path": "/", "headers": list(headers or [])}
     if client_host is not None:
         scope["client"] = (client_host, 43210)
     return Request(scope)
 
 
 # --- the authenticator itself -------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_a_loopback_peer_is_accepted():
@@ -66,6 +68,7 @@ async def test_the_testclient_peer_counts_as_local():
 
 # --- over the real app --------------------------------------------------------
 
+
 def test_a_local_request_succeeds(client):
     r = client.get("/sessions")
     assert r.status_code == 200
@@ -91,16 +94,23 @@ def test_health_stays_open(client):
 
 # --- the Origin guard: a second, independent control --------------------------
 
+
 def test_a_foreign_origin_is_refused_on_a_state_changing_request(client):
-    r = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}},
-                    headers={"Origin": "http://evil.example"})
+    r = client.post(
+        "/sessions",
+        json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}},
+        headers={"Origin": "http://evil.example"},
+    )
     assert r.status_code == 403
     assert r.json()["error"]["code"] == "forbidden_origin"
 
 
 def test_an_allowed_origin_is_accepted(client):
-    r = client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}},
-                    headers={"Origin": "http://localhost:5173"})
+    r = client.post(
+        "/sessions",
+        json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}},
+        headers={"Origin": "http://localhost:5173"},
+    )
     assert r.status_code == 201
 
 
@@ -170,17 +180,20 @@ def test_localhost_is_not_treated_as_127_0_0_1(client):
 
 # --- the seam -----------------------------------------------------------------
 
+
 def test_a_swapped_authenticator_is_the_one_that_runs(app):
     """The container is the only place the authenticator is chosen.
 
     A future TokenAuthenticator is verified by exactly this test: swap the
     seam, watch the answer change.
     """
+
     class RefuseEverything:
         async def authenticate(self, request):
             return None
 
     from dataclasses import replace
+
     app.state.container = replace(app.state.container, authenticator=RefuseEverything())
     r = TestClient(app).get("/sessions")
     assert r.status_code == 401
@@ -189,5 +202,63 @@ def test_a_swapped_authenticator_is_the_one_that_runs(app):
 def test_an_unknown_auth_mode_raises_rather_than_downgrading(tmp_path):
     """A typo must not silently become the permissive option."""
     from vibe.config import Settings
+
     with pytest.raises(ValueError, match="VIBE_AUTH_MODE"):
-        Container.build(Settings(workspace_dir=tmp_path / "ws", auth_mode="token"))
+        Container.build(Settings(workspace_dir=tmp_path / "ws", auth_mode="bogus"))
+
+
+# --- token auth: the seam a shared secret plugs into (P5) ---------------------
+
+
+@pytest.mark.asyncio
+async def test_a_loopback_peer_needs_no_token():
+    """The local SPA and health probe carry no header; requiring one breaks the app."""
+    auth = TokenAuthenticator("sekret")
+    assert await auth.authenticate(_request("127.0.0.1")) is not None
+
+
+@pytest.mark.asyncio
+async def test_a_remote_peer_without_a_token_is_refused():
+    assert await TokenAuthenticator("sekret").authenticate(_request("203.0.113.10")) is None
+
+
+@pytest.mark.asyncio
+async def test_a_remote_peer_with_the_wrong_token_is_refused():
+    headers = [(b"authorization", b"Bearer nope")]
+    assert await TokenAuthenticator("sekret").authenticate(_request("203.0.113.10", headers=headers)) is None
+
+
+@pytest.mark.asyncio
+async def test_a_remote_peer_with_the_token_is_accepted():
+    headers = [(b"authorization", b"Bearer sekret")]
+    principal = await TokenAuthenticator("sekret").authenticate(_request("203.0.113.10", headers=headers))
+    assert principal == Principal(id="local", name="local")
+
+
+def test_a_token_selects_token_auth(tmp_path):
+    from vibe.config import Settings
+
+    settings = Settings(workspace_dir=tmp_path / "ws", auth_token="sekret")
+    assert settings.auth_mode == "token"
+
+
+def test_binding_beyond_loopback_without_a_token_is_refused(tmp_path):
+    """P5: VIBE_HOST=0.0.0.0 used to expose the API silently; now it must have a token."""
+    from vibe.config import Settings
+
+    with pytest.raises(ValueError, match="VIBE_AUTH_TOKEN"):
+        Settings(workspace_dir=tmp_path / "ws", host="0.0.0.0")
+
+
+def test_binding_beyond_loopback_with_a_token_is_allowed(tmp_path):
+    from vibe.config import Settings
+
+    settings = Settings(workspace_dir=tmp_path / "ws", host="0.0.0.0", auth_token="sekret")
+    assert settings.auth_mode == "token"
+
+
+def test_token_mode_without_a_token_is_refused(tmp_path):
+    from vibe.config import Settings
+
+    with pytest.raises(ValueError, match="VIBE_AUTH_TOKEN"):
+        Settings(workspace_dir=tmp_path / "ws", auth_mode="token")

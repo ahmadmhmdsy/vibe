@@ -5,6 +5,7 @@ half of it).
 Deleting a session used to remove one sqlite row and nothing else, so a deleted
 session kept its files on disk and kept a `pnpm dev` process running.
 """
+
 import asyncio
 import time
 from pathlib import Path
@@ -46,14 +47,18 @@ class RecordingExecutor:
 def _lifecycle(tmp_path, **overrides):
     store = overrides.get("store") or SessionStore(tmp_path / "sessions.db")
     event_log = overrides.get("event_log") or EventLog(tmp_path / "events.db")
-    return store, event_log, SessionLifecycle(
-        store=store,
-        event_log=event_log,
-        executors=overrides.get("executors", {}),
-        autorun_policies=overrides.get("autorun_policies", {}),
-        approvals=overrides.get("approvals", ApprovalStore()),
-        runs=overrides.get("runs", RunRegistry()),
-        workspace_dir=tmp_path,
+    return (
+        store,
+        event_log,
+        SessionLifecycle(
+            store=store,
+            event_log=event_log,
+            executors=overrides.get("executors", {}),
+            autorun_policies=overrides.get("autorun_policies", {}),
+            approvals=overrides.get("approvals", ApprovalStore()),
+            runs=overrides.get("runs", RunRegistry()),
+            workspace_dir=tmp_path,
+        ),
     )
 
 
@@ -82,8 +87,12 @@ async def test_delete_takes_everything_the_session_owned_with_it(tmp_path):
     # The lifecycle must be built with the very dicts the test inspects,
     # otherwise it pops from its own empty registries.
     lc = SessionLifecycle(
-        store=store, event_log=event_log, executors=executors,
-        autorun_policies=policies, approvals=approvals, runs=runs,
+        store=store,
+        event_log=event_log,
+        executors=executors,
+        autorun_policies=policies,
+        approvals=approvals,
+        runs=runs,
         workspace_dir=tmp_path,
     )
     await lc.delete(sid)
@@ -203,11 +212,14 @@ def test_browser_driver_reports_unavailable_when_it_cannot_launch(monkeypatch):
     assert asyncio.run(d.screenshot("http://127.0.0.1:1/")) is None
 
 
-@pytest.mark.parametrize("level,kept", [
-    ("error", {"error": True, "warning": False, "info": False}),
-    ("warning", {"error": True, "warning": True, "info": False}),
-    ("all", {"error": True, "warning": True, "info": True}),
-])
+@pytest.mark.parametrize(
+    "level,kept",
+    [
+        ("error", {"error": True, "warning": False, "info": False}),
+        ("warning", {"error": True, "warning": True, "info": False}),
+        ("all", {"error": True, "warning": True, "info": True}),
+    ],
+)
 def test_console_level_filtering(level, kept):
     """A healthy app prints warnings all day; only "error" must burn a fix
     iteration by default.

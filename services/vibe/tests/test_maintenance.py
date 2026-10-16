@@ -172,8 +172,10 @@ def test_repair_migrates_an_empty_workspace(tmp_path: Path) -> None:
     # a literal went stale the moment events.db gained the type index (R3-T8,
     # version 1 -> 2) and "repair migrates" is about reaching the current
     # version, not about the number happening to be 1.
-    for name, table, version in (("sessions.db", "sessions", store_module._SCHEMA_VERSION),
-                                 ("events.db", "events", events_module._SCHEMA_VERSION)):
+    for name, table, version in (
+        ("sessions.db", "sessions", store_module._SCHEMA_VERSION),
+        ("events.db", "events", events_module._SCHEMA_VERSION),
+    ):
         connection = sqlite3.connect(tmp_path / name)
         try:
             assert connection.execute("PRAGMA user_version").fetchone()[0] == version
@@ -238,4 +240,3 @@ def test_repair_reports_a_missing_workspace(tmp_path: Path) -> None:
     assert not report.ok
     assert repair_exit_code(report) == 1
     assert "does not exist" in report.errors[0]
-

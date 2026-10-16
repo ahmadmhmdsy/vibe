@@ -6,6 +6,7 @@ failures and must not share one message.
 collapsed them into "no browser driver". A user whose dev server had died was
 therefore told to install Playwright.
 """
+
 import logging
 
 import pytest
@@ -50,8 +51,13 @@ class FakeExecutor:
 
 
 def _ctx(tmp_path, executor):
-    return AgentContext(session_id="s1", workspace_path=tmp_path, executor=executor,
-                        event_bus=EventBus(), store=SessionStore(db_path=tmp_path / "t.db"))
+    return AgentContext(
+        session_id="s1",
+        workspace_path=tmp_path,
+        executor=executor,
+        event_bus=EventBus(),
+        store=SessionStore(db_path=tmp_path / "t.db"),
+    )
 
 
 def _registry():
@@ -163,13 +169,15 @@ async def test_autorun_names_the_missing_driver_in_its_log(tmp_path, caplog):
     assert not any("no dev server" in r.message for r in caplog.records), caplog.text
 
 
-@pytest.mark.parametrize(("status", "phrase"), [
-    (UNREACHABLE, "not accepting connections"),
-    (CAPTURE_FAILED, "could not be inspected"),
-])
+@pytest.mark.parametrize(
+    ("status", "phrase"),
+    [
+        (UNREACHABLE, "not accepting connections"),
+        (CAPTURE_FAILED, "could not be inspected"),
+    ],
+)
 @pytest.mark.asyncio
-async def test_autorun_puts_a_crashed_server_or_a_failed_capture_in_the_log(
-        tmp_path, caplog, status, phrase):
+async def test_autorun_puts_a_crashed_server_or_a_failed_capture_in_the_log(tmp_path, caplog, status, phrase):
     """Every cause reaches the log as itself; none of them reads as a missing driver."""
     from vibe.autorun.policy import AutoRunPolicy
 
@@ -192,6 +200,7 @@ async def test_autorun_puts_a_crashed_server_or_a_failed_capture_in_the_log(
     assert ex.console_reads == 1, "the reason-aware API is the one autorun asks"
     assert any(phrase in r.message for r in caplog.records), caplog.text
     assert not any("browser driver" in r.message for r in caplog.records), caplog.text
+
 
 # --- the cause the executor itself reports (R3-T5) ---------------------------
 #
@@ -358,4 +367,3 @@ async def test_a_page_that_raises_is_a_failed_capture_not_a_missing_driver(monke
     driver = BrowserDriver()
     assert (await driver.read_console("http://127.0.0.1:1/")).status == CAPTURE_FAILED
     assert (await driver.capture_screenshot("http://127.0.0.1:1/")).status == CAPTURE_FAILED
-

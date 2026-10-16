@@ -5,6 +5,10 @@ from typing import Literal
 
 DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 
+#: Hosts that bind only this machine. Anything else -- 0.0.0.0, ::, a LAN
+#: address -- accepts peers from the network, so it needs a shared secret.
+_LOOPBACK_BINDS = frozenset({"127.0.0.1", "::1", "localhost"})
+
 #: VIBE_LOG_FILE values that mean "do not write a log file". An *unset*
 #: variable is not one of them: the documented default is a rotating file under
 #: the workspace, so only a deliberate off value may disable it.
@@ -95,9 +99,14 @@ class Settings:
     mode: Literal["dev", "prod"] = "dev"
     #: The built SPA. None means "this checkout's apps/vibe/dist".
     static_dir: Path | None = None
-    # Which Authenticator the container builds. Only "loopback" exists today;
-    # the knob is the seam a future token authenticator plugs into.
+    # Which Authenticator the container builds. __post_init__ sets this to
+    # "token" when auth_token is present; the knob is also the seam a future
+    # authenticator plugs into.
     auth_mode: str = "loopback"
+    #: Shared-secret bearer token (VIBE_AUTH_TOKEN). Setting it lets the API be
+    #: reached beyond this machine: the container builds a TokenAuthenticator and
+    #: remote peers must present the token. Loopback stays trusted.
+    auth_token: str | None = None
     cors_origins: list[str] = field(default_factory=lambda: DEFAULT_CORS_ORIGINS.split(","))
     #: Level for the console and file handlers; VIBE_LOG_LEVEL overrides it.
     log_level: str = "INFO"
@@ -124,13 +133,27 @@ class Settings:
         """
         self.workspace_dir = Path(self.workspace_dir).expanduser().resolve()
         self.host = self.host or "127.0.0.1"
+        # P5: a non-loopback bind used to be a silent footgun -- the API became
+        # reachable from the network with only LoopbackAuthenticator (which
+        # refuses remote peers) in the way. A shared secret is now required
+        # before the API is exposed off-machine, and setting one selects token
+        # auth. Fail-closed: a network bind with no token is a startup error.
+        self.auth_token = (self.auth_token or "").strip() or None
+        if self.auth_token is not None:
+            self.auth_mode = "token"
+        if self.auth_mode == "token" and self.auth_token is None:
+            raise ValueError("VIBE_AUTH_MODE=token requires VIBE_AUTH_TOKEN to be set")
+        if self.auth_token is None and self.host not in _LOOPBACK_BINDS:
+            raise ValueError(
+                f"VIBE_HOST={self.host!r} accepts connections beyond this machine, "
+                "so it needs VIBE_AUTH_TOKEN set; refusing to expose the API unprotected"
+            )
         # A typo in VIBE_MODE used to be indistinguishable from "dev": the app
         # started in the mode nobody asked for and served the wrong thing.
         if self.mode not in ("dev", "prod"):
             raise ValueError(f"VIBE_MODE must be 'dev' or 'prod', not {self.mode!r}")
         self.static_dir = (
-            default_static_dir() if self.static_dir is None
-            else Path(self.static_dir).expanduser().resolve()
+            default_static_dir() if self.static_dir is None else Path(self.static_dir).expanduser().resolve()
         )
         # Logging to a file is on by default, under the workspace: a user who
         # is asked "send me the log" must not have to hunt in a console that
@@ -154,7 +177,9 @@ class Settings:
             workspace_dir=Path(os.environ.get("VIBE_WORKSPACE_DIR") or (Path.home() / "vibe-workspaces")),
             host=os.environ.get("VIBE_HOST", "127.0.0.1"),
             max_fix_iterations=int(os.environ.get("VIBE_MAX_FIX_ITERATIONS", "3")),
-            session_token_budget=int(os.environ["VIBE_SESSION_TOKEN_BUDGET"]) if os.environ.get("VIBE_SESSION_TOKEN_BUDGET") else None,
+            session_token_budget=int(os.environ["VIBE_SESSION_TOKEN_BUDGET"])
+            if os.environ.get("VIBE_SESSION_TOKEN_BUDGET")
+            else None,
             history_messages=int(os.environ.get("VIBE_HISTORY_MESSAGES", "24")),
             system_prompt=os.environ.get("VIBE_SYSTEM_PROMPT", ""),
             trash_retention_days=int(os.environ.get("VIBE_TRASH_RETENTION_DAYS", "14")),
@@ -165,14 +190,13 @@ class Settings:
             mode=os.environ.get("VIBE_MODE", "dev").strip().lower(),
             static_dir=Path(os.environ["VIBE_STATIC_DIR"]) if os.environ.get("VIBE_STATIC_DIR") else None,
             auth_mode=os.environ.get("VIBE_AUTH_MODE", "loopback"),
-            cors_origins=[o.strip() for o in os.environ.get("VIBE_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",") if o.strip()],
+            auth_token=os.environ.get("VIBE_AUTH_TOKEN"),
+            cors_origins=[
+                o.strip() for o in os.environ.get("VIBE_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",") if o.strip()
+            ],
             log_level=os.environ.get("VIBE_LOG_LEVEL", "INFO"),
             log_to_file=raw_log_file.lower() not in _LOG_OFF_VALUES,
-            log_file=(
-                Path(raw_log_file)
-                if raw_log_file and raw_log_file.lower() not in _LOG_OFF_VALUES
-                else None
-            ),
+            log_file=(Path(raw_log_file) if raw_log_file and raw_log_file.lower() not in _LOG_OFF_VALUES else None),
             openai_api_key=os.environ.get("OPENAI_API_KEY"),
             anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY"),
             opencode_api_key=os.environ.get("OPENCODE_API_KEY"),

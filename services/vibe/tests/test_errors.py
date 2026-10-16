@@ -6,6 +6,7 @@ transport and the message is prose that may change — so it gets its own tests
 instead of being asserted incidentally through whichever route happened to
 raise.
 """
+
 from __future__ import annotations
 
 from fastapi import HTTPException
@@ -15,12 +16,11 @@ from vibe.api.errors import ApiError, ErrorCode, body
 
 
 def _make_session(client) -> str:
-    return client.post(
-        "/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}
-    ).json()["id"]
+    return client.post("/sessions", json={"model": {"provider_id": "openai", "model_id": "gpt-4o"}}).json()["id"]
 
 
 # --- the contract itself ----------------------------------------------------
+
 
 def test_body_is_the_single_error_shape():
     assert body(ErrorCode.NOT_FOUND, "gone") == {"error": {"code": "not_found", "message": "gone"}}
@@ -56,6 +56,7 @@ async def test_an_unhandled_error_hides_its_message():
 
 
 # --- through the app --------------------------------------------------------
+
 
 def test_unknown_session_is_a_coded_404(client):
     resp = client.get("/sessions/nope")

@@ -8,6 +8,7 @@ one workspace, or that installs pass through an allowlist. The prompt is a plain
 constant here so it is reviewable in one place, and VIBE_SYSTEM_PROMPT replaces
 it without a code change.
 """
+
 from __future__ import annotations
 
 DEFAULT_SYSTEM_PROMPT = """\

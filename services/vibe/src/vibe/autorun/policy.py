@@ -24,9 +24,15 @@ _UNREAD_WHY = {
 
 
 class AutoRunPolicy:
-    def __init__(self, executor, runtime, max_fix_iterations: int = 3,
-                 usage=None, session_token_budget: int | None = None,
-                 system_prompt: str | None = None):
+    def __init__(
+        self,
+        executor,
+        runtime,
+        max_fix_iterations: int = 3,
+        usage=None,
+        session_token_budget: int | None = None,
+        system_prompt: str | None = None,
+    ):
         self._executor = executor
         self._runtime = runtime
         self._max_fix = max_fix_iterations
@@ -89,9 +95,10 @@ class AutoRunPolicy:
                 # same as "the console was clean": an empty string here would let
                 # this loop claim a check it never performed (audit M6).
                 logger.warning(
-                    "autorun: %s for session %s; runtime errors cannot be checked"
-                    " (this is not a clean console)",
-                    _UNREAD_WHY.get(capture.status, _UNREAD_WHY[NO_DRIVER]), ctx.session_id)
+                    "autorun: %s for session %s; runtime errors cannot be checked (this is not a clean console)",
+                    _UNREAD_WHY.get(capture.status, _UNREAD_WHY[NO_DRIVER]),
+                    ctx.session_id,
+                )
                 return
             logs = capture.value if isinstance(capture.value, str) else ""
             if logs.strip():
@@ -113,16 +120,17 @@ class AutoRunPolicy:
         session = await ctx.store.get_session(ctx.session_id)
         model = session.model_ref if session else None
         content = f"The app failed: {error}. Fix it."
-        inp = AgentInput(session_id=ctx.session_id,
-                         messages=[Message(role="user", content=content)],
-                         model=model,
-                         system=system_prompt_for(self._prompt_override()))
+        inp = AgentInput(
+            session_id=ctx.session_id,
+            messages=[Message(role="user", content=content)],
+            model=model,
+            system=system_prompt_for(self._prompt_override()),
+        )
         log = ctx.event_log
         if log is None:
             # Nothing to record into. The build is still broken, so run the fix
             # anyway, but do not pretend it was logged.
-            logger.warning("autorun: fix turn for session %s is unrecorded (no event log)",
-                           ctx.session_id)
+            logger.warning("autorun: fix turn for session %s is unrecorded (no event log)", ctx.session_id)
             async for _ in self._runtime.run(inp, ctx):
                 pass
             return
@@ -138,5 +146,6 @@ class AutoRunPolicy:
 
     @staticmethod
     async def _publish(ctx: AgentContext, type_: str, payload: dict, seq: int) -> None:
-        await ctx.event_bus.publish(ctx.session_id, Event(session_id=ctx.session_id, seq=seq,
-                                                          type=type_, payload=payload))
+        await ctx.event_bus.publish(
+            ctx.session_id, Event(session_id=ctx.session_id, seq=seq, type=type_, payload=payload)
+        )

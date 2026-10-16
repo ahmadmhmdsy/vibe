@@ -143,7 +143,9 @@ async def update_provider(pid: str, request: Request, deps: App):
     # frontend sent, so base URL and API key edits never persisted.
     changes = {_FIELDS[k]: v for k, v in body.items() if k in _FIELDS}
     if not changes:
-        raise ApiError(ErrorCode.VALIDATION_FAILED, f"no updatable fields in {sorted(body)}; expected one of {sorted(_FIELDS)}")
+        raise ApiError(
+            ErrorCode.VALIDATION_FAILED, f"no updatable fields in {sorted(body)}; expected one of {sorted(_FIELDS)}"
+        )
     if "models" in changes:
         changes["models"] = _validate_models(changes["models"])
     try:

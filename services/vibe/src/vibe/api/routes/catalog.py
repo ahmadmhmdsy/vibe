@@ -11,6 +11,7 @@ from vibe.providers.catalog import ProviderCatalog, ProviderInfo
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
 @router.get("/catalog")
 async def catalog(deps: App):
     settings = deps.settings
@@ -20,8 +21,7 @@ async def catalog(deps: App):
         "opencode-go": bool(settings.opencode_api_key),
     }
     builtins = [
-        {**p.__dict__, "key_configured": key_status.get(p.id, False)}
-        for p in ProviderCatalog().list_providers()
+        {**p.__dict__, "key_configured": key_status.get(p.id, False)} for p in ProviderCatalog().list_providers()
     ]
     # Merge user-defined custom providers (public fields only — never keys).
     # The store is read off the event loop: it is file I/O, and every other
@@ -39,7 +39,8 @@ async def catalog(deps: App):
             models.append({"id": mid, "name": m.get("name") or mid})
         customs.append(
             ProviderInfo(
-                id=p.id, name=p.name,
+                id=p.id,
+                name=p.name,
                 capabilities={"tool_support": True, "vision": False},
                 models=models,
                 key_configured=bool(p.api_key),

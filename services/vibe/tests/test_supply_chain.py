@@ -23,9 +23,15 @@ class MockExecutor:
 
 
 def _ctx(tmp_path, ex, log, bus, approvals):
-    return AgentContext(session_id="s1", workspace_path=tmp_path, executor=ex,
-                       event_bus=bus, store=SessionStore(db_path=tmp_path / "t.db"),
-                       event_log=log, approval_store=approvals)
+    return AgentContext(
+        session_id="s1",
+        workspace_path=tmp_path,
+        executor=ex,
+        event_bus=bus,
+        store=SessionStore(db_path=tmp_path / "t.db"),
+        event_log=log,
+        approval_store=approvals,
+    )
 
 
 def test_is_allowlisted():
@@ -92,23 +98,29 @@ async def test_install_non_allowlisted_denied_skips(tmp_path):
 # are the specifiers that ride the allowlist today; the already-rejected ones
 # sit beside them so the boundary is pinned in one place.
 
-ALLOWED_SPECIFIERS = ["react", "react@^19", "react@19.0.0", "@types/react",
-                      "@types/react@^19", "@vitejs/plugin-react", "zustand@^5"]
+ALLOWED_SPECIFIERS = [
+    "react",
+    "react@^19",
+    "react@19.0.0",
+    "@types/react",
+    "@types/react@^19",
+    "@vitejs/plugin-react",
+    "zustand@^5",
+]
 
-DENIED_SPECIFIERS = ["evil-package", "react-malicious", "", " ", "../evil",
-                     "@scope", "date-fns", "lodash"]
+DENIED_SPECIFIERS = ["evil-package", "react-malicious", "", " ", "../evil", "@scope", "date-fns", "lodash"]
 
 # "react@^19 nope" is not a real version range. It is here because the obvious
 # fix -- rejecting an alias/protocol prefix -- would still let it resolve to the
 # allowlisted name "react", so R2-T2 also refuses range characters that can
 # never be part of a version we accept.
 BYPASS_SPECIFIERS = [
-    "react@npm:evil-package",       # alias installs something else entirely
-    "react@npm:@evil/pkg",          # alias to a scoped package
-    "@types/react@npm:evil",        # scoped alias
-    "react@github:evil/repo",       # git protocol
+    "react@npm:evil-package",  # alias installs something else entirely
+    "react@npm:@evil/pkg",  # alias to a scoped package
+    "@types/react@npm:evil",  # scoped alias
+    "react@github:evil/repo",  # git protocol
     "react@git+https://evil/x.git",
-    "react@file:../evil",           # local path
+    "react@file:../evil",  # local path
     "react@link:../evil",
     "react@http://evil/x.tgz",
     "react@workspace:*",
@@ -129,4 +141,3 @@ def test_denied_specifiers(spec):
 @pytest.mark.parametrize("spec", BYPASS_SPECIFIERS)
 def test_alias_and_protocol_specifiers_are_denied(spec):
     assert is_allowlisted(spec) is False
-

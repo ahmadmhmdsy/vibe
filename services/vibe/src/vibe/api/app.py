@@ -85,18 +85,17 @@ def _lifespan_factory(container: Container):
             if orphans.reaped or orphans.dropped or orphans.kept or orphans.skipped:
                 logger.info("startup: %s", render_reap(orphans))
         logger.info("vibe ready: workspace=%s", settings.workspace_dir)
-        # Loopback auth makes a non-loopback bind inert rather than dangerous,
-        # but silence about it would be its own kind of footgun: the day the API
-        # is exposed, the person who exposed it should be told what stands between
-        # it and the network.
+        # P5: a non-loopback bind now requires a shared secret (config.py refuses
+        # to build Settings without one), so this is not the footgun it once was.
+        # Silence would still hide that the API left the loopback interface, so
+        # say exactly what stands between it and the network.
         if settings.host not in ("127.0.0.1", "localhost", "::1"):
             # One placeholder, one argument. This call used to pass three
             # arguments for a single %s, and logging defers that mismatch to the
             # handler: the operator got a "--- Logging error ---" traceback
             # instead of the warning (BE-07).
             logger.warning(
-                "VIBE_HOST=%s: bound beyond loopback; loopback auth still refuses non-local"
-                " peers, but every local process can reach this API.",
+                "VIBE_HOST=%s: bound beyond loopback; non-local peers must present the auth token.",
                 settings.host,
             )
         reaper = asyncio.create_task(_reap_idle_dev_servers(executors, settings))
@@ -139,9 +138,7 @@ async def reconcile_open_turns(store: SessionStore, event_log: EventStore) -> in
         tail = await event_log.get(session.id, after_seq=last_seq - 1)
         if not tail or tail[-1].type not in _OPEN_TURN_TAILS:
             continue
-        await event_log.append(
-            session.id, "turn/aborted", {"reason": "the app stopped before this turn finished"}
-        )
+        await event_log.append(session.id, "turn/aborted", {"reason": "the app stopped before this turn finished"})
         logger.info("startup: session %s had an open turn; marked it aborted", session.id)
         closed += 1
     return closed
@@ -214,9 +211,11 @@ class OriginGuard:
     A request with no Origin header is allowed through. Loopback auth has
     already gated it, and non-browser clients (curl, a test) send none.
     """
+
     def __init__(self, app, allowed_origins: list[str]) -> None:
         self._app = app
         self._allowed = frozenset(o.rstrip("/") for o in allowed_origins)
+
     async def __call__(self, scope, receive, send) -> None:
         if scope["type"] != "http" or scope["method"] not in _STATE_CHANGING:
             await self._app(scope, receive, send)
@@ -363,11 +362,19 @@ def create_app(settings: Settings | None = None, *, container: Container | None 
         return {"status": "shutting_down", "stopping": True}
 
     from vibe.api.routes import approvals, catalog, chat, messages, preview, providers, sessions
+
     # Every router is mounted behind the authenticator, so the default is deny:
     # a route added tomorrow is protected without remembering to ask. /health
     # stays open above because it is a direct @app.get, not part of a router.
-    for _router in (sessions.router, chat.router, catalog.router, providers.router,
-                    approvals.router, messages.router, preview.router):
+    for _router in (
+        sessions.router,
+        chat.router,
+        catalog.router,
+        providers.router,
+        approvals.router,
+        messages.router,
+        preview.router,
+    ):
         app.include_router(_router, dependencies=[Depends(require_principal)])
 
     # Production serves the built SPA from this same process, so the browser has

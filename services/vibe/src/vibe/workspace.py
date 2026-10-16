@@ -6,41 +6,44 @@ unfiltered walk reports thousands of paths nobody asked for (one session
 returned 3680 paths, 3667 of them under node_modules) and pays that cost on
 every chat turn, twice, for the changed-file snapshot.
 """
+
 from __future__ import annotations
 
 import os
 from collections.abc import Iterator
 from pathlib import Path
 
-IGNORED_DIRS = frozenset({
-    "node_modules",
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "__pycache__",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".tox",
-    "dist",
-    "build",
-    "out",
-    ".next",
-    ".nuxt",
-    ".svelte-kit",
-    ".turbo",
-    ".parcel-cache",
-    "coverage",
-    "htmlcov",
-    ".cache",
-    # Workspaces of deleted sessions are moved here rather than removed, so a
-    # delete stays recoverable. It must not appear in a file listing.
-    ".trash",
-    ".idea",
-    ".vscode",
-})
+IGNORED_DIRS = frozenset(
+    {
+        "node_modules",
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".tox",
+        "dist",
+        "build",
+        "out",
+        ".next",
+        ".nuxt",
+        ".svelte-kit",
+        ".turbo",
+        ".parcel-cache",
+        "coverage",
+        "htmlcov",
+        ".cache",
+        # Workspaces of deleted sessions are moved here rather than removed, so a
+        # delete stays recoverable. It must not appear in a file listing.
+        ".trash",
+        ".idea",
+        ".vscode",
+    }
+)
 
 
 def is_ignored(relpath: str | Path) -> bool:
@@ -68,7 +71,4 @@ def iter_workspace_files(root: Path, limit: int | None = None) -> Iterator[Path]
 
 def relative_files(root: Path, limit: int | None = None) -> list[str]:
     """Workspace-relative POSIX paths, sorted."""
-    return sorted(
-        str(p.relative_to(root)).replace("\\", "/")
-        for p in iter_workspace_files(root, limit=limit)
-    )
+    return sorted(str(p.relative_to(root)).replace("\\", "/") for p in iter_workspace_files(root, limit=limit))

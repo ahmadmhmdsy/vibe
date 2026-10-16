@@ -126,18 +126,12 @@ class SessionStore:
         """
         columns = {row["name"] for row in self._db.execute("PRAGMA table_info(sessions)")}
         if "owner_id" not in columns:
-            self._db.execute(
-                "ALTER TABLE sessions ADD COLUMN owner_id TEXT NOT NULL"
-                f" DEFAULT '{LOOPBACK_OWNER_ID}'"
-            )
+            self._db.execute(f"ALTER TABLE sessions ADD COLUMN owner_id TEXT NOT NULL DEFAULT '{LOOPBACK_OWNER_ID}'")
         self._db.execute(
-            "CREATE INDEX IF NOT EXISTS idx_sessions_owner_updated"
-            " ON sessions (owner_id, updated_at DESC)"
+            "CREATE INDEX IF NOT EXISTS idx_sessions_owner_updated ON sessions (owner_id, updated_at DESC)"
         )
 
-    async def create_session(
-        self, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID
-    ) -> str:
+    async def create_session(self, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID) -> str:
         return await asyncio.to_thread(self._create_session, model_ref, owner_id)
 
     def _create_session(self, model_ref: ModelRef, owner_id: str) -> str:
@@ -151,16 +145,19 @@ class SessionStore:
                 " VALUES (?, ?, ?, ?, ?, ?)",
                 # A title is a placeholder until the first message arrives and
                 # can be summarised; see the audit's missing-implementation list.
-                (sid, f"Untitled {sid[:4]}",
-                 json.dumps({"provider_id": model_ref.provider_id, "model_id": model_ref.model_id}),
-                 now, now, owner_id),
+                (
+                    sid,
+                    f"Untitled {sid[:4]}",
+                    json.dumps({"provider_id": model_ref.provider_id, "model_id": model_ref.model_id}),
+                    now,
+                    now,
+                    owner_id,
+                ),
             )
             self._db.commit()
         return sid
 
-    async def get_session(
-        self, session_id: str, owner_id: str = LOOPBACK_OWNER_ID
-    ) -> Session | None:
+    async def get_session(self, session_id: str, owner_id: str = LOOPBACK_OWNER_ID) -> Session | None:
         return await asyncio.to_thread(self._get_session, session_id, owner_id)
 
     def _get_session(self, session_id: str, owner_id: str) -> Session | None:
@@ -179,8 +176,7 @@ class SessionStore:
     def _list_sessions(self, owner_id: str) -> list[Session]:
         with self._lock:
             rows = self._db.execute(
-                f"SELECT {_COLUMNS} FROM sessions WHERE owner_id = ?"
-                " ORDER BY updated_at DESC",
+                f"SELECT {_COLUMNS} FROM sessions WHERE owner_id = ? ORDER BY updated_at DESC",
                 (owner_id,),
             ).fetchall()
         return [self._session_from_row(r) for r in rows]
@@ -196,14 +192,10 @@ class SessionStore:
             owner_id=row["owner_id"],
         )
 
-    async def rename_session(
-        self, session_id: str, title: str, owner_id: str = LOOPBACK_OWNER_ID
-    ) -> None:
+    async def rename_session(self, session_id: str, title: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:
         await asyncio.to_thread(self._touch, session_id, owner_id, title=title)
 
-    async def retitle_from_message(
-        self, session_id: str, text: str, owner_id: str = LOOPBACK_OWNER_ID
-    ) -> bool:
+    async def retitle_from_message(self, session_id: str, text: str, owner_id: str = LOOPBACK_OWNER_ID) -> bool:
         """Title a session from one of its messages. True if it did.
 
         Only fires while the title is still the placeholder, so a title the user
@@ -230,13 +222,12 @@ class SessionStore:
             self._db.commit()
         return True
 
-    async def set_model(
-        self, session_id: str, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID
-    ) -> None:
+    async def set_model(self, session_id: str, model_ref: ModelRef, owner_id: str = LOOPBACK_OWNER_ID) -> None:
         await asyncio.to_thread(self._touch, session_id, owner_id, model_ref=model_ref)
 
-    def _touch(self, session_id: str, owner_id: str, title: str | None = None,
-               model_ref: ModelRef | None = None) -> None:
+    def _touch(
+        self, session_id: str, owner_id: str, title: str | None = None, model_ref: ModelRef | None = None
+    ) -> None:
         now = datetime.now(UTC).isoformat()
         with self._lock:
             if title is not None:
@@ -247,14 +238,16 @@ class SessionStore:
             if model_ref is not None:
                 self._db.execute(
                     "UPDATE sessions SET model_ref = ?, updated_at = ? WHERE id = ? AND owner_id = ?",
-                    (json.dumps({"provider_id": model_ref.provider_id,
-                                "model_id": model_ref.model_id}), now, session_id, owner_id),
+                    (
+                        json.dumps({"provider_id": model_ref.provider_id, "model_id": model_ref.model_id}),
+                        now,
+                        session_id,
+                        owner_id,
+                    ),
                 )
             self._db.commit()
 
-    async def delete_session(
-        self, session_id: str, owner_id: str = LOOPBACK_OWNER_ID
-    ) -> None:
+    async def delete_session(self, session_id: str, owner_id: str = LOOPBACK_OWNER_ID) -> None:
         await asyncio.to_thread(self._delete_session, session_id, owner_id)
 
     def _delete_session(self, session_id: str, owner_id: str) -> None:
@@ -270,11 +263,7 @@ class SessionStore:
 
     def _count_sessions(self, owner_id: str) -> int:
         with self._lock:
-            return int(
-                self._db.execute(
-                    "SELECT COUNT(*) FROM sessions WHERE owner_id = ?", (owner_id,)
-                ).fetchone()[0]
-            )
+            return int(self._db.execute("SELECT COUNT(*) FROM sessions WHERE owner_id = ?", (owner_id,)).fetchone()[0])
 
     def close(self) -> None:
         with self._lock:
