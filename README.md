@@ -1,5 +1,7 @@
 # vibe
 
+[![CI](https://github.com/ahmadmhmdsy/vibe/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ahmadmhmdsy/vibe/actions/workflows/ci.yml)
+
 **A local-first vibe-coding IDE.** Describe an app in the chat box; an agent writes it as a
 multi-file React project, installs it, builds it, runs it, and keeps it working in a live preview.
 
