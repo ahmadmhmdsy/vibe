@@ -1,0 +1,5 @@
+# Line endings: prettier (endOfLine default), ruff and eslint all expect LF.
+# A Windows checkout with core.autocrlf=true hands them CRLF instead, which
+# is why CI flagged every frontend file as unformatted before this file
+# existed. Normalize on checkout so local and CI see the same bytes.
+* text=auto eol=lf
