@@ -22,8 +22,8 @@ vibe is **Windows-first** today: the one-click launchers are `.bat` files and CI
 
 ![The generated app in the live preview: three tasks typed in, one completed, one deleted](docs/assets/demo.gif)
 
-*No mocks: the app in the panel is a Vite + React project the agent wrote, running in the preview
-iframe while the chat that produced it sits beside it.*
+*Not a mock-up: the app in the preview iframe is the Vite + React project the agent wrote, driven
+by hand in a real session - add, complete, delete.*
 
 Quick start: [Requirements](#requirements) · [Install](#install) · [Run](#run) ·
 [Local setup guide](docs/guides/local-setup.md)
