@@ -1,11 +1,11 @@
 # vibe
 
-[![CI](https://github.com/ahmadmhmdsy/vibe/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ahmadmhmdsy/vibe/actions/workflows/ci.yml)
+[![CI](https://github.com/ahmadmhmdsy/vibe/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ahmadmhmdsy/vibe/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **A local-first vibe-coding IDE.** Describe an app in the chat box; an agent writes it as a
 multi-file React project, installs it, builds it, runs it, and keeps it working in a live preview.
 
-![The vibe IDE: a session list on the left, the agent building a to-do app in a chat-and-tool timeline in the middle, and the generated App.tsx in the source panel on the right](docs/assets/hero.png)
+![The vibe IDE: the session list on the left, the agent's answer in the chat timeline in the middle after it inspected the project, and the running app in the live preview on the right](docs/assets/hero.png)
 
 vibe runs entirely on your machine. The React UI talks to a FastAPI + LangGraph backend that drives
 a real Vite + React + TypeScript project in a workspace directory on disk. You watch the agent's
@@ -19,6 +19,11 @@ configure and the package downloads a generated app needs.
 
 vibe is **Windows-first** today: the one-click launchers are `.bat` files and CI runs on
 `windows-latest`.
+
+![The generated app in the live preview: three tasks typed in, one completed, one deleted](docs/assets/demo.gif)
+
+*No mocks: the app in the panel is a Vite + React project the agent wrote, running in the preview
+iframe while the chat that produced it sits beside it.*
 
 Quick start: [Requirements](#requirements) · [Install](#install) · [Run](#run) ·
 [Local setup guide](docs/guides/local-setup.md)
@@ -39,7 +44,7 @@ The preview panel starts and stops the generated app's Vite dev server, reloads 
 copies the preview URL. While the tab is visible it polls the backend for the server's state, so
 the badge reflects what is actually running.
 
-![Live preview: the to-do app the agent generated running in the preview panel, beside the chat and tool timeline that produced it](docs/assets/preview.png)
+![The generated to-do app in the live preview: three tasks, one completed, the items-left footer and the clear-completed control](docs/assets/preview.png)
 
 ### Code view
 
@@ -47,7 +52,7 @@ The code panel shows the workspace as a file tree beside a Monaco editor. The tr
 the agent writes; edits you save go through the API and are used by the next build. The editor
 follows the app theme.
 
-![Code view: the workspace file tree next to the Monaco editor showing a generated App.tsx](docs/assets/code-view.png)
+![Code view: the workspace file tree next to the Monaco editor, with the generated src/index.css open](docs/assets/code-view.png)
 
 ### Source control
 
@@ -149,7 +154,7 @@ apps/vibe/                 React SPA: src/{app,features,components,lib,hooks,sty
 services/vibe/             FastAPI backend: src/vibe/{api,runtime,executor,tools,providers,
                            autorun,services}, tests/
 docs/                      guides, architecture, reviews, research, design spec
-scripts/                   acceptance-local.ps1, release-check.ps1
+scripts/                   acceptance-local.ps1, release-check.ps1, publish-public.ps1
 .github/workflows/         ci.yml, acceptance.yml
 start.bat  stop.bat  doctor.bat  test.bat
 ```
@@ -390,6 +395,10 @@ not that it works.
   `pnpm typecheck`, `pnpm test:backend`, and `pnpm lint:backend`.
 - Run the acceptance and release checks with PowerShell 7:
   `pwsh -File scripts\acceptance-local.ps1` and `pwsh -File scripts\release-check.ps1`.
+- Publish the public repository with `pwsh -File scripts\publish-public.ps1`. It is the only
+  supported path: the public history is a curated export with the vendored skill packs and internal
+  working files stripped, so pushing this checkout directly is wrong. See
+  **[docs/guides/publishing.md](docs/guides/publishing.md)** before the first publish.
 
 ## Documentation
 
@@ -403,3 +412,9 @@ not that it works.
 - **[Research](docs/research/README.md)** - the competitive analysis behind the roadmap.
 - **[Codebase audit](docs/architecture/2026-10-04-codebase-audit.md)** - the structural audit and the
   findings that shaped the hardening work.
+- **[Publishing](docs/guides/publishing.md)** - maintainers: what the public repository is, how the
+  export is produced, and what to verify after a publish.
+
+## License
+
+MIT - see [LICENSE](LICENSE).
