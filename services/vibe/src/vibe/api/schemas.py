@@ -59,6 +59,25 @@ class WriteFileIn(BaseModel):
     content: str
 
 
+class CommitIn(BaseModel):
+    """POST /sessions/{sid}/vcs/commit (M8/C2).
+
+    The message is required and non-empty: an empty one would make git open an
+    editor, which in a server process means a command that never returns.
+    """
+
+    message: str = Field(min_length=1, max_length=10_000)
+
+
+class BranchIn(BaseModel):
+    """POST /sessions/{sid}/vcs/branch. `create` is what separates a new branch
+    from a switch to one that exists; the Name is validated against git's rules
+    where it is used."""
+
+    name: str = Field(min_length=1, max_length=200)
+    create: bool = False
+
+
 class SystemPromptIn(BaseModel):
     """PATCH /settings body (BE-19's GUI half).
 

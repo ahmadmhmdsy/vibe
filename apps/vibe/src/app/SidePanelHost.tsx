@@ -1,8 +1,8 @@
-// app/SidePanelHost.tsx — the Preview/Code tab host.
+// app/SidePanelHost.tsx — the side tab host: preview, code, source control.
 //
 // This lives in the composition layer on purpose: the chat feature must never
 // import the preview feature, so the thing that decides which of them is on
-// screen belongs to the shell. Both panels are lazily loaded and stay mounted
+// screen belongs to the shell. Every panel is lazily loaded and stays mounted
 // once opened, so switching tabs never tears down the preview iframe.
 
 import { forwardRef, lazy, Suspense, type ReactNode } from "react";
@@ -19,12 +19,18 @@ const PreviewPanel = lazy(() =>
 const CodePanel = lazy(() =>
   import("../features/code/CodePanel").then((m) => ({ default: m.CodePanel }))
 );
+const SourceControlPanel = lazy(() =>
+  import("../features/vcs/SourceControlPanel").then((m) => ({
+    default: m.SourceControlPanel,
+  }))
+);
 
-export type SideTab = "preview" | "code";
+export type SideTab = "preview" | "code" | "vcs";
 
 const TABS: readonly TabItem[] = [
   { id: "preview", label: "Preview", icon: <Icon name="play" size={14} /> },
   { id: "code", label: "Code", icon: <Icon name="code" size={14} /> },
+  { id: "vcs", label: "Source", icon: <Icon name="branch" size={14} /> },
 ];
 
 export interface SidePanelHostProps {
@@ -49,7 +55,7 @@ export const SidePanelHost = forwardRef<HTMLElement, SidePanelHostProps>(functio
     <section
       ref={ref}
       className={["app-side", open ? "app-side-open" : ""].filter(Boolean).join(" ")}
-      aria-label="Preview and code"
+      aria-label="Preview, code, and source control"
     >
       {leading}
 
@@ -78,6 +84,14 @@ export const SidePanelHost = forwardRef<HTMLElement, SidePanelHostProps>(functio
             <ErrorBoundary resetKey={sessionId}>
               <Suspense fallback={<Loading label="Loading code" />}>
                 <CodePanel sessionId={sessionId} theme={theme} active={tab === "code"} />
+              </Suspense>
+            </ErrorBoundary>
+          </TabPanel>
+
+          <TabPanel id="vcs" idPrefix="side" active={tab === "vcs"}>
+            <ErrorBoundary resetKey={sessionId}>
+              <Suspense fallback={<Loading label="Loading source control" />}>
+                <SourceControlPanel sessionId={sessionId} active={tab === "vcs"} />
               </Suspense>
             </ErrorBoundary>
           </TabPanel>

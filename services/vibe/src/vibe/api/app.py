@@ -361,7 +361,7 @@ def create_app(settings: Settings | None = None, *, container: Container | None 
         server.should_exit = True
         return {"status": "shutting_down", "stopping": True}
 
-    from vibe.api.routes import approvals, catalog, chat, messages, preview, providers, sessions
+    from vibe.api.routes import approvals, catalog, chat, messages, preview, providers, sessions, vcs
 
     # Every router is mounted behind the authenticator, so the default is deny:
     # a route added tomorrow is protected without remembering to ask. /health
@@ -374,6 +374,7 @@ def create_app(settings: Settings | None = None, *, container: Container | None 
         approvals.router,
         messages.router,
         preview.router,
+        vcs.router,
     ):
         app.include_router(_router, dependencies=[Depends(require_principal)])
 

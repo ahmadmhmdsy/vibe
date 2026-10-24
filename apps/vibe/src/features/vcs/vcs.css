@@ -1,0 +1,190 @@
+/* vcs.css — source control panel.
+   Token-driven only; every rule sits in the components layer so a feature rule
+   can never outrank the primitives it composes. */
+
+@layer components {
+  /* .panel owns the flex context; this only fills the side column without
+     growing the app shell. */
+  .vcs-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .vcs-branch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vcs-alert {
+    padding: var(--space-2) var(--space-3) 0;
+  }
+
+  .vcs-loading {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-5) 0;
+  }
+
+  /* The one scrolling region above the commit box. */
+  .vcs-changes {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2);
+  }
+
+  .vcs-change {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .vcs-change:hover {
+    background: var(--bg-hover);
+  }
+
+  .vcs-change-code {
+    flex: none;
+    color: var(--text-faint);
+    font-size: var(--text-2xs);
+  }
+
+  .vcs-change-path {
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--text-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The directory is context, not the name the user is scanning for. */
+  .vcs-change-dir {
+    color: var(--text-faint);
+  }
+
+  .vcs-clean {
+    margin: 0;
+    padding: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .vcs-commit {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-top: 1px solid var(--border);
+  }
+
+  .vcs-log {
+    flex: none;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    border-top: 1px solid var(--border);
+  }
+
+  .vcs-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .vcs-log-entry {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-width: 0;
+    font-size: var(--text-xs);
+  }
+
+  .vcs-sha {
+    flex: none;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+  }
+
+  .vcs-log-subject {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vcs-log-date {
+    flex: none;
+    margin-left: auto;
+    color: var(--text-faint);
+  }
+
+  /* --- one file's diff --- */
+  .vcs-diff-view {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .vcs-diff-head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .vcs-diff-path {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vcs-diff-note {
+    margin: 0;
+    padding: 0 var(--space-3) var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
+
+  /* pre, so the +/- columns line up; the region scrolls both ways. */
+  .vcs-diff {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--line-height);
+    white-space: pre;
+  }
+
+  .vcs-branch-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}

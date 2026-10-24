@@ -304,6 +304,7 @@ export default function App() {
             { id: "chat", label: "Chat", icon: "chat" },
             { id: "code", label: "Code", icon: "code" },
             { id: "preview", label: "Preview", icon: "play" },
+            { id: "vcs", label: "Source", icon: "branch" },
           ] as const
         ).map((tab) => (
           <button

@@ -211,7 +211,56 @@ export const api = {
     }),
   approve: (aid: string) => req<{ ok: true }>(`/approvals/${aid}/approve`, { method: "POST" }),
   deny: (aid: string) => req<{ ok: true }>(`/approvals/${aid}/deny`, { method: "POST" }),
+
+  // --- source control (M8/C2) -------------------------------------------
+  // One session's workspace. `is_repo: false` is an answer, not an error: the
+  // panel offers to create a repository instead of showing a failure.
+  vcsStatus: (sid: string) => req<VcsStatus>(`/sessions/${sid}/vcs`),
+  vcsInit: (sid: string) =>
+    req<{ branch: string | null }>(`/sessions/${sid}/vcs/init`, { method: "POST" }),
+  vcsDiff: async (sid: string, opts: { path?: string; staged?: boolean } = {}) => {
+    const q = new URLSearchParams();
+    if (opts.path) q.set("path", opts.path);
+    if (opts.staged) q.set("staged", "true");
+    const qs = q.toString();
+    return req<{ diff: string; truncated: boolean }>(
+      `/sessions/${sid}/vcs/diff${qs ? "?" + qs : ""}`
+    );
+  },
+  /** `committed: false` means the workspace was already clean -- the agent had
+   *  nothing new on disk -- not that the commit failed. */
+  vcsCommit: (sid: string, message: string) =>
+    req<{ sha: string | null; committed: boolean }>(`/sessions/${sid}/vcs/commit`, {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }),
+  vcsLog: (sid: string, limit = 20) => req<VcsCommit[]>(`/sessions/${sid}/vcs/log?limit=${limit}`),
+  vcsBranch: (sid: string, name: string, create = false) =>
+    req<{ branch: string }>(`/sessions/${sid}/vcs/branch`, {
+      method: "POST",
+      body: JSON.stringify({ name, create }),
+    }),
 };
+
+/** A path git reports as changed. `status` is git's two-character code. */
+export interface VcsFile {
+  path: string;
+  status: string;
+  staged: boolean;
+}
+
+export interface VcsStatus {
+  is_repo: boolean;
+  branch: string | null;
+  files: VcsFile[];
+}
+
+export interface VcsCommit {
+  sha: string;
+  subject: string;
+  author: string;
+  date: string;
+}
 
 export interface Approval {
   id: string;
