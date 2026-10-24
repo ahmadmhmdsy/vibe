@@ -5,7 +5,7 @@
 **A local-first vibe-coding IDE.** Describe an app in the chat box; an agent writes it as a
 multi-file React project, installs it, builds it, runs it, and keeps it working in a live preview.
 
-![The vibe IDE: the session list on the left, the agent's answer in the chat timeline in the middle after it inspected the project, and the running app in the live preview on the right](docs/assets/hero.png)
+![The vibe IDE: one session in the sidebar, a build transcript in the middle (the prompt, three write_file rows, a failed edit that the agent retried, and a passing build), and the running Habit Tracker app in the live preview on the right](docs/assets/hero.png)
 
 vibe runs entirely on your machine. The React UI talks to a FastAPI + LangGraph backend that drives
 a real Vite + React + TypeScript project in a workspace directory on disk. You watch the agent's
@@ -20,10 +20,10 @@ configure and the package downloads a generated app needs.
 vibe is **Windows-first** today: the one-click launchers are `.bat` files and CI runs on
 `windows-latest`.
 
-![The generated app in the live preview: three tasks typed in, one completed, one deleted](docs/assets/demo.gif)
+![The generated habit tracker in the live preview: two habits added, two days ticked on the first, and its streak count climbing from 0 to 2](docs/assets/demo.gif)
 
-*Not a mock-up: the app in the preview iframe is the Vite + React project the agent wrote, driven
-by hand in a real session - add, complete, delete.*
+*Not a mock-up: the app in the preview iframe is the Vite + React project the agent wrote, driven by
+hand in a real session - add a habit, tick the week, watch the streak.*
 
 Quick start: [Requirements](#requirements) · [Install](#install) · [Run](#run) ·
 [Local setup guide](docs/guides/local-setup.md)
@@ -44,7 +44,7 @@ The preview panel starts and stops the generated app's Vite dev server, reloads 
 copies the preview URL. While the tab is visible it polls the backend for the server's state, so
 the badge reflects what is actually running.
 
-![The generated to-do app in the live preview: three tasks, one completed, the items-left footer and the clear-completed control](docs/assets/preview.png)
+![The generated habit tracker in the live preview: three habits, each with a seven-day grid, a flame and a streak count, above an add-habit form](docs/assets/preview.png)
 
 ### Code view
 
@@ -52,7 +52,7 @@ The code panel shows the workspace as a file tree beside a Monaco editor. The tr
 the agent writes; edits you save go through the API and are used by the next build. The editor
 follows the app theme.
 
-![Code view: the workspace file tree next to the Monaco editor, with the generated src/index.css open](docs/assets/code-view.png)
+![Code view: the workspace file tree beside the Monaco editor, with the generated src/index.css open on its design tokens](docs/assets/code-view.png)
 
 ### Source control
 
@@ -374,6 +374,12 @@ not that it works.
   `<workspace_dir>\providers.json`.
 - **The code editor loads Monaco from a CDN** (`@monaco-editor/react` with no local loader
   configured), so the code view needs network access the first time.
+- **Gemini 3.x tool calls need a signature-preserving proxy.** Google's OpenAI-compatible endpoint
+  attaches a `thought_signature` to every function call and rejects the follow-up turn when it is
+  missing; the OpenAI client behind the custom-provider path does not echo it back, so a provider
+  pointed straight at `generativelanguage.googleapis.com/v1beta/openai` fails on the second tool
+  call. A small proxy that re-attaches the signature works - that is how the screenshot above was
+  produced - but there is no native Google adapter yet.
 - **The system prompt has three layers.** Settings -> System prompt edits
   `<workspace_dir>\settings.json`; `VIBE_SYSTEM_PROMPT` overrides that file, and the panel disables
   its field while the environment is in charge. An empty value falls back to the built-in prompt.
