@@ -105,6 +105,7 @@ Validation labels: `PASS`, `FAIL`, `SKIPPED`, `BLOCKED`,
 | Environment (stable policy) | [ENVIRONMENT.md](./ENVIRONMENT.md) | before running anything | after any tooling/version change |
 | Usage (humans) | [README.md](./README.md) | for command syntax | when commands or usage change |
 | Local setup guide (humans) | [docs/guides/local-setup.md](./docs/guides/local-setup.md) | for the longer walkthrough: providers, first app, offline, backups, running the checks | when install steps, prerequisites, or the check scripts change |
+| Publishing (maintainers) | [docs/guides/publishing.md](./docs/guides/publishing.md) | before any push to the public repository | when the strip list, the publish script, or the verification steps change |
 | Design spec | [docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md](./docs/superpowers/specs/2026-09-28-vibe-coding-app-design.md) | before any implementation work | only for user-approved spec changes |
 | Conditional rules | [rules/](./rules/README.md) | when the task class matches | only via an approved authoring step |
 | Architecture audit | [docs/architecture/2026-10-04-codebase-audit.md](./docs/architecture/2026-10-04-codebase-audit.md) | before any structural or refactor work | when a finding is fixed or a newer audit supersedes it; the [2026-10-11 code review](./docs/reviews/2026-10-11-full-app-review/README.md) is the newer artifact for structure findings |
@@ -121,6 +122,10 @@ not exist for the next agent. When creating one, keep this table in sync.
 - Task progress: update [TASKS.md](./TASKS.md) (live status) and
   [HANDOFF.md](./HANDOFF.md) (narrative evidence); refresh
   [CURRENT_STATE.md](./CURRENT_STATE.md) at session start.
+- Publishing: the public repository is a curated export of this checkout,
+  not this history — read
+  [docs/guides/publishing.md](./docs/guides/publishing.md) and run
+  `scripts/publish-public.ps1`; never `git push` this checkout to it.
 - Durable lessons go to [MEMORY.md](./MEMORY.md); stable policy changes to
   AGENTS.md or a rules file — never a drive-by edit.
 - A new durable knowledge kind must land in the document map above — a
